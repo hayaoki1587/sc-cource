@@ -1,0 +1,778 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第15講 ICMP｜SC合格講座</title><style>
+:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#f4f7fa;color:#1d2938;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;line-height:1.9;font-size:16px}main{max-width:950px;margin:35px auto 90px;background:white;padding:55px 65px;border-radius:14px;box-shadow:0 5px 35px #10243810}h1{font-size:2rem;line-height:1.4;color:#153854;border-bottom:4px solid #21846b;padding-bottom:18px}h2{margin-top:3.5rem;font-size:1.55rem;color:#153854;border-left:5px solid #21846b;padding:5px 0 5px 15px;background:#f5faf8}h3{margin-top:2.2rem;font-size:1.15rem;color:#14516a}p{margin:1em 0}strong{color:#124f69}table{border-collapse:collapse;width:100%;margin:22px 0;font-size:.94rem}th,td{border:1px solid #d7e2e8;padding:10px 12px;vertical-align:top;text-align:left}th{background:#e9f3f4;color:#173e50}tr:nth-child(even){background:#f8fafb}pre{background:#162737;color:#e4f6ed;border-radius:9px;padding:19px 22px;overflow-x:auto;line-height:1.65;font-size:.92rem}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}p code,td code{background:#eaf1f5;padding:2px 5px;border-radius:4px;color:#164f63}li{margin:6px 0}hr{border:0;border-top:1px solid #dce5e9;margin:38px 0}.note{background:#eff7f4;border-left:4px solid #21846b;padding:12px 16px;border-radius:5px}.toc{padding:16px 24px;background:#f0f6f8;border-radius:9px}.toc ol{columns:2;padding-left:22px}.toc a{color:#176d73;text-decoration:none}.meta{font-size:.86rem;color:#607687}footer{margin-top:55px;border-top:1px solid #dce5e9;padding-top:15px;color:#62788b;font-size:.86rem}@media(max-width:700px){main{margin:0;padding:25px 18px;border-radius:0}body{font-size:15px}.toc ol{columns:1}h1{font-size:1.65rem}h2{font-size:1.3rem}pre{font-size:.78rem}}@media print{body{background:white}main{margin:0;padding:0;box-shadow:none;max-width:none}h2,h3{break-after:avoid}pre,table{break-inside:avoid}}</style></head><body><main><h1>第15講｜ICMP</h1>
+<p class="meta">講義本文：全14節／理解度チェックは収録していません</p><nav class="toc"><strong>目次</strong><ol><li><a href="#sec1">到達目標と参考書</a></li><li><a href="#sec2">ICMPは何をするプロトコルなのか</a></li><li><a href="#sec3">ICMPのTypeとCode</a></li><li><a href="#sec4">pingの仕組み</a></li><li><a href="#sec5">Destination Unreachable</a></li><li><a href="#sec6">TTLとTime Exceeded</a></li><li><a href="#sec7">tracerouteの仕組み</a></li><li><a href="#sec8">MTUとPath MTU Discovery</a></li><li><a href="#sec9">ICMPを悪用する攻撃</a></li><li><a href="#sec10">ICMPに対するセキュリティ対策</a></li><li><a href="#sec11">ファイアウォールとICMPログの読み取り</a></li><li><a href="#sec12">科目Aで押さえる典型論点</a></li><li><a href="#sec13">科目Bの答案作成ポイント</a></li><li><a href="#sec14">重要事項の整理</a></li></ol></nav>
+<p><strong>情報処理安全確保支援士（SC）合格講座｜第1〜23講・詳細再執筆</strong></p>
+<p>第14講では、IPv6のNDP、NS・NA、RS・RAを学びました。今回は、これらの基盤にもなっている<strong>ICMP（Internet Control Message Protocol）</strong>を体系的に理解します。</p>
+<p>ICMPは、IP通信で発生した問題を通知したり、通信経路を調査したりするためのプロトコルです。</p>
+<p>SC試験では、単に「pingに使うプロトコル」と覚えるだけでは不十分です。<strong>ICMPのメッセージがなぜ発生するのか、どこから返されるのか、ログから何が分かるのか、どの通信を制限すべきか</strong>まで判断できるようにします。</p>
+<h2 id="sec1">1. 到達目標と参考書</h2>
+<h3>到達目標</h3>
+<p>この講義では、次の七つを目指します。</p>
+<ol>
+<li>ICMPの役割と、IP・TCP・UDPとの関係を説明できる。</li>
+<li>Echo RequestとEcho Replyによるpingの仕組みを理解する。</li>
+<li>Destination Unreachable、Time Exceeded、Fragmentation Neededの意味を区別する。</li>
+<li>tracerouteが経路上のルータを調査する仕組みを説明できる。</li>
+<li>ICMPを悪用する攻撃と、その影響を説明できる。</li>
+<li>ICMPを一律遮断することの問題点を理解する。</li>
+<li>パケット情報やログを読み、科目Bで原因・根拠・対策を記述できる。</li>
+</ol>
+<h3>参考書の対応箇所</h3>
+<p>基本参考書：『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』</p>
+<p><strong>第3章「ネットワーク基礎技術」3-1「TCP/IP」、p.171「ICMP」</strong>を確認しました。</p>
+<p>参考書では、ICMPをIP通信の状態確認や異常時のトラブルシューティングに利用するプロトコルとして説明しています。</p>
+<p>また、p.163では、IPv4ヘッダのProtocol番号としてICMPが <code>1</code> であることを確認できます。p.172には、IPv6の近隣探索がICMPv6を利用することも記載されています。</p>
+<p>今回のping・tracerouteの詳細な処理、PMTUD、攻撃シナリオ、ファイアウォール設定例、ログ分析は、試験での応用判断を目的とする講師独自の補足です。</p>
+<h3>学習優先度</h3>
+<table>
+<thead>
+<tr>
+  <th>優先度</th>
+  <th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>A：必須</strong></td>
+  <td>ICMPの役割、ping、Echo Request/Reply、Destination Unreachable、Time Exceeded、traceroute、攻撃と防御、ログ分析</td>
+</tr>
+<tr>
+  <td><strong>B：理解補助</strong></td>
+  <td>Path MTU Discovery、ICMPv6との比較、エラー通知の制限</td>
+</tr>
+<tr>
+  <td><strong>C：発展</strong></td>
+  <td>ICMPメッセージの全タイプ・コード、製品固有の診断オプション、特殊なトンネリング</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="sec2">2. ICMPは何をするプロトコルなのか</h2>
+<h3>2-1. IPだけでは通信の状態を十分に伝えられない</h3>
+<p>第12講で、IPはパケットを宛先まで届けるためのプロトコルだと学びました。</p>
+<p>しかし、IPの基本的な転送機能だけでは、例えば次のような状況を送信元へ詳しく伝えられません。</p>
+<ul>
+<li>宛先ネットワークに到達できない。</li>
+<li>パケットがルータ間を回り続けている。</li>
+<li>パケットが大きすぎて次のリンクへ転送できない。</li>
+<li>宛先端末が応答可能な状態か調べたい。</li>
+</ul>
+<p>そこで、IP通信に関する制御情報やエラー情報を通知するICMPを使用します。</p>
+<h3>2-2. ICMPとTCP・UDPの違い</h3>
+<table>
+<thead>
+<tr>
+  <th>プロトコル</th>
+  <th>主な役割</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>IP</td>
+  <td>宛先IPアドレスに基づくパケット転送</td>
+</tr>
+<tr>
+  <td>ICMP</td>
+  <td>IP通信に関するエラー通知・状態確認など</td>
+</tr>
+<tr>
+  <td>TCP</td>
+  <td>コネクション管理、信頼性のあるバイトストリーム転送</td>
+</tr>
+<tr>
+  <td>UDP</td>
+  <td>コネクションレスのデータグラム転送</td>
+</tr>
+</tbody>
+</table>
+<p>ICMPは、TCPのようにアプリケーション間で信頼性のあるデータ転送を提供するプロトコルではありません。</p>
+<p>また、ICMPはTCPやUDPのポート番号を使用しません。</p>
+<p>例えば、</p>
+<pre><code class="language-text">TCP 443番ポート
+UDP 53番ポート
+</code></pre>
+<p>という表現はありますが、通常、</p>
+<pre><code class="language-text">ICMP 443番ポート
+</code></pre>
+<p>という表現はしません。</p>
+<p>ICMPでは、<strong>Type（タイプ）とCode（コード）</strong>でメッセージの種類や詳細を区別します。</p>
+<h3>2-3. IPv4パケット内での位置付け</h3>
+<p>ICMPv4メッセージは、IPv4パケットのペイロードに格納されます。</p>
+<p><strong>ICMPv4を含むEthernetフレーム</strong></p>
+<pre><code class="language-text">┌────────────────────────────────────┐
+│ Ethernetヘッダ                     │
+│ 送信元MAC、宛先MAC、EtherTypeなど  │
+├────────────────────────────────────┤
+│ IPv4ヘッダ                         │
+│ 送信元IP、宛先IP、TTL、Protocol=1  │
+├────────────────────────────────────┤
+│ ICMPメッセージ                     │
+│ Type、Code、Checksumなど           │
+└────────────────────────────────────┘
+</code></pre>
+<p>IPv4ヘッダのProtocol番号は、ICMPv4の場合 <code>1</code> です。</p>
+<p>比較すると、</p>
+<pre><code class="language-text">Protocol 1  → ICMP
+Protocol 6  → TCP
+Protocol 17 → UDP
+</code></pre>
+<p>となります。</p>
+<p>IPv6ではICMPv6のプロトコル番号は <code>58</code> です。</p>
+<p><strong>ICMPv4とICMPv6は密接に関連しますが、メッセージの種類や役割が完全に同一ではありません。</strong></p>
+<hr />
+<h2 id="sec3">3. ICMPのTypeとCode</h2>
+<h3>3-1. Typeはメッセージの大分類</h3>
+<p>ICMPメッセージには、Typeというフィールドがあります。</p>
+<p>これは、メッセージの種類を識別します。</p>
+<p>例えば、ICMPv4では次のようなTypeがあります。</p>
+<table>
+<thead>
+<tr>
+  <th>Type</th>
+  <th>メッセージ</th>
+  <th>意味</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>0</td>
+  <td>Echo Reply</td>
+  <td>Echo Requestへの応答</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>Destination Unreachable</td>
+  <td>宛先へ届けられない</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>Echo Request</td>
+  <td>応答を要求する</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td>Time Exceeded</td>
+  <td>TTLなどの制限に達した</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td>Parameter Problem</td>
+  <td>IPヘッダなどの問題</td>
+</tr>
+</tbody>
+</table>
+<p>すべてのType番号を丸暗記する必要はありません。</p>
+<p>ただし、<strong>Echo Requestが8、Echo Replyが0、Destination Unreachableが3、Time Exceededが11</strong>という組合せは、パケットやログの読み取りに役立ちます。</p>
+<h3>3-2. Codeは詳細な理由</h3>
+<p>同じTypeでも、理由が異なる場合があります。</p>
+<p>例えば、ICMPv4のDestination UnreachableはType 3です。</p>
+<p>その中には、次のようなCodeがあります。</p>
+<table>
+<thead>
+<tr>
+  <th>Type</th>
+  <th>Code</th>
+  <th>意味</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>3</td>
+  <td>0</td>
+  <td>Network Unreachable</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>1</td>
+  <td>Host Unreachable</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>3</td>
+  <td>Port Unreachable</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>4</td>
+  <td>Fragmentation Needed and DF Set</td>
+</tr>
+</tbody>
+</table>
+<p>ここで注意が必要です。</p>
+<p>「Destination Unreachable」という名前だけを見て、すべて同じ原因だと判断してはいけません。</p>
+<p><strong>Typeで大分類を判断し、Codeで具体的な理由を判断します。</strong></p>
+<hr />
+<h2 id="sec4">4. pingの仕組み</h2>
+<h3>4-1. pingは何を確認するのか</h3>
+<p>pingは、対象ホストなどへICMP Echo Requestを送信し、Echo Replyが返ってくるか確認する診断手段です。</p>
+<p>例えば、PC-AからサーバBへpingを実行します。</p>
+<pre><code class="language-text">PC-A：192.168.1.10
+サーバB：192.168.1.20
+</code></pre>
+<p>PC-Aは、サーバBへEcho Requestを送ります。</p>
+<p>サーバBがそれを受信し、応答可能であればEcho Replyを返します。</p>
+<pre><code class="language-text">PC-A（192.168.1.10）         サーバB（192.168.1.20）
+        │                              │
+        │ ① Echo Request（Type 8）    │
+        ├─────────────────────────────&gt;│
+        │                              │
+        │ ② Echo Reply（Type 0）      │
+        │&lt;─────────────────────────────┤
+        │                              │
+</code></pre>
+<h3>4-2. pingの結果例</h3>
+<pre><code class="language-text">$ ping 192.168.1.20
+
+64 bytes from 192.168.1.20:
+icmp_seq=1 ttl=64 time=1.2 ms
+
+64 bytes from 192.168.1.20:
+icmp_seq=2 ttl=64 time=1.0 ms
+
+64 bytes from 192.168.1.20:
+icmp_seq=3 ttl=64 time=1.1 ms
+</code></pre>
+<p>この出力から、少なくとも次のことが分かります。</p>
+<ul>
+<li>Echo Replyを受信できた。</li>
+<li>各応答に対応するシーケンス番号を確認できる。</li>
+<li>往復時間の目安を確認できる。</li>
+<li>受信したIPv4パケットのTTLを確認できる。</li>
+</ul>
+<p><code>time=1.2 ms</code> は、通常、Echo Requestを送ってからEcho Replyを受け取るまでの往復時間です。</p>
+<h3>4-3. pingが成功してもアプリケーションが動くとは限らない</h3>
+<p>ここは非常に重要です。</p>
+<p>pingが成功しても、例えばWebサーバのTCP 443番ポートが開いているとは限りません。</p>
+<pre><code class="language-text">ICMP Echo Reply：成功
+TCP 443接続　　：失敗
+</code></pre>
+<p>という状態は十分にあり得ます。</p>
+<p>原因として、次のようなものがあります。</p>
+<ul>
+<li>Webサーバのプロセスが停止している。</li>
+<li>TCP 443番ポートがファイアウォールで遮断されている。</li>
+<li>サービスが別のポートで待ち受けている。</li>
+<li>アプリケーション側に障害がある。</li>
+</ul>
+<p>したがって、<strong>pingの成功は、目的のアプリケーション通信の成功を保証しません。</strong></p>
+<h3>4-4. pingが失敗してもホストが停止しているとは限らない</h3>
+<p>逆も重要です。</p>
+<p>pingが失敗した場合、対象ホストが停止しているとは限りません。</p>
+<p>例えば、サーバがEcho Requestに応答しない設定であっても、HTTPS通信は正常にできる場合があります。</p>
+<pre><code class="language-text">ICMP Echo Reply：なし
+HTTPS通信　　 ：成功
+</code></pre>
+<p>このような構成は矛盾ではありません。</p>
+<p>ファイアウォールやOSの設定によって、ICMP Echo Requestへの応答を制限できるからです。</p>
+<h3>4-5. pingで判断できること・できないこと</h3>
+<table>
+<thead>
+<tr>
+  <th>判断対象</th>
+  <th>pingだけで判断できるか</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Echo Replyを受信できたか</td>
+  <td>できる</td>
+</tr>
+<tr>
+  <td>ICMPの往復時間</td>
+  <td>目安を確認できる</td>
+</tr>
+<tr>
+  <td>途中経路に障害がないか</td>
+  <td>限定的</td>
+</tr>
+<tr>
+  <td>Webサービスが正常か</td>
+  <td>できない</td>
+</tr>
+<tr>
+  <td>TCPポートが開いているか</td>
+  <td>できない</td>
+</tr>
+<tr>
+  <td>相手の本人性が保証されるか</td>
+  <td>できない</td>
+</tr>
+</tbody>
+</table>
+<p>科目Bでは、「pingが成功したから通信に問題はない」と結論付けないようにしてください。</p>
+<hr />
+<h2 id="sec5">5. Destination Unreachable</h2>
+<h3>5-1. 宛先へ届けられないことを通知する</h3>
+<p>Destination Unreachableは、パケットを宛先へ届けられない場合などに送信されるICMPエラーメッセージです。</p>
+<p>例えば、次の構成を考えます。</p>
+<pre><code class="language-text">PC-A
+192.168.1.10
+    |
+    v
+ルータR
+192.168.1.1
+    |
+    X  宛先ネットワークへの経路がない
+    |
+203.0.113.10
+</code></pre>
+<p>PC-Aは <code>203.0.113.10</code> へパケットを送信します。</p>
+<p>ルータRが宛先への転送経路を持たず、パケットを転送できない場合、Destination Unreachableを返すことがあります。</p>
+<p>ここで重要なのは、<strong>エラーを通知する機器が必ず最終宛先とは限らない</strong>ことです。</p>
+<p>途中のルータが通知する場合もあります。</p>
+<h3>5-2. Port Unreachable</h3>
+<p>UDPを使用する場合、宛先ホストに該当するUDPポートの受信先が存在しないと、ICMP Port Unreachableが返されることがあります。</p>
+<p>例えば、</p>
+<pre><code class="language-text">送信元：192.168.1.10
+宛先　：192.168.1.20
+UDP宛先ポート：9999
+</code></pre>
+<p>というUDPデータグラムを送信したとします。</p>
+<p>宛先ホストにUDP 9999番ポートで受信するアプリケーションが存在しなければ、Port Unreachableが返される場合があります。</p>
+<p>ただし、ファイアウォールがパケットを破棄したり、応答を制限したりする場合には、エラーメッセージが返らないこともあります。</p>
+<h3>5-3. TCPの接続拒否とは異なる</h3>
+<p>TCPで待受けのないポートへ接続しようとした場合、通常はTCP RSTが返されることがあります。</p>
+<p>これはICMP Port Unreachableとは異なります。</p>
+<table>
+<thead>
+<tr>
+  <th>状況</th>
+  <th>代表的な応答</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>UDPの未使用ポート</td>
+  <td>ICMP Port Unreachable</td>
+</tr>
+<tr>
+  <td>TCPの未使用ポート</td>
+  <td>TCP RST</td>
+</tr>
+<tr>
+  <td>FWが通信を破棄</td>
+  <td>応答なしの場合もある</td>
+</tr>
+<tr>
+  <td>FWが明示的に拒否</td>
+  <td>TCP RSTやICMPエラーなど、設定による</td>
+</tr>
+</tbody>
+</table>
+<p>試験では、TCPとUDPの動作を混同しないことが重要です。</p>
+<hr />
+<h2 id="sec6">6. TTLとTime Exceeded</h2>
+<h3>6-1. TTLは何のためにあるのか</h3>
+<p>IPv4ヘッダにはTTL（Time To Live）があります。</p>
+<p>TTLは、パケットがルータを通過するたびに減少する値です。</p>
+<p>例えば、送信元がTTLを4に設定したとします。</p>
+<pre><code class="language-text">送信元 → R1 → R2 → R3 → R4 → 宛先
+ TTL=4   3    2    1    0
+</code></pre>
+<p>ルータがTTLを減らした結果、0になる場合、パケットは破棄されます。</p>
+<p>これにより、ルーティングループが発生しても、パケットが無限に転送され続けることを防ぎます。</p>
+<h3>6-2. Time Exceeded</h3>
+<p>ルータがTTLの期限切れでパケットを破棄した場合、通常、送信元へICMP Time Exceededを返します。</p>
+<p>ICMPv4では、</p>
+<pre><code class="language-text">Type：11
+Code：0
+</code></pre>
+<p>がTTL超過によるTime Exceededを示します。</p>
+<p>ただし、ネットワーク機器の設定やレート制限などによって、必ず通知が返るとは限りません。</p>
+<h3>6-3. ルーティングループの例</h3>
+<p>次のような誤設定があったとします。</p>
+<pre><code class="language-text">ルータA：
+10.10.20.0/24 はルータBへ転送
+
+ルータB：
+10.10.20.0/24 はルータAへ転送
+</code></pre>
+<p>宛先 <code>10.10.20.10</code> のパケットが、</p>
+<pre><code class="language-text">ルータA → ルータB → ルータA → ルータB → …
+</code></pre>
+<p>と転送される可能性があります。</p>
+<p>しかしTTLは減少し続けるため、最終的には破棄されます。</p>
+<p>ここで、ICMP Time Exceededが送信元に返されることがあります。</p>
+<p><strong>Time Exceededはルーティングループの調査材料になりますが、Time Exceededを受信しただけでループの存在が確定するわけではありません。</strong></p>
+<p>後述するtracerouteでも、意図的にTTLを小さくしたパケットによってTime Exceededを発生させるからです。</p>
+<hr />
+<h2 id="sec7">7. tracerouteの仕組み</h2>
+<h3>7-1. tracerouteは何を調べるのか</h3>
+<p>tracerouteは、宛先までの経路上にあるルータを調査するためのツールです。</p>
+<p>IPv4では、TTLを小さな値から順番に増やしてパケットを送信し、途中のルータから返るICMP Time Exceededなどを利用する方式があります。</p>
+<p>例えば、送信元PCからサーバまで、三つのルータを通過するとします。</p>
+<pre><code class="language-text">PC → R1 → R2 → R3 → サーバ
+</code></pre>
+<h3>7-2. TTLを1にして送信</h3>
+<p>最初にTTLを1にして送信します。</p>
+<pre><code class="language-text">PC → R1
+     TTLが0になり破棄
+</code></pre>
+<p>R1がICMP Time Exceededを返せば、PCは最初のホップにあるルータを知ることができます。</p>
+<h3>7-3. TTLを2にして送信</h3>
+<p>次にTTLを2にして送信します。</p>
+<pre><code class="language-text">PC → R1 → R2
+          TTLが0になり破棄
+</code></pre>
+<p>R2がICMP Time Exceededを返せば、二番目のホップを知ることができます。</p>
+<h3>7-4. TTLを3、4と増やす</h3>
+<p>同じ方法でTTLを増やします。</p>
+<p><strong>TTLを増やして経路を調べる</strong></p>
+<pre><code class="language-text">PC ─── R1 ─── R2 ─── R3 ─── サーバ
+       1      2      3       4 ホップ目
+</code></pre>
+<table>
+<thead>
+<tr>
+  <th>送信TTL</th>
+  <th>期限切れ・到達地点</th>
+  <th>観測する応答</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>TTL=1</td>
+  <td>R1で期限切れ</td>
+  <td>R1から応答</td>
+</tr>
+<tr>
+  <td>TTL=2</td>
+  <td>R2で期限切れ</td>
+  <td>R2から応答</td>
+</tr>
+<tr>
+  <td>TTL=3</td>
+  <td>R3で期限切れ</td>
+  <td>R3から応答</td>
+</tr>
+<tr>
+  <td>TTL=4</td>
+  <td>サーバへ到達</td>
+  <td>方式に応じた応答</td>
+</tr>
+</tbody>
+</table>
+<h3>7-5. tracerouteは必ずICMP Echo Requestを送るのか</h3>
+<p>いいえ。</p>
+<p>tracerouteの送信パケットは、OSやツール、指定オプションによって異なります。</p>
+<p>例えば、UDPデータグラム、ICMP Echo Request、TCP SYNなどを利用する実装があります。</p>
+<p>ただし、途中のルータからICMP Time Exceededを受け取るという基本的な考え方は共通します。</p>
+<p>UDP方式では、最終宛先の未使用UDPポートに到達すると、ICMP Port Unreachableが返され、それを到達の判断に利用する場合があります。</p>
+<h3>7-6. tracerouteの出力例</h3>
+<pre><code class="language-text">traceroute to 203.0.113.10
+
+1  192.168.1.1      1.0 ms
+2  10.0.0.1         4.5 ms
+3  * * *
+4  203.0.113.10    15.2 ms
+</code></pre>
+<p>3ホップ目が <code>* * *</code> になっています。</p>
+<p>これは、3ホップ目のルータから期待する応答が得られなかったことを示します。</p>
+<p>しかし、4ホップ目の宛先から応答が得られています。</p>
+<p>したがって、<strong>3ホップ目の <code>* * *</code> だけを根拠に、その地点で通信が途絶えていると断定することはできません。</strong></p>
+<p>考えられる理由には、ICMPの応答制限、フィルタリング、レート制限などがあります。</p>
+<h3>7-7. 経路調査の限界</h3>
+<p>tracerouteの結果は、実際の通信経路を調べる重要な材料ですが、すべてのルータが必ず応答するわけではありません。</p>
+<p>また、負荷分散や経路変更によって、複数回の調査で結果が変わる場合もあります。</p>
+<p>そのため、障害調査ではtracerouteの結果だけでなく、ルーティングテーブル、ファイアウォールログ、通信の送受信記録などと照合します。</p>
+<hr />
+<h2 id="sec8">8. MTUとPath MTU Discovery</h2>
+<h3>8-1. MTUとは</h3>
+<p>MTU（Maximum Transmission Unit）は、あるリンクで転送できるネットワーク層パケットの最大サイズを表します。</p>
+<p>例えば、一般的なEthernetでは、IPパケットのMTUとして1500バイトが使われます。</p>
+<p>ただし、VPNやトンネルなどを経由する場合、途中の経路で利用できるMTUが小さくなることがあります。</p>
+<h3>8-2. Path MTU Discoveryとは</h3>
+<p>Path MTU Discovery（PMTUD）は、送信元から宛先までの経路で利用可能なMTUを調べ、適切なパケットサイズで通信するための仕組みです。</p>
+<p>例えば、</p>
+<pre><code class="language-text">送信元PC
+   |
+   | MTU 1500
+   v
+ルータA
+   |
+   | MTU 1400
+   v
+ルータB
+   |
+   v
+宛先サーバ
+</code></pre>
+<p>という経路を考えます。</p>
+<p>送信元PCが1500バイトのIPv4パケットを送り、DF（Don't Fragment）フラグが設定されているとします。</p>
+<p>ルータAが、そのパケットをMTU 1400のリンクへ転送しようとすると、パケットを分割できません。</p>
+<p>そこで、パケットを破棄し、送信元へICMPのFragmentation Neededを返すことがあります。</p>
+<h3>8-3. Fragmentation Needed</h3>
+<p>IPv4では、</p>
+<pre><code class="language-text">ICMP Type：3
+Code     ：4
+</code></pre>
+<p>が、DFフラグによってフラグメント化できないことを示すメッセージです。</p>
+<p>この通知によって、送信元はより小さなパケットサイズを使う必要があると判断できます。</p>
+<p>IPv6では途中のルータがフラグメント化を行わず、ICMPv6 Packet Too Bigによって通知します。</p>
+<h3>8-4. ICMPを遮断した場合</h3>
+<p>ここでファイアウォールが、必要なICMPエラーメッセージを遮断していたとします。</p>
+<p>送信元は、途中の経路でパケットが大きすぎることを把握できない場合があります。</p>
+<p>その結果、</p>
+<ul>
+<li>小さいデータは送受信できる。</li>
+<li>大きいデータの送信で通信が停止する。</li>
+<li>特定のWebサイトやVPNだけ通信が不安定になる。</li>
+</ul>
+<p>といった症状が発生する可能性があります。</p>
+<p>これを、Path MTU Discoveryの失敗によるブラックホール現象などと呼ぶことがあります。</p>
+<h3>8-5. 科目Bでの説明方法</h3>
+<p><strong>設問例</strong></p>
+<p>VPN経由の通信で、小さなパケットは正常に送信できるが、大きなパケットは送信できない。ファイアウォールでICMP Fragmentation Neededを遮断していた。原因を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<p>「経路上のMTUを超えるパケットを分割できない際のICMP通知が遮断され、送信元が適切なパケットサイズへ調整できないため。」</p>
+<p>このように、<strong>MTU超過 → 通知の遮断 → サイズ調整失敗 → 通信障害</strong>という因果関係で説明します。</p>
+<hr />
+<h2 id="sec9">9. ICMPを悪用する攻撃</h2>
+<p>ICMPは診断やエラー通知に必要ですが、攻撃に悪用されることもあります。</p>
+<h3>9-1. ICMP Flood</h3>
+<p>ICMP Floodは、大量のICMPメッセージを送り、ネットワーク帯域や機器の処理能力を消費させるDoS攻撃の一種です。</p>
+<p>例えば、大量のEcho Requestを送信し、対象サーバに処理や応答を発生させることが考えられます。</p>
+<p>ただし、実際の負荷や影響は、機器の実装、パケット量、通信経路、制限設定などに依存します。</p>
+<h3>9-2. Smurf攻撃</h3>
+<p>Smurf攻撃は、送信元IPアドレスを被害者のアドレスに偽装し、ブロードキャスト宛てのICMP Echo Requestを利用して、多数の応答を被害者へ集中させる攻撃です。</p>
+<p>概念的には次の流れです。</p>
+<pre><code class="language-text">攻撃者
+  |
+  | 送信元IPを被害者に偽装
+  | Echo Requestをブロードキャスト宛てに送信
+  v
+複数の端末
+  |
+  | Echo Replyを送信
+  v
+被害者
+</code></pre>
+<p>一つの要求によって多数の応答が発生すると、通信量が増幅されます。</p>
+<p>ただし、現在の一般的なネットワークでは、ディレクテッドブロードキャストの転送禁止や、ブロードキャスト宛てEcho Requestへの応答抑制などによって対策されていることが多く、古典的な攻撃例として理解するのが適切です。</p>
+<p><strong>攻撃成立のポイントは、送信元IPアドレスの偽装と、複数端末からの応答による増幅です。</strong></p>
+<h3>9-3. ICMPを使った情報収集</h3>
+<p>攻撃者はpingなどを利用して、応答する端末や到達可能なネットワークを調査する場合があります。</p>
+<p>ただし、ICMPに応答しない機器も存在するため、応答がないことは端末が存在しない証拠にはなりません。</p>
+<h3>9-4. ICMPトンネリング</h3>
+<p>ICMPメッセージにデータを格納し、通常とは異なる用途で情報をやり取りする手法があります。</p>
+<p>例えば、攻撃者がICMPを利用して不正な通信路を作ろうとする場合があります。</p>
+<p>これはICMPトンネリングと呼ばれることがあります。</p>
+<p>ただし、ICMPを利用した通信がすべて不正なわけではありません。パケットの内容、通信量、頻度、送信先などを総合的に確認する必要があります。</p>
+<h3>9-5. 攻撃と対策の整理</h3>
+<table>
+<thead>
+<tr>
+  <th>攻撃・悪用</th>
+  <th>主な問題</th>
+  <th>対策の考え方</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>ICMP Flood</td>
+  <td>帯域や処理能力の消費</td>
+  <td>レート制限、DoS対策</td>
+</tr>
+<tr>
+  <td>Smurf攻撃</td>
+  <td>応答の増幅による負荷</td>
+  <td>ブロードキャスト転送の制限、送信元偽装対策</td>
+</tr>
+<tr>
+  <td>ICMPによる探索</td>
+  <td>ネットワーク情報の収集</td>
+  <td>必要に応じた応答制限、監視</td>
+</tr>
+<tr>
+  <td>ICMPトンネリング</td>
+  <td>不正な通信路の形成</td>
+  <td>通信内容・振る舞いの監視、適切な制御</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="sec10">10. ICMPに対するセキュリティ対策</h2>
+<h3>10-1. ICMPをすべて遮断すれば安全か</h3>
+<p>必ずしもそうではありません。</p>
+<p>ICMPには、正常な通信や障害調査に必要なメッセージがあります。</p>
+<p>特に、Destination Unreachableの一部やPath MTU Discoveryに関係するメッセージを無条件に遮断すると、通信障害の原因になる場合があります。</p>
+<p>一方、不要なEcho Requestへの応答や、大量のICMP通信を制限することには意味があります。</p>
+<p>したがって、重要なのは<strong>用途に応じた選択的な許可・拒否</strong>です。</p>
+<h3>10-2. Echo Requestの制限</h3>
+<p>例えば、インターネットから社内の管理サーバへのEcho Requestを拒否する構成が考えられます。</p>
+<p>これにより、外部からの単純なICMP探索を制限できます。</p>
+<p>ただし、これだけで管理サーバへの不正アクセスを防げるわけではありません。</p>
+<p>SSHやHTTPSなどの管理サービスについても、送信元や認証方式を適切に制御する必要があります。</p>
+<h3>10-3. レート制限</h3>
+<p>ICMPの送受信量を制限することで、大量のメッセージによる負荷を抑えることができます。</p>
+<p>例えば、ルータがICMPエラーを大量に生成すると、転送処理に影響する場合があります。</p>
+<p>そのため、ICMPエラーの生成や応答をレート制限する機能が使われることがあります。</p>
+<p>ただし、必要な通知まで過度に制限すると、障害調査が難しくなったり、通信に影響したりする可能性があります。</p>
+<h3>10-4. 送信元IPアドレスの偽装対策</h3>
+<p>Smurf攻撃のような送信元IPアドレスの偽装を悪用する攻撃に対しては、ネットワーク境界で不正な送信元アドレスを持つパケットを遮断することが重要です。</p>
+<p>例えば、内部ネットワークから外部へ送信するパケットの送信元が、組織に割り当てられていないアドレスであれば、異常な通信として制限する方法があります。</p>
+<p>これは、送信元アドレスの妥当性を確認するフィルタリングの考え方です。</p>
+<h3>10-5. IPv4とIPv6でポリシーを分けて考える</h3>
+<p>第14講で学んだとおり、IPv6ではICMPv6が近隣探索やルータ発見にも使われます。</p>
+<p>したがって、IPv4で設定しているICMPの遮断ルールを、そのままIPv6に適用することは適切でない場合があります。</p>
+<p><strong>ICMPv4とICMPv6は、必要なメッセージをそれぞれ確認して制御する必要があります。</strong></p>
+<hr />
+<h2 id="sec11">11. ファイアウォールとICMPログの読み取り</h2>
+<h3>11-1. Echo Requestのログ</h3>
+<p>次のログを考えます。</p>
+<pre><code class="language-text">2026-10-12 10:00:01
+Action      : DENY
+Source IP   : 198.51.100.10
+Destination : 203.0.113.20
+Protocol    : ICMP
+Type        : 8
+Code        : 0
+</code></pre>
+<p>ICMPv4のType 8はEcho Requestです。</p>
+<p>このログから、送信元 <code>198.51.100.10</code> が宛先 <code>203.0.113.20</code> へ送ったEcho Requestが拒否されたと分かります。</p>
+<p>ただし、<strong>このログだけで送信元が攻撃者だと断定することはできません。</strong></p>
+<p>正当な監視や疎通確認の可能性もあります。</p>
+<h3>11-2. Time Exceededのログ</h3>
+<pre><code class="language-text">2026-10-12 10:05:30
+Source IP   : 10.0.0.2
+Destination : 192.168.1.10
+Protocol    : ICMP
+Type        : 11
+Code        : 0
+</code></pre>
+<p>Type 11、Code 0は、TTLの期限切れに関するTime Exceededです。</p>
+<p>このログから、ルータなどがTTLの期限切れを通知していると判断できます。</p>
+<p>ただし、原因がルーティングループなのか、tracerouteのような診断通信なのかは、追加の情報が必要です。</p>
+<h3>11-3. Fragmentation Neededのログ</h3>
+<pre><code class="language-text">2026-10-12 10:10:20
+Action      : DENY
+Protocol    : ICMP
+Type        : 3
+Code        : 4
+</code></pre>
+<p>このログは、IPv4のFragmentation Neededが拒否されたことを示します。</p>
+<p>もし同時期に、VPN経由で大きなデータだけ通信できない障害が発生していた場合、Path MTU Discoveryに必要な通知の遮断が原因の一つとして疑われます。</p>
+<p>ただし、ログの存在と通信障害の因果関係は、パケットキャプチャやMTU設定などによって確認する必要があります。</p>
+<hr />
+<h2 id="sec12">12. 科目Aで押さえる典型論点</h2>
+<table>
+<thead>
+<tr>
+  <th>論点</th>
+  <th>覚えるべきこと</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>ICMP</td>
+  <td>IP通信のエラー通知・状態確認など</td>
+</tr>
+<tr>
+  <td>ICMPv4のProtocol番号</td>
+  <td>1</td>
+</tr>
+<tr>
+  <td>ICMPv6の番号</td>
+  <td>58</td>
+</tr>
+<tr>
+  <td>Echo Request</td>
+  <td>Type 8</td>
+</tr>
+<tr>
+  <td>Echo Reply</td>
+  <td>Type 0</td>
+</tr>
+<tr>
+  <td>Destination Unreachable</td>
+  <td>Type 3</td>
+</tr>
+<tr>
+  <td>Time Exceeded</td>
+  <td>Type 11</td>
+</tr>
+<tr>
+  <td>Fragmentation Needed</td>
+  <td>Type 3、Code 4</td>
+</tr>
+<tr>
+  <td>ping</td>
+  <td>Echo Request/Replyなどを利用した疎通確認</td>
+</tr>
+<tr>
+  <td>traceroute</td>
+  <td>TTLを変化させ、途中ルータの応答などから経路を調査</td>
+</tr>
+<tr>
+  <td>PMTUD</td>
+  <td>経路で利用可能なMTUを調べる</td>
+</tr>
+<tr>
+  <td>Smurf攻撃</td>
+  <td>送信元IP偽装と応答増幅</td>
+</tr>
+<tr>
+  <td>ICMPの制御</td>
+  <td>必要なメッセージを選択的に許可・制限</td>
+</tr>
+</tbody>
+</table>
+<p>番号の暗記だけではなく、<strong>TypeやCodeを見たときに、通信で何が起きたかを説明できること</strong>を目指してください。</p>
+<hr />
+<h2 id="sec13">13. 科目Bの答案作成ポイント</h2>
+<h3>13-1. 設問例①：pingの失敗</h3>
+<p><strong>設問</strong></p>
+<p>あるサーバに対してpingが失敗した。管理者は「サーバが停止している」と判断した。この判断が適切でない理由を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<p>「ファイアウォールやサーバの設定によってICMP Echo RequestまたはEcho Replyが制限されている可能性があり、pingの失敗だけではサーバ停止を断定できないため。」</p>
+<p><strong>ポイント</strong></p>
+<p>「ping失敗＝サーバ停止」と決め付けないことが重要です。</p>
+<h3>13-2. 設問例②：tracerouteの途中で応答がない</h3>
+<p><strong>設問</strong></p>
+<p>tracerouteの結果で3ホップ目が <code>* * *</code> となったが、4ホップ目の宛先から応答があった。3ホップ目で通信が停止したと判断できない理由を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<p>「3ホップ目のルータがICMP Time Exceededを返さない設定や制限を行っている可能性があり、後続の宛先から応答が得られているため。」</p>
+<p><strong>ポイント</strong></p>
+<p>途中ルータからのICMP応答と、実際のパケット転送は区別します。</p>
+<h3>13-3. 設問例③：PMTUDの障害</h3>
+<p><strong>設問</strong></p>
+<p>大きなパケットを送る通信だけが失敗しており、ICMP Fragmentation Neededが遮断されていた。原因を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<p>「経路のMTUを超えるパケットを分割できない際の通知が遮断され、送信元が適切なパケットサイズに調整できないため。」</p>
+<p><strong>ポイント</strong></p>
+<p>単に「ICMPを遮断したから」ではなく、通知の役割とサイズ調整の失敗を結び付けます。</p>
+<h3>13-4. 設問例④：ICMP Flood</h3>
+<p><strong>設問</strong></p>
+<p>大量のICMP Echo Requestがサーバに送信されている。想定される影響と対策を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<p>「大量のICMP通信によってサーバやネットワークの処理能力が消費される可能性があるため、通信量の監視や適切なレート制限を行う。」</p>
+<p><strong>ポイント</strong></p>
+<p>攻撃による影響と、対応する防御策を具体的に示します。</p>
+<h3>13-5. 設問例⑤：ICMPの一律遮断</h3>
+<p><strong>設問</strong></p>
+<p>セキュリティ強化のため、すべてのICMP通信を遮断することが提案された。問題点を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<p>「経路MTUの通知など、正常なIP通信に必要なICMPメッセージまで遮断し、通信障害を引き起こす可能性があるため。」</p>
+<p><strong>ポイント</strong></p>
+<p>必要なメッセージまで遮断してしまうことが問題です。</p>
+<hr />
+<h2 id="sec14">14. 重要事項の整理</h2>
+<p>今回の講義で特に重要な事項を整理します。</p>
+<p><strong>第一に、ICMPはIP通信に関するエラー通知や状態確認などを行うプロトコルです。</strong> TCPやUDPのようにアプリケーションデータの転送を担うものではありません。</p>
+<p><strong>第二に、pingはICMP Echo RequestとEcho Replyなどを利用します。</strong> ただし、pingの成功はアプリケーションの正常動作を保証せず、失敗もホスト停止を意味するとは限りません。</p>
+<p><strong>第三に、Destination Unreachableは、パケットを宛先へ届けられない状況などを通知します。</strong> TypeとCodeを組み合わせて理由を判断します。</p>
+<p><strong>第四に、Time ExceededはTTLの期限切れなどを通知します。</strong> tracerouteでは、TTLを変化させて途中のルータを調査します。</p>
+<p><strong>第五に、ICMPはPath MTU Discoveryにも関係します。</strong> 必要なエラーメッセージを遮断すると、大きなパケットを送る通信で障害が発生する場合があります。</p>
+<p><strong>第六に、ICMPは攻撃にも悪用されます。</strong> ICMP Flood、Smurf攻撃、情報収集、不正なトンネリングなどが例です。</p>
+<p><strong>第七に、ICMPを一律遮断するのではなく、必要なメッセージを適切に許可し、不正な通信や過剰な通信を制限します。</strong></p>
+<h3>C：発展として切り分ける内容</h3>
+<p>今回は、次の詳細は任意学習とします。</p>
+<ul>
+<li>ICMPの全Type・Codeの網羅的な暗記</li>
+<li>OSごとのping・tracerouteの細かな実装差</li>
+<li>ICMPトンネリングの実装方法</li>
+<li>特殊なPMTUDの実装上の詳細</li>
+<li>製品固有のICMPフィルタリング構文</li>
+</ul>
+<p>試験対策では、まず<strong>ICMPメッセージの意味を読み取り、通信障害や攻撃の原因・対策を説明できること</strong>を優先してください。</p>
+<footer>第15講「ICMP」｜既修了講義の再執筆教材。理解度チェック（第15節）はご指定により除外。</footer></main></body></html>
