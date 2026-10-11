@@ -1,0 +1,1000 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第13講｜サブネットとCIDR｜講義本文（全16節）</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f1f5f9;color:#203044;font:16px/1.92 -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}main{max-width:1000px;margin:36px auto;padding:42px 58px;background:white;border:1px solid #dce4ed;border-radius:16px;box-shadow:0 12px 40px #0f172a0a}h1{font-size:2.1rem;color:#12375a;border-bottom:4px solid #2563eb;padding-bottom:16px}h2{font-size:1.5rem;color:#174a79;margin:58px 0 22px;padding:12px 15px;border-left:6px solid #2563eb;background:#eff6ff;scroll-margin-top:16px}h3{font-size:1.16rem;color:#1e40af;margin:30px 0 13px}h4{font-size:1.05rem;color:#31587b;margin:22px 0 10px}p{margin:12px 0}strong{color:#103b68}table{border-collapse:collapse;width:100%;margin:20px 0 26px;font-size:.92rem}th,td{border:1px solid #cbd5e1;padding:10px 12px;text-align:left;vertical-align:top}th{background:#eaf1f9;color:#153e62}tr:nth-child(even){background:#f8fafc}pre{overflow-x:auto;background:#132337;color:#e6f1ff;border-radius:9px;padding:18px 20px;line-height:1.6;font-size:.9rem}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#eef2f7;padding:2px 5px;border-radius:4px;font-size:.9em}pre code{background:none;color:inherit;padding:0}ul,ol{padding-left:1.65rem}li{padding:3px 0}hr{border:0;border-top:1px solid #dbe3ee;margin:35px 0}.intro{color:#64748b;font-size:.93rem}.toc{background:#f8fafc;border:1px solid #dce5f0;border-radius:12px;padding:20px 28px;margin:25px 0}.toc h2{background:none;border:0;padding:0;margin:0 0 10px;font-size:1.2rem}.toc ol{columns:2;column-gap:30px;margin:0}.toc li{break-inside:avoid;font-size:.9rem}.toc a{color:#185b9c;text-decoration:none}.toc a:hover{text-decoration:underline}.footnote{margin-top:55px;padding:18px;background:#f8fafc;border-radius:10px;color:#475569;font-size:.85rem}.calculator{border:1px solid #a8c5e3;border-radius:12px;background:#f5f9ff;padding:22px;margin:22px 0}.calc-inputs{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}.calc-inputs label{display:flex;flex-direction:column;gap:6px;font-weight:600}.calc-inputs input,.calc-inputs select{padding:9px;border:1px solid #a7b8cc;border-radius:7px;font-size:1rem;background:white}.calculator table{background:white}.calculator small{color:#52667e}@media(max-width:720px){main{margin:0;padding:24px 18px;border:0;border-radius:0}h1{font-size:1.6rem}h2{font-size:1.24rem}.toc ol{columns:1}table{display:block;overflow-x:auto}pre{font-size:.78rem}}@media print{body{background:white}main{margin:0;padding:0;border:0;box-shadow:none}h2{break-after:avoid}pre,table{break-inside:avoid}}</style></head><body><main><div class="intro">情報処理安全確保支援士（SC）合格講座｜第13講・再執筆版｜理解度チェックなし</div><nav class="toc" aria-label="目次"><h2>目次</h2><ol><li><a href="#section-1">1. 到達目標と参考書</a></li><li><a href="#section-2">2. なぜサブネット分割が必要なのか</a></li><li><a href="#section-3">3. サブネットマスクとCIDRを理解する</a></li><li><a href="#section-4">4. ブロックサイズでサブネットを素早く計算する</a></li><li><a href="#section-5">5. IPアドレスからネットワーク範囲を求める</a></li><li><a href="#section-6">6. <code>/25</code>・<code>/27</code>・<code>/28</code> の計算を比較する</a></li><li><a href="#section-7">7. 2進数による計算と論理積（AND）</a></li><li><a href="#section-8">8. 同一サブネットかどうかを判断する</a></li><li><a href="#section-9">9. 最長プレフィックス一致（Longest Prefix Match）</a></li><li><a href="#section-10">10. CIDRによる経路集約</a></li><li><a href="#section-11">11. サブネットとネットワークセキュリティ</a></li><li><a href="#section-12">12. CIDRの設定ミスが引き起こす脆弱性</a></li><li><a href="#section-13">13. ログ・設定からネットワーク範囲を読み取る</a></li><li><a href="#section-14">14. よくある誤解と注意点</a></li><li><a href="#section-15">15. 科目A・科目Bの答案作成ポイント</a></li><li><a href="#section-16">16. 重要事項の整理</a></li></ol></nav><h1>第13講｜サブネットとCIDR</h1>
+<p><strong>第1〜23講・詳細再執筆シリーズ｜第II部 ネットワーク完全攻略</strong></p>
+<p>第12講では、IPv4アドレスの構造、サブネットマスク、ルーティングの基本を学びました。</p>
+<p>今回はそれらを発展させて、<strong>IPアドレスを適切な大きさのネットワークに分割し、通信可能な範囲やルーティング先を正しく判断する方法</strong>を学びます。</p>
+<p>サブネット計算は単なる数学の問題ではありません。ファイアウォールの許可範囲、VPNの接続先、ネットワーク分離、アクセス制御の不備など、セキュリティ設計にも直結します。</p>
+<h2 id="section-1">1. 到達目標と参考書</h2>
+<h3>1-1. 試験上の到達目標</h3>
+<p>この講義を終えると、次のことができるようになります。</p>
+<ol>
+<li>サブネット分割が必要な理由を説明できる。</li>
+<li><code>/25</code>、<code>/26</code>、<code>/27</code>、<code>/28</code> などのCIDR表記をサブネットマスクに変換できる。</li>
+<li>任意のIPv4アドレスから、ネットワークアドレス、ブロードキャストアドレス、利用可能なホスト範囲を計算できる。</li>
+<li>二つのIPアドレスが同一サブネットに属するか判断できる。</li>
+<li>ルーティングテーブルの最長プレフィックス一致を正しく適用できる。</li>
+<li>CIDRによる経路集約の仕組みと、集約できる条件を説明できる。</li>
+<li>ファイアウォールやACLに指定されたCIDRの範囲が適切か判断できる。</li>
+<li>科目Bで、通信が許可・拒否される理由を具体的なアドレス範囲に基づいて記述できる。</li>
+</ol>
+<h3>1-2. 参考書の対応箇所</h3>
+<p>基本参考書：『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』</p>
+<p>実際に確認した範囲は以下のとおりです。</p>
+<table>
+<thead>
+<tr>
+  <th>章・節</th>
+  <th>ページ</th>
+  <th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>第3章「ネットワーク基礎技術」3-1「TCP/IP」内の「サブネットマスク」</td>
+  <td>p.166〜167</td>
+  <td>サブネット分割、ネットワーク部とホスト部</td>
+</tr>
+<tr>
+  <td>同「CIDR」</td>
+  <td>p.167〜168</td>
+  <td>プレフィックス長、クラスに依存しないアドレス指定、経路集約</td>
+</tr>
+<tr>
+  <td>同「ブロードキャストアドレスとマルチキャストアドレス」</td>
+  <td>p.168〜169</td>
+  <td>ブロードキャストアドレスの求め方</td>
+</tr>
+<tr>
+  <td>同「ルーティング」「デフォルトゲートウェイ」</td>
+  <td>p.170</td>
+  <td>ルーティングテーブルとデフォルトルート</td>
+</tr>
+</tbody>
+</table>
+<p>参考書では、例えば <code>172.16.100.138/26</code> からネットワークアドレス <code>172.16.100.128</code> を求める例が示されています。</p>
+<p>今回の<strong>多数の計算演習、最長プレフィックス一致の詳細例、ファイアウォールのCIDR設定ミスの分析</strong>は、これらの基礎事項をSC試験の答案作成につなげるための講師独自の補足です。</p>
+<h3>1-3. 学習優先度</h3>
+<table>
+<thead>
+<tr>
+  <th>優先度</th>
+  <th>学習内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>A：必須</strong></td>
+  <td>サブネット計算、CIDR、ネットワーク・ブロードキャストアドレス、同一サブネット判定、最長プレフィックス一致、ACL・FWのアドレス範囲</td>
+</tr>
+<tr>
+  <td><strong>B：理解補助</strong></td>
+  <td>VLSM、経路集約、ネットワーク分離と通信制御の関係</td>
+</tr>
+<tr>
+  <td><strong>C：発展</strong></td>
+  <td>複雑なアドレス設計、BGPでの経路広告設計、特殊なプレフィックスの詳細</td>
+</tr>
+</tbody>
+</table>
+<p>学習時間の目安は、Aを約75%、Bを約20%、Cを約5%とします。</p>
+<hr />
+<h2 id="section-2">2. なぜサブネット分割が必要なのか</h2>
+<h3>2-1. 大きなネットワークを一つのまま使う問題</h3>
+<p>ある企業が、社内で次のIPv4ネットワークを使っているとします。</p>
+<pre><code class="language-text">10.10.0.0/16
+</code></pre>
+<p><code>/16</code> では、ホスト部は16ビットです。</p>
+<p>一般的なIPv4サブネットとして計算すると、割当可能なホストアドレス数は、</p>
+<p>[2^{16}-2=65,534]</p>
+<p>です。</p>
+<p>ところが、この企業には次のような部門しかないとします。</p>
+<table>
+<thead>
+<tr>
+  <th>部門</th>
+  <th style="text-align:right">端末数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>営業部</td>
+  <td style="text-align:right">100台</td>
+</tr>
+<tr>
+  <td>開発部</td>
+  <td style="text-align:right">200台</td>
+</tr>
+<tr>
+  <td>総務部</td>
+  <td style="text-align:right">40台</td>
+</tr>
+<tr>
+  <td>サーバ用ネットワーク</td>
+  <td style="text-align:right">30台</td>
+</tr>
+</tbody>
+</table>
+<p>これらの機器を一つの大きなネットワークで運用すると、管理が複雑になり、部門ごとの通信制御もしにくくなります。</p>
+<p>特に、すべてを同じVLAN・ブロードキャストドメインに置いた場合、ARPなどのブロードキャストが広い範囲に届きます。</p>
+<p>また、侵害された端末が同じネットワーク内の他の端末へアクセスしやすい構成になることもあります。</p>
+<p>ただし、<strong>同一IPサブネットだから必ずすべての通信が許可されるわけではありません。</strong> ホストファイアウォールなどによって制御できるためです。</p>
+<h3>2-2. サブネットに分割する</h3>
+<p>そこで、部署ごとに異なるネットワークを割り当てます。</p>
+<p><strong>企業内ネットワーク <code>10.10.0.0/16</code> を分割する構成例</strong></p>
+<table>
+<thead>
+<tr>
+  <th>部門</th>
+  <th>サブネット</th>
+  <th style="text-align:right">通常の割当可能ホスト数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>営業部</td>
+  <td><code>10.10.1.0/25</code></td>
+  <td style="text-align:right">126</td>
+</tr>
+<tr>
+  <td>開発部</td>
+  <td><code>10.10.2.0/24</code></td>
+  <td style="text-align:right">254</td>
+</tr>
+<tr>
+  <td>総務部</td>
+  <td><code>10.10.3.0/26</code></td>
+  <td style="text-align:right">62</td>
+</tr>
+<tr>
+  <td>サーバ</td>
+  <td><code>10.10.4.0/26</code></td>
+  <td style="text-align:right">62</td>
+</tr>
+</tbody>
+</table>
+<p>各サブネットを別VLANなどに配置し、ルータやL3スイッチを介して通信させる構成例です。</p>
+<p>こうすると、部門ごとに必要なアドレス数を割り当てられます。</p>
+<p>さらに、サブネット間の通信をルータやL3スイッチ経由にすることで、ファイアウォールやACLによる制御を適用しやすくなります。</p>
+<p>ただし、<strong>サブネットを分けるだけでは通信の遮断は保証されません。</strong></p>
+<p>サブネット間を自由にルーティングする設定なら、別サブネット間でも通信できます。ネットワーク分離をセキュリティ対策として成立させるには、通信許可ルールの設計が必要です。</p>
+<hr />
+<h2 id="section-3">3. サブネットマスクとCIDRを理解する</h2>
+<h3>3-1. サブネットマスクの役割</h3>
+<p>IPv4アドレスは32ビットです。</p>
+<p>サブネットマスクは、その32ビットのうち、どこまでをネットワーク部として扱うかを示します。</p>
+<p>例えば、</p>
+<pre><code class="language-text">IPアドレス：192.168.10.130
+マスク　　：255.255.255.0
+</code></pre>
+<p>であれば、サブネットマスクは次のようになります。</p>
+<pre><code class="language-text">11111111.11111111.11111111.00000000
+</code></pre>
+<p>先頭24ビットがネットワーク部です。</p>
+<p>したがって、CIDR表記は、</p>
+<pre><code class="language-text">192.168.10.130/24
+</code></pre>
+<p>となります。</p>
+<h3>3-2. CIDRとは</h3>
+<p>CIDRは、Classless Inter-Domain Routingの略です。</p>
+<p>従来のクラスA・B・Cという固定的なネットワーク部の区分に依存せず、プレフィックス長によってネットワークの範囲を表現します。</p>
+<p>例えば、<code>/26</code> なら、</p>
+<pre><code class="language-text">ネットワーク部：26ビット
+ホスト部　　　： 6ビット
+</code></pre>
+<p>です。</p>
+<p>ホスト部のビット数は、次の式で求めます。</p>
+<p>[32-\text{プレフィックス長}]</p>
+<h3>3-3. よく使うサブネットマスク</h3>
+<table>
+<thead>
+<tr>
+  <th>CIDR</th>
+  <th>サブネットマスク</th>
+  <th style="text-align:right">ホスト部</th>
+  <th style="text-align:right">通常の割当可能ホスト数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>/24</code></td>
+  <td><code>255.255.255.0</code></td>
+  <td style="text-align:right">8</td>
+  <td style="text-align:right">254</td>
+</tr>
+<tr>
+  <td><code>/25</code></td>
+  <td><code>255.255.255.128</code></td>
+  <td style="text-align:right">7</td>
+  <td style="text-align:right">126</td>
+</tr>
+<tr>
+  <td><code>/26</code></td>
+  <td><code>255.255.255.192</code></td>
+  <td style="text-align:right">6</td>
+  <td style="text-align:right">62</td>
+</tr>
+<tr>
+  <td><code>/27</code></td>
+  <td><code>255.255.255.224</code></td>
+  <td style="text-align:right">5</td>
+  <td style="text-align:right">30</td>
+</tr>
+<tr>
+  <td><code>/28</code></td>
+  <td><code>255.255.255.240</code></td>
+  <td style="text-align:right">4</td>
+  <td style="text-align:right">14</td>
+</tr>
+<tr>
+  <td><code>/29</code></td>
+  <td><code>255.255.255.248</code></td>
+  <td style="text-align:right">3</td>
+  <td style="text-align:right">6</td>
+</tr>
+<tr>
+  <td><code>/30</code></td>
+  <td><code>255.255.255.252</code></td>
+  <td style="text-align:right">2</td>
+  <td style="text-align:right">2</td>
+</tr>
+</tbody>
+</table>
+<p>この表は、試験での計算速度を上げるために覚えておくと便利です。</p>
+<p>ただし、数字を丸暗記するだけでなく、なぜその値になるのかを理解してください。</p>
+<h3>3-4. なぜ <code>/26</code> は255.255.255.192なのか</h3>
+<p><code>/26</code> とは、先頭26ビットがネットワーク部という意味です。</p>
+<p>最初の24ビットは、</p>
+<pre><code class="language-text">11111111.11111111.11111111
+</code></pre>
+<p>です。</p>
+<p>残りの8ビットのうち、先頭2ビットをネットワーク部にします。</p>
+<pre><code class="language-text">11000000
+</code></pre>
+<p>この2進数を10進数にすると、</p>
+<p>[128+64=192]</p>
+<p>となります。</p>
+<p>したがって、</p>
+<pre><code class="language-text">255.255.255.192
+</code></pre>
+<p>です。</p>
+<p>ここまで分かれば、<code>/27</code> や <code>/28</code> も同じ方法で求められます。</p>
+<hr />
+<h2 id="section-4">4. ブロックサイズでサブネットを素早く計算する</h2>
+<p>ここが今回の計算の中心です。</p>
+<h3>4-1. ブロックサイズとは</h3>
+<p>サブネットのネットワークアドレスが、何個刻みで変化するかを示す値です。</p>
+<p>例えば、<code>/26</code> のサブネットマスクは、</p>
+<pre><code class="language-text">255.255.255.192
+</code></pre>
+<p>です。</p>
+<p>最後のオクテットに注目します。</p>
+<p>[256-192=64]</p>
+<p>したがって、ブロックサイズは64です。</p>
+<p>ネットワークアドレスは次のように並びます。</p>
+<pre><code class="language-text">192.168.1.0/26
+192.168.1.64/26
+192.168.1.128/26
+192.168.1.192/26
+</code></pre>
+<p>つまり、最後のオクテットが64ずつ増えます。</p>
+<h3>4-2. <code>/25</code>〜<code>/28</code> のブロックサイズ</h3>
+<table>
+<thead>
+<tr>
+  <th>CIDR</th>
+  <th style="text-align:right">マスク末尾</th>
+  <th style="text-align:right">ブロックサイズ</th>
+  <th>ネットワークアドレスの刻み</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>/25</code></td>
+  <td style="text-align:right">128</td>
+  <td style="text-align:right">128</td>
+  <td>0、128</td>
+</tr>
+<tr>
+  <td><code>/26</code></td>
+  <td style="text-align:right">192</td>
+  <td style="text-align:right">64</td>
+  <td>0、64、128、192</td>
+</tr>
+<tr>
+  <td><code>/27</code></td>
+  <td style="text-align:right">224</td>
+  <td style="text-align:right">32</td>
+  <td>0、32、64、96、…</td>
+</tr>
+<tr>
+  <td><code>/28</code></td>
+  <td style="text-align:right">240</td>
+  <td style="text-align:right">16</td>
+  <td>0、16、32、48、…</td>
+</tr>
+</tbody>
+</table>
+<p>この計算は、プレフィックスの境界が第4オクテットにある場合のものです。</p>
+<p>例えば <code>/20</code> のように第3オクテットが変化する場合は、第3オクテットを対象に同じ考え方を使います。</p>
+<h3>4-3. <code>/26</code> の範囲を図で確認する</h3>
+<p><strong>192.168.1.0/24 を四つの /26 に分割</strong></p>
+<pre><code class="language-text">0                  63 64                127 128               191 192               255
+|--- 第1サブネット ---| |--- 第2サブネット ---| |--- 第3サブネット ---| |--- 第4サブネット ---|
+</code></pre>
+<table>
+<thead>
+<tr>
+  <th>サブネット</th>
+  <th>アドレス範囲</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>第1サブネット</td>
+  <td><code>192.168.1.0〜63</code></td>
+</tr>
+<tr>
+  <td>第2サブネット</td>
+  <td><code>192.168.1.64〜127</code></td>
+</tr>
+<tr>
+  <td>第3サブネット</td>
+  <td><code>192.168.1.128〜191</code></td>
+</tr>
+<tr>
+  <td>第4サブネット</td>
+  <td><code>192.168.1.192〜255</code></td>
+</tr>
+</tbody>
+</table>
+<p>元の <code>/24</code> には256個のIPv4アドレスがあります。</p>
+<p>これを <code>/26</code> に分割すると、64個ずつの四つのサブネットになります。</p>
+<p>各サブネットの64個には、ネットワークアドレスとブロードキャストアドレスも含まれます。</p>
+<p>そのため、一般的にホストへ割り当てられるのは各62個です。</p>
+<hr />
+<h2 id="section-5">5. IPアドレスからネットワーク範囲を求める</h2>
+<h3>5-1. 例題：192.168.10.130/26</h3>
+<p>次のアドレスについて考えます。</p>
+<pre><code class="language-text">192.168.10.130/26
+</code></pre>
+<p>求めるものは四つです。</p>
+<ul>
+<li>ネットワークアドレス</li>
+<li>ブロードキャストアドレス</li>
+<li>利用可能なホスト範囲</li>
+<li>利用可能なホスト数</li>
+</ul>
+<h4>手順①：ブロックサイズを求める</h4>
+<p><code>/26</code> のサブネットマスクは、</p>
+<pre><code class="language-text">255.255.255.192
+</code></pre>
+<p>です。</p>
+<p>したがって、</p>
+<p>[256-192=64]</p>
+<p>ブロックサイズは64です。</p>
+<h4>手順②：130がどの範囲に属するか判断する</h4>
+<p>64刻みの範囲は、</p>
+<pre><code class="language-text">0〜63
+64〜127
+128〜191
+192〜255
+</code></pre>
+<p>です。</p>
+<p>130は128〜191の範囲に入ります。</p>
+<h4>手順③：ネットワークアドレスを求める</h4>
+<p>範囲の先頭がネットワークアドレスです。</p>
+<pre><code class="language-text">192.168.10.128
+</code></pre>
+<h4>手順④：ブロードキャストアドレスを求める</h4>
+<p>範囲の末尾がブロードキャストアドレスです。</p>
+<pre><code class="language-text">192.168.10.191
+</code></pre>
+<h4>手順⑤：ホスト範囲を求める</h4>
+<p>ネットワークアドレスとブロードキャストアドレスを除きます。</p>
+<pre><code class="language-text">192.168.10.129〜192.168.10.190
+</code></pre>
+<h4>手順⑥：ホスト数を求める</h4>
+<p>ホスト部は6ビットです。</p>
+<p>[2^6-2=62]</p>
+<p>したがって、答えは次のとおりです。</p>
+<table>
+<thead>
+<tr>
+  <th>項目</th>
+  <th>計算結果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>ネットワークアドレス</td>
+  <td><code>192.168.10.128</code></td>
+</tr>
+<tr>
+  <td>ブロードキャスト</td>
+  <td><code>192.168.10.191</code></td>
+</tr>
+<tr>
+  <td>利用可能なホスト</td>
+  <td><code>192.168.10.129〜190</code></td>
+</tr>
+<tr>
+  <td>利用可能なホスト数</td>
+  <td>62</td>
+</tr>
+</tbody>
+</table>
+<h3>5-2. 計算の本質</h3>
+<p>ここで大切なのは、<code>130</code> を見て「128に近いから128」と判断することではありません。</p>
+<p><strong>ブロックサイズ64で区切られた範囲のうち、130を含む範囲を選ぶ</strong>ことです。</p>
+<p>試験では、例えば <code>192.168.10.191/26</code> と <code>192.168.10.192/26</code> は別のサブネットになります。</p>
+<p>191と192は数字としては1しか違いませんが、サブネットの境界をまたいでいるからです。</p>
+<hr />
+<h2 id="section-6">6. <code>/25</code>・<code>/27</code>・<code>/28</code> の計算を比較する</h2>
+<p>今度はプレフィックス長を変えて計算してみましょう。</p>
+<h3>6-1. <code>/25</code> の例</h3>
+<pre><code class="language-text">192.168.20.200/25
+</code></pre>
+<p><code>/25</code> のサブネットマスクは、</p>
+<pre><code class="language-text">255.255.255.128
+</code></pre>
+<p>ブロックサイズは128です。</p>
+<p>範囲は次の二つです。</p>
+<pre><code class="language-text">0〜127
+128〜255
+</code></pre>
+<p>200は128〜255の範囲に含まれます。</p>
+<table>
+<thead>
+<tr>
+  <th>項目</th>
+  <th>結果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>ネットワークアドレス</td>
+  <td><code>192.168.20.128</code></td>
+</tr>
+<tr>
+  <td>ブロードキャストアドレス</td>
+  <td><code>192.168.20.255</code></td>
+</tr>
+<tr>
+  <td>ホスト範囲</td>
+  <td><code>192.168.20.129〜254</code></td>
+</tr>
+<tr>
+  <td>ホスト数</td>
+  <td>126</td>
+</tr>
+</tbody>
+</table>
+<h3>6-2. <code>/27</code> の例</h3>
+<pre><code class="language-text">192.168.30.77/27
+</code></pre>
+<p><code>/27</code> のサブネットマスクは、</p>
+<pre><code class="language-text">255.255.255.224
+</code></pre>
+<p>ブロックサイズは32です。</p>
+<pre><code class="language-text">0〜31
+32〜63
+64〜95
+96〜127
+...
+</code></pre>
+<p>77は64〜95の範囲です。</p>
+<table>
+<thead>
+<tr>
+  <th>項目</th>
+  <th>結果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>ネットワークアドレス</td>
+  <td><code>192.168.30.64</code></td>
+</tr>
+<tr>
+  <td>ブロードキャストアドレス</td>
+  <td><code>192.168.30.95</code></td>
+</tr>
+<tr>
+  <td>ホスト範囲</td>
+  <td><code>192.168.30.65〜94</code></td>
+</tr>
+<tr>
+  <td>ホスト数</td>
+  <td>30</td>
+</tr>
+</tbody>
+</table>
+<h3>6-3. <code>/28</code> の例</h3>
+<pre><code class="language-text">192.168.40.46/28
+</code></pre>
+<p><code>/28</code> のサブネットマスクは、</p>
+<pre><code class="language-text">255.255.255.240
+</code></pre>
+<p>ブロックサイズは16です。</p>
+<pre><code class="language-text">0〜15
+16〜31
+32〜47
+48〜63
+...
+</code></pre>
+<p>46は32〜47の範囲です。</p>
+<table>
+<thead>
+<tr>
+  <th>項目</th>
+  <th>結果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>ネットワークアドレス</td>
+  <td><code>192.168.40.32</code></td>
+</tr>
+<tr>
+  <td>ブロードキャストアドレス</td>
+  <td><code>192.168.40.47</code></td>
+</tr>
+<tr>
+  <td>ホスト範囲</td>
+  <td><code>192.168.40.33〜46</code></td>
+</tr>
+<tr>
+  <td>ホスト数</td>
+  <td>14</td>
+</tr>
+</tbody>
+</table>
+<p>ここで注目してください。</p>
+<p><code>192.168.40.46</code> は、<strong>ホスト範囲の最後のアドレス</strong>です。</p>
+<p>一方、<code>192.168.40.47</code> はブロードキャストアドレスなので、一般的なサブネットではホストに割り当てません。</p>
+<h3>6-4. インタラクティブ計算練習</h3>
+<p>チャット版では、IPv4アドレスとプレフィックス長を入力すると、サブネットマスク、ネットワークアドレス、ブロードキャストアドレス、ホスト範囲、ホスト数を表示する計算機を用意しました。</p>
+<p>HTML版にも、同じ計算ができる入力フォームを掲載しています。対象は通常のIPv4サブネット（/24〜/30）です。</p>
+<div id="subnet-calculator" class="calculator"><strong>サブネット計算機</strong><p>IPv4アドレスとプレフィックス長を変更すると、計算結果が変わります。</p><div class="calc-inputs"><label>IPv4アドレス <input id="calc-ip" value="192.168.10.130" autocomplete="off"></label><label>プレフィックス長 <select id="calc-prefix"><option>/24</option><option>/25</option><option selected>/26</option><option>/27</option><option>/28</option><option>/29</option><option>/30</option></select></label></div><div id="calc-output" aria-live="polite"></div><small>この計算機は通常のIPv4サブネット（/24〜/30）を対象としています。</small></div>
+
+<hr />
+<h2 id="section-7">7. 2進数による計算と論理積（AND）</h2>
+<p>ブロックサイズでの計算は速くて便利ですが、なぜ正しい答えが出るのでしょうか。</p>
+<p>その理由は、IPアドレスとサブネットマスクの<strong>ビット単位の論理積（AND）</strong>にあります。</p>
+<h3>7-1. ANDとは</h3>
+<p>ANDは、両方のビットが1のときだけ1になる演算です。</p>
+<table>
+<thead>
+<tr>
+  <th>IPのビット</th>
+  <th>マスクのビット</th>
+  <th>ANDの結果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>0</td>
+  <td>0</td>
+  <td>0</td>
+</tr>
+<tr>
+  <td>0</td>
+  <td>1</td>
+  <td>0</td>
+</tr>
+<tr>
+  <td>1</td>
+  <td>0</td>
+  <td>0</td>
+</tr>
+<tr>
+  <td>1</td>
+  <td>1</td>
+  <td>1</td>
+</tr>
+</tbody>
+</table>
+<p>つまり、マスクのビットが1の部分はIPアドレスの値が残り、0の部分は必ず0になります。</p>
+<h3>7-2. 実際に計算する</h3>
+<p>次のアドレスを考えます。</p>
+<pre><code class="language-text">192.168.10.130/26
+</code></pre>
+<p>最後のオクテットに注目します。</p>
+<p>130を2進数にすると、</p>
+<pre><code class="language-text">10000010
+</code></pre>
+<p><code>/26</code> の最後のマスクは192なので、</p>
+<pre><code class="language-text">11000000
+</code></pre>
+<p>です。</p>
+<p>ANDを計算します。</p>
+<pre><code class="language-text">IPアドレス   10000010
+マスク       11000000
+            --------
+AND結果      10000000
+</code></pre>
+<p><code>10000000</code> は10進数で128です。</p>
+<p>したがって、ネットワークアドレスは、</p>
+<pre><code class="language-text">192.168.10.128
+</code></pre>
+<p>となります。</p>
+<h3>7-3. なぜブロックサイズ計算と同じになるのか</h3>
+<p><code>/26</code> では、最後のオクテットの先頭2ビットだけがネットワーク部です。</p>
+<pre><code class="language-text">11 000000
+</code></pre>
+<p>残り6ビットをすべて0にすると、ネットワークアドレスになります。</p>
+<p>また、残り6ビットをすべて1にすると、ブロードキャストアドレスになります。</p>
+<pre><code class="language-text">ネットワーク：10 000000 = 128
+ブロードキャスト：10 111111 = 191
+</code></pre>
+<p>したがって、ブロックサイズ計算とAND計算は、同じ結果を異なる方法で求めているのです。</p>
+<p><strong>試験で速く解くにはブロックサイズ、計算の仕組みを理解するにはAND</strong>という使い分けができます。</p>
+<hr />
+<h2 id="section-8">8. 同一サブネットかどうかを判断する</h2>
+<p>ここからは計算を実際の通信に結び付けます。</p>
+<h3>8-1. 同じ192.168.1.xでも別サブネットになる</h3>
+<p>次の端末を考えます。</p>
+<pre><code class="language-text">PC-A：192.168.1.30/26
+PC-B：192.168.1.50/26
+PC-C：192.168.1.70/26
+</code></pre>
+<p><code>/26</code> のブロックサイズは64です。</p>
+<p>各端末のネットワークアドレスを求めます。</p>
+<table>
+<thead>
+<tr>
+  <th>端末</th>
+  <th>IPアドレス</th>
+  <th>ネットワークアドレス</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>PC-A</td>
+  <td><code>192.168.1.30/26</code></td>
+  <td><code>192.168.1.0</code></td>
+</tr>
+<tr>
+  <td>PC-B</td>
+  <td><code>192.168.1.50/26</code></td>
+  <td><code>192.168.1.0</code></td>
+</tr>
+<tr>
+  <td>PC-C</td>
+  <td><code>192.168.1.70/26</code></td>
+  <td><code>192.168.1.64</code></td>
+</tr>
+</tbody>
+</table>
+<p>PC-AとPC-Bは同一サブネットです。</p>
+<p>一方、PC-AとPC-Cは別サブネットです。</p>
+<p>ここで重要なのは、三つのIPアドレスがすべて <code>192.168.1.x</code> で始まっていることです。</p>
+<p><strong>IPアドレスの先頭3オクテットが同じだから、必ず同じサブネットになるわけではありません。</strong></p>
+<h3>8-2. 同一サブネットと通信経路</h3>
+<p>PC-AからPC-Bへ通信するときは、通常、PC-BのMACアドレスをARPで解決します。</p>
+<p>一方、PC-AからPC-Cへ通信するときは、PC-Aのルーティングテーブルに従い、通常、ルータへ送信します。</p>
+<p>このときARPで解決するのは、次の転送先となるルータのMACアドレスです。</p>
+<p>第11講のARPと今回のサブネット計算がつながる部分です。</p>
+<h3>8-3. サブネットマスクの設定ミス</h3>
+<p>次の構成を考えます。</p>
+<pre><code class="language-text">PC-A：192.168.1.30/26
+PC-B：192.168.1.70/24
+</code></pre>
+<p>PC-Aは、PC-Bを別サブネットの端末だと判断します。</p>
+<p>一方、PC-Bは、PC-Aを同一サブネットの端末だと判断します。</p>
+<p>そのため、PC-Aはルータへ送ろうとする一方、PC-BはPC-Aへ直接ARPしようとするなど、通信経路の判断が非対称になることがあります。</p>
+<p>結果として、ネットワーク構成やルータの設定によっては通信障害が発生します。</p>
+<p>サブネットマスクの不一致は、単なる計算ミスではなく、実際の障害原因になるのです。</p>
+<hr />
+<h2 id="section-9">9. 最長プレフィックス一致（Longest Prefix Match）</h2>
+<p>ここはSC試験のネットワーク問題で重要な判断方法です。</p>
+<h3>9-1. ルータはどの経路を選ぶのか</h3>
+<p>ルータは、宛先IPアドレスをルーティングテーブルと照合して転送先を決定します。</p>
+<p>次のルーティングテーブルを考えます。</p>
+<table>
+<thead>
+<tr>
+  <th>宛先ネットワーク</th>
+  <th>次の転送先</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>10.0.0.0/8</code></td>
+  <td>ルータA</td>
+</tr>
+<tr>
+  <td><code>10.20.0.0/16</code></td>
+  <td>ルータB</td>
+</tr>
+<tr>
+  <td><code>10.20.30.0/24</code></td>
+  <td>ルータC</td>
+</tr>
+<tr>
+  <td><code>0.0.0.0/0</code></td>
+  <td>デフォルトGW</td>
+</tr>
+</tbody>
+</table>
+<p>ここで、宛先が、</p>
+<pre><code class="language-text">10.20.30.50
+</code></pre>
+<p>だった場合、どの経路が選ばれるでしょうか。</p>
+<h3>9-2. 一致する経路を探す</h3>
+<p>この宛先は、次のすべてに一致します。</p>
+<pre><code class="language-text">10.0.0.0/8
+10.20.0.0/16
+10.20.30.0/24
+0.0.0.0/0
+</code></pre>
+<p>では、どの経路を選ぶのでしょうか。</p>
+<p>最も広い範囲の経路ではありません。</p>
+<p><strong>宛先IPアドレスに一致する経路のうち、プレフィックス長が最も長い経路</strong>を選びます。</p>
+<p>今回なら <code>/24</code> が最も長いので、</p>
+<pre><code class="language-text">10.20.30.0/24 → ルータC
+</code></pre>
+<p>が選択されます。</p>
+<h3>9-3. 図で確認する</h3>
+<p><strong>宛先：10.20.30.50</strong></p>
+<pre><code class="language-text">10.0.0.0/8       ━━━━━━━                 → ルータA
+10.20.0.0/16     ━━━━━━━━━━━━━━          → ルータB
+10.20.30.0/24    ━━━━━━━━━━━━━━━━━━━━━   → ルータC ← 選択
+0.0.0.0/0        ━                        → デフォルトGW
+</code></pre>
+<p><strong>最長の <code>/24</code> に一致するため、ルータCを選択</strong>します。</p>
+<p>棒の長さはプレフィックス長の概念を示しています。経路の優先度や帯域を示すものではありません。</p>
+<h3>9-4. 宛先が変わるとどうなるか</h3>
+<table>
+<thead>
+<tr>
+  <th>宛先IPアドレス</th>
+  <th>選ばれる経路</th>
+  <th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>10.20.30.50</code></td>
+  <td><code>10.20.30.0/24</code></td>
+  <td><code>/24</code> まで一致</td>
+</tr>
+<tr>
+  <td><code>10.20.40.50</code></td>
+  <td><code>10.20.0.0/16</code></td>
+  <td><code>/24</code> には一致しない</td>
+</tr>
+<tr>
+  <td><code>10.30.40.50</code></td>
+  <td><code>10.0.0.0/8</code></td>
+  <td><code>/16</code> には一致しない</td>
+</tr>
+<tr>
+  <td><code>203.0.113.50</code></td>
+  <td><code>0.0.0.0/0</code></td>
+  <td>他の経路に一致しない</td>
+</tr>
+</tbody>
+</table>
+<p>この表を理解できれば、最長プレフィックス一致の基本は身に付いています。</p>
+<h3>9-5. プレフィックス長が同じ場合はどうなるか</h3>
+<p>最長プレフィックス一致は、異なるプレフィックス長の経路を比較する際の原則です。</p>
+<p>同じプレフィックス長で複数の経路が存在する場合は、経路の管理距離、メトリック、等コスト経路の扱いなど、追加の判断が関係します。</p>
+<p>ただし、今回はこれらの詳細には踏み込みません。</p>
+<p><strong>「最長プレフィックス一致」は、宛先に一致する経路のうちプレフィックス長が最長のものを選ぶ原則</strong>として理解してください。</p>
+<hr />
+<h2 id="section-10">10. CIDRによる経路集約</h2>
+<p><strong>B：理解補助</strong></p>
+<h3>10-1. 経路集約とは</h3>
+<p>ルーティングテーブルに多数の経路があると、管理する経路情報が増加します。</p>
+<p>そこで、連続した複数のネットワークを、より大きな一つのネットワークとして表現する方法があります。</p>
+<p>これを経路集約、またはルートサマリと呼びます。</p>
+<h3>10-2. 例：二つの <code>/25</code> を一つの <code>/24</code> にする</h3>
+<p>次の二つのネットワークがあります。</p>
+<pre><code class="language-text">192.168.10.0/25
+192.168.10.128/25
+</code></pre>
+<p>それぞれの範囲は、</p>
+<pre><code class="language-text">192.168.10.0〜127
+192.168.10.128〜255
+</code></pre>
+<p>です。</p>
+<p>この二つを合わせると、</p>
+<pre><code class="language-text">192.168.10.0〜255
+</code></pre>
+<p>になります。</p>
+<p>したがって、一つの <code>/24</code> に集約できます。</p>
+<pre><code class="language-text">192.168.10.0/24
+</code></pre>
+<h3>10-3. 経路集約できない例</h3>
+<p>次の二つを考えます。</p>
+<pre><code class="language-text">192.168.10.0/25
+192.168.11.0/25
+</code></pre>
+<p>この二つを単純に <code>/24</code> 一つで表現することはできません。</p>
+<p>また、より大きな経路でまとめようとすると、元の二つ以外のアドレス範囲も含まれてしまう場合があります。</p>
+<p>経路集約では、<strong>連続性だけでなく、集約後のネットワーク境界が正しくそろっているか</strong>も確認する必要があります。</p>
+<h3>10-4. セキュリティ上の注意点</h3>
+<p>経路集約はルーティング情報を減らすための技術です。</p>
+<p>一方、ファイアウォールの許可ルールを安易に集約すると、本来許可すべきでないアドレスまで含めてしまうことがあります。</p>
+<p>例えば、次の二つの範囲だけを許可したいとします。</p>
+<pre><code class="language-text">192.168.10.0/25
+192.168.11.0/25
+</code></pre>
+<p>これを単純に広い範囲へまとめると、不要な通信元も許可する可能性があります。</p>
+<p><strong>経路の集約とアクセス制御の許可範囲の集約は、目的が異なる</strong>ことを理解してください。</p>
+<hr />
+<h2 id="section-11">11. サブネットとネットワークセキュリティ</h2>
+<h3>11-1. ネットワークを分離する目的</h3>
+<p>企業内ネットワークでは、業務内容や端末の重要度によって、ネットワークを分離することがあります。</p>
+<p>例えば、次のような構成です。</p>
+<table>
+<thead>
+<tr>
+  <th>ネットワーク</th>
+  <th>アドレス</th>
+  <th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>社員端末</td>
+  <td><code>10.10.10.0/24</code></td>
+  <td>一般社員のPC</td>
+</tr>
+<tr>
+  <td>業務サーバ</td>
+  <td><code>10.10.20.0/24</code></td>
+  <td>業務システム</td>
+</tr>
+<tr>
+  <td>管理端末</td>
+  <td><code>10.10.30.0/27</code></td>
+  <td>管理者用PC</td>
+</tr>
+<tr>
+  <td>ゲストWi-Fi</td>
+  <td><code>10.10.40.0/24</code></td>
+  <td>来訪者用</td>
+</tr>
+</tbody>
+</table>
+<p>このように分割する目的は、単にIPアドレスを整理することだけではありません。</p>
+<p>部門や用途ごとに通信を制御し、不正アクセスやマルウェア感染の影響範囲を抑えるためでもあります。</p>
+<h3>11-2. サブネット分割とVLAN分割</h3>
+<p>サブネットとVLANは関連しますが、同じものではありません。</p>
+<ul>
+<li><strong>サブネット</strong>は、IPアドレスのネットワーク範囲を区切る仕組みです。</li>
+<li><strong>VLAN</strong>は、L2のブロードキャストドメインを論理的に分離する仕組みです。</li>
+</ul>
+<p>一般的な企業ネットワークでは、VLANごとに異なるIPサブネットを割り当てます。</p>
+<p>例えば、</p>
+<pre><code class="language-text">VLAN 10 → 10.10.10.0/24
+VLAN 20 → 10.10.20.0/24
+VLAN 30 → 10.10.30.0/27
+</code></pre>
+<p>という構成です。</p>
+<p>ただし、VLANとIPサブネットが常に一対一でなければならないわけではありません。</p>
+<p>また、異なるVLAN間でも、L3スイッチやルータが通信を転送するように設定されていれば通信できます。</p>
+<p>したがって、セキュリティ上の分離を実現するには、必要に応じてACLやファイアウォールを設定します。</p>
+<h3>11-3. 管理ネットワークを制限する</h3>
+<p>例えば、業務サーバの管理画面に、管理端末ネットワークからだけアクセスできるようにしたいとします。</p>
+<pre><code class="language-text">管理端末：10.10.30.0/27
+業務サーバ：10.10.20.10
+</code></pre>
+<p>この場合、ファイアウォールに次のようなルールを設定することが考えられます。</p>
+<pre><code class="language-text">送信元：10.10.30.0/27
+宛先　：10.10.20.10
+ポート：TCP 22
+動作　：許可
+</code></pre>
+<p>このルールは、管理端末ネットワークから業務サーバのSSHポートへの通信を許可する例です。</p>
+<p>ただし、他により広い許可ルールが存在したり、ルールの評価順序が不適切だったりすれば、想定外の通信が許可される場合があります。</p>
+<p><strong>アクセス制御の正しさは、CIDRの範囲だけでなく、ルール全体で判断する必要があります。</strong></p>
+<hr />
+<h2 id="section-12">12. CIDRの設定ミスが引き起こす脆弱性</h2>
+<p>ここは科目Bでの説明力に直結する重要な論点です。</p>
+<h3>12-1. 許可範囲を広く設定しすぎた場合</h3>
+<p>管理者が、次のネットワークからだけ管理画面への接続を許可したいとします。</p>
+<pre><code class="language-text">192.168.10.0/27
+</code></pre>
+<p><code>/27</code> の範囲は、</p>
+<pre><code class="language-text">192.168.10.0〜192.168.10.31
+</code></pre>
+<p>です。</p>
+<p>ところが、誤って次のように設定してしまいました。</p>
+<pre><code class="language-text">192.168.10.0/24
+</code></pre>
+<p><code>/24</code> の範囲は、</p>
+<pre><code class="language-text">192.168.10.0〜192.168.10.255
+</code></pre>
+<p>です。</p>
+<p>つまり、許可範囲が大幅に広がっています。</p>
+<table>
+<thead>
+<tr>
+  <th>設定</th>
+  <th style="text-align:right">許可対象のアドレス数</th>
+  <th>範囲</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>本来の設定 <code>/27</code></td>
+  <td style="text-align:right">32</td>
+  <td><code>192.168.10.0〜31</code></td>
+</tr>
+<tr>
+  <td>誤設定 <code>/24</code></td>
+  <td style="text-align:right">256</td>
+  <td><code>192.168.10.0〜255</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>許可対象のアドレス数が8倍に拡大</strong>します。これはアドレス数の比較であり、実際に存在する端末数や、利用可能なホスト数を示すものではありません。</p>
+<p>この設定では、本来許可する必要のないIPアドレスからも管理画面へ接続できる可能性があります。</p>
+<h3>12-2. なぜ <code>/24</code> の方が広いのか</h3>
+<p>CIDRのプレフィックス長は、ネットワーク部のビット数です。</p>
+<p><code>/27</code> ではホスト部が5ビットなので、</p>
+<p>[2^5=32]</p>
+<p>個のアドレスを含みます。</p>
+<p><code>/24</code> ではホスト部が8ビットなので、</p>
+<p>[2^8=256]</p>
+<p>個のアドレスを含みます。</p>
+<p>つまり、<strong>プレフィックス長が短くなるほど、一般に指定するアドレス範囲は広くなります。</strong></p>
+<p>これは、ファイアウォールやACLの設定を読むときに非常に重要です。</p>
+<h3>12-3. 科目Bの答案例</h3>
+<p><strong>設問</strong></p>
+<p>本来 <code>192.168.10.0/27</code> の管理端末からだけ許可する予定だったが、誤って <code>192.168.10.0/24</code> を許可した。セキュリティ上の問題を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<p>「許可する送信元IPアドレスの範囲が本来より広がり、管理端末以外のIPアドレスからも管理画面へアクセスできる可能性がある。」</p>
+<p>この答案では、次の因果関係を明確にしています。</p>
+<pre><code class="language-text">プレフィックス長の誤設定
+       ↓
+許可するIPアドレス範囲が拡大
+       ↓
+本来許可しない端末からの接続が可能になる
+</code></pre>
+<p>単に「セキュリティが低下する」と書くのではなく、<strong>何が広がり、どのような不正アクセスにつながるのか</strong>を説明してください。</p>
+<h3>12-4. CIDRによる制御の限界</h3>
+<p>送信元IPアドレスを許可範囲に含めることは、アクセス制御の一つの条件です。</p>
+<p>しかし、IPアドレスだけで利用者の本人確認ができるわけではありません。</p>
+<p>したがって、重要な管理画面では、IPアドレスによる制限に加えて、認証や多要素認証などを組み合わせることが望まれます。</p>
+<hr />
+<h2 id="section-13">13. ログ・設定からネットワーク範囲を読み取る</h2>
+<h3>13-1. ファイアウォールのログ例</h3>
+<p>次のログを考えます。</p>
+<pre><code class="language-text">2026-10-12 10:15:30
+Action    : ALLOW
+Source IP : 192.168.10.45
+Dest IP   : 10.10.20.10
+Dest Port : 22
+Rule      : Admin-SSH
+</code></pre>
+<p>対応するファイアウォールルールは次のとおりです。</p>
+<pre><code class="language-text">Rule Name : Admin-SSH
+Source    : 192.168.10.0/27
+Dest      : 10.10.20.10
+Port      : TCP 22
+Action    : ALLOW
+</code></pre>
+<p>ここで、送信元IPアドレス <code>192.168.10.45</code> が、許可範囲に含まれているか計算してみます。</p>
+<p><code>/27</code> のブロックサイズは32です。</p>
+<pre><code class="language-text">192.168.10.0〜31
+192.168.10.32〜63
+192.168.10.64〜95
+...
+</code></pre>
+<p><code>192.168.10.45</code> は、32〜63の範囲に含まれます。</p>
+<p>したがって、<code>192.168.10.0/27</code> には含まれません。</p>
+<p>このログでは、<strong>表示されたルールだけではALLOWになった理由を説明できません。</strong></p>
+<p>考えられる原因には、次のようなものがあります。</p>
+<ul>
+<li>実際に適用されているルールが表示内容と異なる。</li>
+<li>他のルールが通信を許可している。</li>
+<li>ログに記録されたルール名や設定情報が不正確である。</li>
+<li>アドレス変換などによって、ルール評価時とログ表示時のアドレスが異なる。</li>
+</ul>
+<p>このように、ログと設定が矛盾している場合、単純に「通信が許可されたから設定は正しい」と判断してはいけません。</p>
+<h3>13-2. ACLの設定例</h3>
+<p>次のACLを考えます。</p>
+<pre><code class="language-text">permit tcp 10.10.30.0/27 10.10.20.10/32 eq 22
