@@ -1,0 +1,194 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第8講｜第I部 総合演習・修了試験</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif;line-height:1.9;color:#172337;background:#f4f6fa;margin:0}main{max-width:920px;margin:32px auto;background:white;padding:36px 46px;border-radius:16px;box-shadow:0 4px 25px #1b2d4712}h1{font-size:2rem;color:#12335a}h2{border-bottom:2px solid #2768aa;padding-bottom:8px;margin-top:46px;color:#163c69}h3{margin-top:28px;color:#254b75}table{border-collapse:collapse;width:100%;margin:16px 0}td,th{border:1px solid #d8e1ec;padding:9px 12px;text-align:left;vertical-align:top}th{background:#eaf1f8}pre{background:#172333;color:#f4f7fc;padding:18px;overflow:auto;border-radius:8px}code{font-family:ui-monospace,monospace}p,li{overflow-wrap:anywhere}blockquote{border-left:4px solid #3374ad;padding-left:16px}details{margin-top:32px;border:1px solid #c6d6e7;border-radius:12px;padding:16px;background:#f6f9fd}summary{cursor:pointer;font-weight:700;font-size:1.15rem;color:#194f84}textarea{display:block;width:100%;min-height:110px;box-sizing:border-box;margin:10px 0 22px;border:1px solid #aebed0;border-radius:7px;padding:10px;font:inherit}nav{background:#edf4fb;padding:14px 22px;border-radius:10px}nav a{color:#19558b} .note{color:#576477;font-size:.9rem} @media(max-width:700px){main{margin:0;padding:18px;border-radius:0}h1{font-size:1.55rem}table{font-size:.86rem}}</style></head><body><main><nav><strong>目次</strong><ol><li><a href="#sec1">到達目標と参考書</a></li><li><a href="#sec2">総合演習の事例</a></li><li><a href="#sec3">理解度チェック・総合試験</a></li><li><a href="#sec4">科目Bで意識する解答の作り方</a></li><li><a href="#sec5">今回の位置付け</a></li></ol></nav><h1>第8講｜第I部 総合演習・修了試験</h1>
+<p>第8講は通常の知識講義ではなく、<strong>第1〜7講で学んだ内容を統合して、SC試験形式で判断・記述する総合演習</strong>です。</p>
+<p>これまでに学んだ情報セキュリティの三要素、脅威・脆弱性・リスク、攻撃の流れ、多層防御、SOC・CSIRT、脆弱性管理、セキュリティ評価制度を、一つの企業事例に結び付けて考えます。</p>
+<p>今回は既に修了した第8講の再構築なので、過去の採点結果や修了履歴は変更しません。また、<strong>解答・模範答案は回答前には公開しません。</strong></p>
+<h2 id="sec1">1. 到達目標と参考書</h2>
+<p>今回の到達目標は、次の四つです。</p>
+<ol>
+<li>セキュリティ上の問題を、機密性・完全性・可用性の観点で分類できる。</li>
+<li>脆弱性と攻撃成立条件を区別し、適切な対策を選択できる。</li>
+<li>SOC・CSIRTの役割と、インシデント対応の流れを説明できる。</li>
+<li>科目Bの答案として、問題文の根拠を使って原因・リスク・対策を簡潔に記述できる。</li>
+</ol>
+<p><strong>参考書：</strong> 『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』第1章「情報セキュリティとは」、特に1-1「情報セキュリティとは」と1-2「情報セキュリティ対策の制度・仕組み」。</p>
+<p>参考書の第1章1-2-2「セキュリティ評価」pp.73〜80については、ISMS、CC、CVE、CWE、脆弱性検査などの記述を確認しました。第1章のその他のページについては、今回の出力時点で詳細な再照合が完了していないため、未確認のページ番号は記載しません。</p>
+<h3>学習優先度</h3>
+<table>
+<thead>
+<tr>
+  <th>区分</th>
+  <th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>A：必須</td>
+  <td>CIA、リスク判断、多層防御、最小権限、インシデント対応、脆弱性対策、科目B記述</td>
+</tr>
+<tr>
+  <td>B：理解補助</td>
+  <td>CVE・CVSS・JVN、ISMS・CCの区別</td>
+</tr>
+<tr>
+  <td>C：発展</td>
+  <td>評価規格の細かな仕様、CVSS計算式など。今回は出題しません</td>
+</tr>
+</tbody>
+</table>
+<h2 id="sec2">2. 総合演習の事例</h2>
+<p>架空のEC事業者A社では、インターネット向けWebサイトを運営し、顧客情報と注文情報をデータベースに保存しています。</p>
+<p>ある日、次の事象が発生しました。</p>
+<p><strong>A社で発生した事象（以下はすべて演習用の架空事例です）</strong></p>
+<ol>
+<li>アプリケーションサーバで使用している製品Xに、認証回避の脆弱性が公表された。</li>
+<li>製品Xの管理機能は、インターネットからアクセスできる状態だった。</li>
+<li>一般担当者のアカウントに、業務上不要な管理者権限が付与されていた。</li>
+<li>SOCが、深夜に顧客情報ファイルが大量ダウンロードされたことを検知した。</li>
+<li>CSIRTが調査したところ、不審な管理者ログインと設定変更が確認された。</li>
+<li>バックアップは取得していたが、復元テストは長期間実施していなかった。</li>
+</ol>
+<h3>A社の構成</h3>
+<p>インターネット → Webサーバ → アプリケーションサーバ（製品X） → データベースサーバ（顧客情報・注文情報）</p>
+<h3>SOCが確認したログ</h3>
+<pre><code class="language-text">2026-10-11T01:12:03+09:00
+user=operator01
+source=203.0.113.45
+action=ADMIN_LOGIN
+result=SUCCESS
+
+2026-10-11T01:18:22+09:00
+user=operator01
+action=CHANGE_ACCESS_POLICY
+result=SUCCESS
+
+2026-10-11T01:25:10+09:00
+user=operator01
+action=DOWNLOAD
+object=/customers/customer_list.csv
+bytes=420000000
+result=SUCCESS
+</code></pre>
+<p>このログから、管理者ログイン、アクセス制御設定の変更、顧客情報ファイルの大量ダウンロードが記録されていることは分かります。</p>
+<p>ただし、<strong>ログだけで、誰が実際に操作したのか、認証回避の脆弱性が悪用されたのか、ファイルが社外に持ち出されたのかまで確定できるわけではありません。</strong></p>
+<p>設問では、記録された事実と、追加調査が必要な事項を区別してください。</p>
+<h2 id="sec3">3. 理解度チェック・総合試験</h2>
+<p><strong>選択式6問×1点＋記述式3問×3点＝15点満点。</strong> 今回は再学習用であり、過去の第8講の採点履歴は変更しません。</p>
+<h3>Q1（1点）</h3>
+<p>顧客情報ファイルを権限のない者が閲覧した場合、最も直接的に損なわれる情報セキュリティの要素はどれか。</p>
+<ul>
+<li>ア：完全性</li>
+<li>イ：機密性</li>
+<li>ウ：可用性</li>
+<li>エ：真正性</li>
+</ul>
+<h3>Q2（1点）</h3>
+<p>製品Xに認証回避の脆弱性が存在する場合の判断として、最も適切なのはどれか。</p>
+<ul>
+<li>ア：脆弱性があれば、必ず攻撃が成功したと判断する</li>
+<li>イ：CVSS基本値だけで自社の対応優先順位を決める</li>
+<li>ウ：対象バージョン、利用状況、到達可能性などを調査する</li>
+<li>エ：製品が稼働していれば必ず情報漏えいしている</li>
+</ul>
+<h3>Q3（1点）</h3>
+<p>一般担当者に業務上不要な管理者権限が付与されている問題に対して、最も直接的な対策はどれか。</p>
+<ul>
+<li>ア：最小権限の原則に従って権限を見直す</li>
+<li>イ：通信帯域を増やす</li>
+<li>ウ：バックアップ容量を増やす</li>
+<li>エ：すべてのログを削除する</li>
+</ul>
+<h3>Q4（1点）</h3>
+<p>SOCとCSIRTの役割分担として最も適切なのはどれか。</p>
+<ul>
+<li>ア：SOCは監視・分析、CSIRTはインシデント対応の調整</li>
+<li>イ：SOCは製品認証、CSIRTは税務監査</li>
+<li>ウ：SOCは経営計画、CSIRTは販売管理</li>
+<li>エ：SOCもCSIRTも外部への情報共有を一切行わない</li>
+</ul>
+<h3>Q5（1点）</h3>
+<p>CVEとCVSSの関係として正しいものはどれか。</p>
+<ul>
+<li>ア：CVEは組織の認証、CVSSは製品の販売制度</li>
+<li>イ：CVEは脆弱性の識別、CVSSは深刻度の評価</li>
+<li>ウ：CVEは暗号化方式、CVSSは通信プロトコル</li>
+<li>エ：CVEはアクセス制御、CVSSはバックアップ方式</li>
+</ul>
+<h3>Q6（1点）</h3>
+<p>バックアップについて最も適切な説明はどれか。</p>
+<ul>
+<li>ア：取得していれば復元可能性を確認する必要はない</li>
+<li>イ：情報漏えいを必ず防止できる</li>
+<li>ウ：定期的に復元テストを行い、復旧可能性を確認する</li>
+<li>エ：バックアップがあればログの保存は不要になる</li>
+</ul>
+<h3>Q7（3点）｜脆弱性管理</h3>
+<p>A社が製品Xの脆弱性情報を入手した後、パッチ適用までに確認・実施すべきことを、影響調査と暫定対策の両面から説明してください。</p>
+<textarea aria-label="Q7の回答" placeholder="ここに自分の解答を記入（このページ内のみ）"></textarea>
+<h3>Q8（3点）｜ログ分析とインシデント対応</h3>
+<p>SOCが提示したログから確認できる事実を挙げ、その後CSIRTが調査すべきことを説明してください。</p>
+<textarea aria-label="Q8の回答" placeholder="ここに自分の解答を記入（このページ内のみ）"></textarea>
+<h3>Q9（3点）｜多層防御と再発防止</h3>
+<p>A社では、不要な管理者権限の付与と、復元テストの未実施が確認されています。これらが問題となる理由と、それぞれに対する改善策を説明してください。</p>
+<textarea aria-label="Q9の回答" placeholder="ここに自分の解答を記入（このページ内のみ）"></textarea>
+<h2 id="sec4">4. 科目Bで意識する解答の作り方</h2>
+<p>今回の総合演習では、単に用語を覚えているかだけでなく、次のように判断することを重視します。</p>
+<p><strong>事実と推測を区別する。</strong> 例えば、<code>ADMIN_LOGIN result=SUCCESS</code> はログイン成功を示しますが、実際の操作人物を特定するものではありません。</p>
+<p><strong>問題文にある条件を根拠にする。</strong> 「インターネットから管理機能にアクセス可能」「一般担当者に管理者権限がある」などの条件を答案に使います。</p>
+<p><strong>対策は問題の原因に対応させる。</strong> 不要な権限が問題ならアクセス権の見直し、復旧可能性が問題なら復元テストというように、因果関係を明確にします。</p>
+<p><strong>断定できないことは断定しない。</strong> 不正アクセスの疑いがあることと、情報漏えいが確定したことは別です。</p>
+<h2 id="sec5">5. 今回の位置付け</h2>
+<p>第8講は、第I部で学んだ知識を実際の事例に適用するための演習です。A（必須）の判断・記述を中心に構成し、B（理解補助）の制度知識を一部含めています。C（発展）の知識だけを前提とする問題はありません。</p>
+<details><summary>解答・解説を表示する（演習後に開く）</summary><h3>選択式の正解と解説</h3>
+<table>
+<thead>
+<tr>
+  <th>問題</th>
+  <th>正解</th>
+  <th>解説</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Q1</td>
+  <td>イ</td>
+  <td>権限のない者による情報閲覧は、機密性の侵害に当たる。</td>
+</tr>
+<tr>
+  <td>Q2</td>
+  <td>ウ</td>
+  <td>対象バージョン・使用条件・到達可能性を調べ、攻撃成立の可能性を判断する。</td>
+</tr>
+<tr>
+  <td>Q3</td>
+  <td>ア</td>
+  <td>不要な管理者権限を削除する最小権限の原則が直接的な対策。</td>
+</tr>
+<tr>
+  <td>Q4</td>
+  <td>ア</td>
+  <td>SOCは監視・分析、CSIRTはインシデント対応の調整を中心に担う。</td>
+</tr>
+<tr>
+  <td>Q5</td>
+  <td>イ</td>
+  <td>CVEは脆弱性の識別番号、CVSSは深刻度を評価する仕組み。</td>
+</tr>
+<tr>
+  <td>Q6</td>
+  <td>ウ</td>
+  <td>バックアップを取得するだけでなく、復元可能か定期的に試験する。</td>
+</tr>
+</tbody>
+</table>
+<h3>記述式の模範解答と採点観点</h3>
+<p><strong>Q7（3点）</strong></p>
+<p>模範解答：製品Xの導入バージョンと脆弱な機能の利用状況を確認し、インターネットからの到達可能性と影響範囲を調査する。修正版を適用するまで、管理機能へのアクセス元を制限するか当該機能を無効化する。</p>
+<p>採点観点：対象バージョン・利用状況の確認（1点）、到達可能性・影響範囲の確認（1点）、具体的な暫定対策（1点）。</p>
+<p><strong>Q8（3点）</strong></p>
+<p>模範解答：ログにはoperator01による管理者ログイン成功、アクセス制御設定変更、顧客情報ファイルの大量ダウンロードが記録されている。CSIRTは認証情報の悪用や脆弱性悪用の有無、操作主体、実際の外部送信・漏えいの有無、影響範囲を他のログや端末の記録と照合して調査する。</p>
+<p>採点観点：ログにある事実の特定（1点）、追加調査事項の具体性（1点）、操作人物や漏えいを断定せず区別すること（1点）。</p>
+<p><strong>Q9（3点）</strong></p>
+<p>模範解答：不要な管理者権限があると、アカウントが悪用された際に設定変更や情報への不正アクセスが可能になるため、最小権限に従って権限を削除・定期的に見直す。また、バックアップを取得していても復元できる保証はないため、定期的に復元テストを実施して復旧手順と復旧可能性を確認する。</p>
+<p>採点観点：過大権限のリスクと改善策（1点）、復元テスト未実施のリスク（1点）、具体的な復元テストと復旧確認（1点）。</p>
+<p>※上記は今回新たに作成した模範解答・採点観点です。ユーザーの回答に対する採点結果ではありません。</p>
+</details><p class="note">このHTMLはチャット講義の文章・設問に、今回作成した模範解答と解説を追加したものです。過去の採点結果は含みません。記入欄の内容は保存・送信されません。</p></main></body></html>
