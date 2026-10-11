@@ -1,0 +1,704 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第22講｜DNS詳細｜SC合格講座</title><style>
+:root{color-scheme:light;--ink:#1c3045;--muted:#53697b;--accent:#176c78;--line:#dbe5eb;--bg:#f5f8fa}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;background:var(--bg);color:var(--ink);line-height:1.85}.layout{display:grid;grid-template-columns:255px minmax(0,850px);gap:34px;max-width:1200px;margin:auto;padding:30px 22px}nav{position:sticky;top:18px;align-self:start;max-height:calc(100vh - 36px);overflow:auto;background:white;border:1px solid var(--line);border-radius:14px;padding:20px}nav strong{display:block;margin-bottom:12px}nav a{display:block;font-size:13px;line-height:1.55;padding:7px 2px;color:var(--muted);text-decoration:none;border-bottom:1px solid #f0f3f5}nav a:hover{color:var(--accent)}main{background:white;border:1px solid var(--line);border-radius:16px;padding:42px 48px;box-shadow:0 6px 30px #263b4b0a}h1{font-size:2.1rem;line-height:1.35;color:#113e57;margin:0 0 16px}h2{font-size:1.55rem;line-height:1.45;border-bottom:2px solid #9ac8ce;padding-bottom:10px;margin-top:58px;scroll-margin-top:24px}h3{font-size:1.15rem;color:#14606d;margin-top:28px}p{margin:12px 0}strong{font-weight:750}ul,ol{padding-left:1.6em}li{margin:5px 0}table{border-collapse:collapse;width:100%;margin:18px 0 26px;font-size:.92rem}th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}th{background:#eaf3f5}tr:nth-child(even) td{background:#fafcfd}pre{background:#12283b;color:#edf6fb;padding:18px 20px;border-radius:10px;overflow:auto;line-height:1.65;font-size:.9rem}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}p code,li code,td code{background:#edf3f6;padding:2px 5px;border-radius:4px;font-size:.92em}.back{display:inline-block;margin-top:40px;color:var(--accent)}@media(max-width:880px){.layout{display:block;padding:10px}nav{position:static;max-height:none;margin-bottom:12px}nav a{display:inline-block;padding:5px 8px;border:none}main{padding:24px 18px}h1{font-size:1.7rem}h2{font-size:1.3rem}table{display:block;overflow-x:auto}pre{font-size:.8rem}}@media print{body{background:white}.layout{display:block;padding:0}nav{display:none}main{border:0;box-shadow:none;padding:0}h2{break-after:avoid}pre,table{break-inside:avoid}}
+</style></head><body><div class="layout"><nav><strong>第22講｜目次</strong><a href="#section-01">1. 到達目標・学習範囲</a>
+<a href="#section-02">2. DNSの仕組みをセキュリティの観点から復習する</a>
+<a href="#section-03">3. DNSキャッシュポイズニング</a>
+<a href="#section-04">4. DNSキャッシュポイズニングとHTTPSの関係</a>
+<a href="#section-05">5. DNSSECの目的と基本構成</a>
+<a href="#section-06">6. DNSSECの信頼の連鎖</a>
+<a href="#section-07">7. DNSSECと暗号化DNSの違い</a>
+<a href="#section-08">8. DNS Rebinding</a>
+<a href="#section-09">9. サブドメインテイクオーバー</a>
+<a href="#section-10">10. DNSの不正利用とその他の脅威</a>
+<a href="#section-11">11. DNSSEC検証失敗の障害調査</a>
+<a href="#section-12">12. DNSログの読み取り演習</a>
+<a href="#section-13">13. 科目Aの典型論点</a>
+<a href="#section-14">14. 科目Bの答案作成ポイント</a>
+<a href="#section-15">15. 重要事項の整理</a></nav><main><h1>第22講｜DNS詳細</h1>
+<p><strong>情報処理安全確保支援士（SC）合格講座｜第1〜23講・詳細再執筆</strong></p>
+<p>第21講では、DNSの階層構造、名前解決、DNSレコード、キャッシュ、権威DNSサーバを学びました。今回は、その仕組みを利用する攻撃と防御を詳しく学びます。中心となるのは、<strong>DNSキャッシュポイズニング、DNSSEC、DNS Rebinding、サブドメインテイクオーバー</strong>です。</p>
+<p>これらはすべてDNSに関係する攻撃であっても、攻撃者が操作するものや有効な対策が異なります。例えば、DNSSECを導入していても、組織が正規のDNSゾーンに不要なCNAMEレコードを残していれば、サブドメインテイクオーバーの問題が解消するとは限りません。</p>
+<h2 id="section-01">1. 到達目標・学習範囲</h2>
+<h3>1-1. 試験上の到達目標</h3>
+<ol>
+<li>DNSキャッシュポイズニングの成立条件と影響を説明する。</li>
+<li>DNSトランザクションIDと送信元ポート番号の役割を説明する。</li>
+<li>DNSSECのDNSKEY・RRSIG・DSレコードを区別する。</li>
+<li>親ゾーンから子ゾーンへつながるDNSSECの信頼の連鎖を説明する。</li>
+<li>DNS Rebindingの攻撃の流れと防御策を説明する。</li>
+<li>サブドメインテイクオーバーとDNSキャッシュポイズニングを区別する。</li>
+<li>DNSログや設定例から原因を特定し、科目Bで具体的な対策を記述する。</li>
+</ol>
+<h3>1-2. 参考資料</h3>
+<p>基本参考書：『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』。</p>
+<p>確認した関連箇所は、第3章「ネットワーク基礎技術」3-3-3「DNSのプロトコル」p.224〜229です。ここで扱われるDNSの階層構造、委任、資源レコード、TTL、権威DNSとキャッシュDNS、ゾーン転送が今回の前提になります。</p>
+<p>DNSSECの詳細、DNS Rebinding、サブドメインテイクオーバーの技術的な説明は、今回の講師補足として区別します。これらの詳細について参考書の該当ページを確認できたとは扱いません。</p>
+<p>また、令和7年度春期のIPA午後試験・問4の採点講評では、<strong>サービス利用終了後のCNAMEレコードの削除漏れ</strong>がサブドメインテイクオーバーにつながる事例が取り上げられています。この論点は、確認済みのIPA資料に基づいて重点的に扱います。</p>
+<h3>1-3. 学習優先度</h3>
+<table>
+<thead>
+<tr>
+<th>優先度</th>
+<th>学習内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A：必須</strong></td>
+<td>キャッシュポイズニング、DNSSECの役割と信頼の連鎖、DNS Rebinding、サブドメインテイクオーバー、攻撃と対策の対応、ログ・設定の読解</td>
+</tr>
+<tr>
+<td><strong>B：理解補助</strong></td>
+<td>トランザクションID、ポートランダム化、DNSSEC検証失敗、ゾーン転送、DNS応答の状態</td>
+</tr>
+<tr>
+<td><strong>C：発展</strong></td>
+<td>DNSSECの署名アルゴリズム、NSEC/NSEC3の詳細、DNS実装ごとのキャッシュ処理、攻撃再現の細部</td>
+</tr>
+</tbody>
+</table>
+<p>既存の第22講の採点記録は、選択式15/15点、追加記述9/10点です。今回の重点復習は、<strong>親ゾーンのDSレコードから子ゾーンのDNSKEYを検証する順序</strong>です。既存履歴は変更しません。</p>
+<h2 id="section-02">2. DNSの仕組みをセキュリティの観点から復習する</h2>
+<h3>2-1. 通常の名前解決</h3>
+<p>利用者が <code>www.example.jp</code> へアクセスするとき、一般的には次の流れになります。</p>
+<pre><code class="language-text">クライアント
+    |
+    | www.example.jp のAレコードは？
+    v
+再帰リゾルバ
+    |
+    | キャッシュになければ問い合わせ
+    v
+ルートDNS
+    |
+    | jpの権威DNSを案内
+    v
+jpの権威DNS
+    |
+    | example.jpの権威DNSを案内
+    v
+example.jpの権威DNS
+    |
+    | www.example.jp = 203.0.113.10
+    v
+再帰リゾルバ
+    |
+    | 結果をクライアントへ返す
+    v
+クライアント
+</code></pre>
+<p>この構造では、再帰リゾルバがさまざまなDNSサーバから情報を取得します。</p>
+<h3>2-2. どこを攻撃されると危険なのか</h3>
+<table>
+<thead>
+<tr>
+<th>攻撃対象</th>
+<th>起こり得る問題</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>クライアントのhostsファイル</td>
+<td>不正なIPアドレスへの誘導</td>
+</tr>
+<tr>
+<td>クライアントのDNS設定</td>
+<td>攻撃者のDNSサーバを利用させられる</td>
+</tr>
+<tr>
+<td>再帰リゾルバのキャッシュ</td>
+<td>不正なDNS情報が利用者へ返される</td>
+</tr>
+<tr>
+<td>権威DNSのゾーン情報</td>
+<td>正式なDNS情報そのものが改ざんされる</td>
+</tr>
+<tr>
+<td>DNS委任・CNAME設定</td>
+<td>不適切な管理先や残存レコードが悪用される</td>
+</tr>
+</tbody>
+</table>
+<p><strong>名前解決結果が誤っているという症状だけでは、どこが攻撃されたか分からない</strong>ことが重要です。</p>
+<h3>2-3. DNSSECが解決できる問題とできない問題</h3>
+<p>DNSSECは、DNSデータの真正性・完全性を検証する仕組みです。しかし、DNSSECはDNS設定の内容が業務上正しいか、参照先サービスが安全かまで判断する仕組みではありません。この違いを理解すると、サブドメインテイクオーバーの設問にも対応できます。</p>
+<h2 id="section-03">3. DNSキャッシュポイズニング</h2>
+<p><strong>A：必須</strong></p>
+<h3>3-1. 攻撃の目的</h3>
+<p>DNSキャッシュポイズニングは、再帰リゾルバなどのキャッシュに不正なDNS情報を取り込ませる攻撃です。</p>
+<p>通常の情報が <code>www.example.jp → 203.0.113.10</code> であるのに対し、攻撃者は <code>www.example.jp → 203.0.113.200</code> に置き換えようとします。利用者が正しいドメイン名を入力しても、誤ったIPアドレスが返されることで、攻撃者が用意したサーバへ接続してしまう可能性があります。</p>
+<h3>3-2. 攻撃の流れ</h3>
+<ol>
+<li><strong>正常な問い合わせ</strong>：再帰リゾルバが権威DNSへ <code>www.example.jp</code> のAレコードを問い合わせる。</li>
+<li><strong>攻撃者が偽の応答を送信</strong>：正規の権威DNSからの応答に見せかけて、不正なIPアドレスを含む応答を送り込む。</li>
+<li><strong>偽の応答が受理される</strong>：必要な照合条件を満たしていると誤認されれば、不正なレコードがキャッシュされる。</li>
+<li><strong>利用者に不正なIPアドレスが返る</strong>：同じ名前を問い合わせた利用者が、意図しないサーバへ誘導される。</li>
+</ol>
+<h3>3-3. なぜ偽の応答を受け入れてしまうのか</h3>
+<p>従来のDNS応答では、問い合わせと応答の対応付けにトランザクションID、送信元・宛先IPアドレス、ポート番号、質問内容などが使われます。これらは応答の整合性を確認するための情報ですが、暗号学的な署名とは異なります。</p>
+<p>攻撃者が必要な条件を満たす偽の応答を正規の応答より先に受理させると、キャッシュポイズニングが成立する可能性があります。ただし、偽の応答を送るだけで必ず成功するわけではありません。DNS実装の検証処理や、攻撃者が通信を観測できるかなどによって成立条件は異なります。</p>
+<h3>3-4. トランザクションID</h3>
+<p>DNSトランザクションIDは、問い合わせと応答を対応付けるための16ビットの値です。例えば、再帰リゾルバが問い合わせにID <code>0x7A31</code> を使用した場合、応答にも対応するIDが含まれます。</p>
+<p>攻撃者が正しいIDを知らなければ、偽の応答を受理させることは難しくなります。ただし、16ビットという値だけで十分な防御になるわけではありません。</p>
+<h3>3-5. 送信元ポート番号のランダム化</h3>
+<p>DNS問い合わせを行う再帰リゾルバは、問い合わせ元のUDPポート番号をランダムに選ぶことがあります。</p>
+<pre><code class="language-text">再帰リゾルバ
+192.0.2.10:53127
+       |
+       | UDP
+       v
+権威DNS
+203.0.113.53:53
+</code></pre>
+<p>攻撃者が偽の応答を送り込むには、トランザクションIDに加えて、問い合わせ元ポート番号などの条件にも適合させる必要があります。そのため、送信元ポート番号のランダム化は、推測による応答偽装を困難にする対策になります。</p>
+<h3>3-6. 対策</h3>
+<ul>
+<li>DNSトランザクションIDを予測困難にする。</li>
+<li>問い合わせ元ポート番号をランダム化する。</li>
+<li>応答の送信元、問い合わせ内容などを適切に照合する。</li>
+<li>DNSSECによって署名付きDNSデータを検証する。</li>
+<li>DNSサーバのソフトウェアを更新し、既知の脆弱性に対処する。</li>
+</ul>
+<p><strong>トランザクションIDやポート番号のランダム化は偽応答を受け入れさせにくくする対策であり、DNSSECは署名を使ってDNSデータ自体の真正性を検証する対策です。</strong></p>
+<h2 id="section-04">4. DNSキャッシュポイズニングとHTTPSの関係</h2>
+<h3>4-1. DNSを偽装すればHTTPSも破られるのか</h3>
+<p>必ずしもそうではありません。利用者が <code>https://www.example.jp</code> にアクセスしたとします。DNSキャッシュポイズニングによって攻撃者のIPアドレスが返された場合、ブラウザはそのIPアドレスへ接続しようとする可能性があります。</p>
+<p>しかし、HTTPSではサーバ証明書の検証が行われます。攻撃者が <code>www.example.jp</code> に対する正当な証明書を提示できなければ、通常は証明書エラーになります。</p>
+<h3>4-2. それでも危険な理由</h3>
+<p>DNSキャッシュポイズニングによる影響は、HTTPSで完全に消えるわけではありません。HTTPでアクセスするサービス、証明書警告を無視する利用者、証明書検証に問題のあるアプリケーションなどでは、攻撃の影響が生じる可能性があります。また、通信の妨害や、意図しない接続先への誘導そのものが問題となる場合もあります。</p>
+<h3>4-3. 科目Bでの説明</h3>
+<p>「DNSを偽装されたので暗号通信が復号された」と短絡的に書くのは不適切です。DNS偽装によって接続先IPアドレスが変化することと、TLSによって接続先の正当性を検証することを分けて説明します。</p>
+<h2 id="section-05">5. DNSSECの目的と基本構成</h2>
+<p><strong>A：必須・重点復習</strong></p>
+<h3>5-1. DNSSECとは</h3>
+<p>DNSSEC（Domain Name System Security Extensions）は、DNSの応答データにデジタル署名を利用し、そのデータが正当なゾーンから提供されたもので、改ざんされていないことを検証する仕組みです。</p>
+<p>通常のDNSでは、例えば次のようなレコードが返されます。</p>
+<pre><code class="language-dns">www.example.jp. 300 IN A 203.0.113.10
+</code></pre>
+<p>DNSSECに対応したゾーンでは、これに関連する署名情報も管理されます。検証側は、署名と公開鍵などを利用してDNSデータを検証します。</p>
+<h3>5-2. DNSSECが保証すること</h3>
+<ul>
+<li><strong>真正性</strong>：信頼できるDNSゾーンから提供されたデータであることを確認する。</li>
+<li><strong>完全性</strong>：DNSデータが不正に改ざんされていないことを確認する。</li>
+</ul>
+<p>DNSSECはDNS通信を暗号化する仕組みではありません。従来の平文DNS問い合わせの内容が通信経路上で見えなくなるわけではありません。</p>
+<h3>5-3. DNSSECに登場する主要レコード</h3>
+<table>
+<thead>
+<tr>
+<th>レコード</th>
+<th>役割</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>DNSKEY</strong></td>
+<td>DNSSECの署名検証に利用する公開鍵を公開する</td>
+</tr>
+<tr>
+<td><strong>RRSIG</strong></td>
+<td>DNSレコード集合に対するデジタル署名を保持する</td>
+</tr>
+<tr>
+<td><strong>DS</strong></td>
+<td>親ゾーンに置かれ、子ゾーンのDNSKEYを信頼の連鎖につなぐ</td>
+</tr>
+<tr>
+<td>NSEC/NSEC3</td>
+<td>名前やレコードが存在しないことを検証可能な形で示す</td>
+</tr>
+</tbody>
+</table>
+<p>今回の最優先は、DNSKEY・RRSIG・DSの三つです。</p>
+<h3>5-4. RRSIGは何に署名するのか</h3>
+<p>DNSSECでは、同じ名前・種類などの条件でまとめられたDNSレコード集合（RRset）に対して署名が付けられます。例えば <code>www.example.jp. 300 IN A 203.0.113.10</code> というAレコード集合に対し、対応するRRSIGが存在します。検証側は、適切なDNSKEYを利用して、その署名を検証します。</p>
+<h3>5-5. DNSKEYは秘密鍵なのか</h3>
+<p>いいえ。DNSKEYレコードに登録されるのは公開鍵です。署名を作成するための秘密鍵は、適切に保護して管理します。</p>
+<pre><code class="language-text">署名作成側：
+秘密鍵 → DNSレコード集合に署名
+
+検証側：
+公開鍵（DNSKEY） → RRSIGを検証
+</code></pre>
+<p>秘密鍵が漏えいすれば、不正な署名付きデータを作成されるおそれがあるため、鍵管理は重要です。</p>
+<h2 id="section-06">6. DNSSECの信頼の連鎖</h2>
+<p><strong>A：必須・既存の復習対象</strong></p>
+<h3>6-1. 公開鍵を取得しただけでは信用できない</h3>
+<p>ここがDNSSECの理解で最も重要な点です。攻撃者が偽のAレコードを作り、自分の秘密鍵で署名し、自分の公開鍵も配布したとします。その公開鍵で署名を検証すれば、数学的には検証に成功する可能性があります。しかし、<strong>その公開鍵が本当に正規の <code>example.jp</code> の公開鍵なのか</strong>が分かりません。そのため、DNSSECには公開鍵自体を信頼できる仕組みが必要です。</p>
+<h3>6-2. 親ゾーンと子ゾーン</h3>
+<pre><code class="language-text">ルート（.）
+   |
+   v
+jp
+   |
+   v
+example.jp
+   |
+   v
+www.example.jp
+</code></pre>
+<p>DNSSECでは、この階層構造を利用して信頼をつなぎます。</p>
+<h3>6-3. DSレコードの役割</h3>
+<p>DS（Delegation Signer）レコードは、親ゾーンに登録され、子ゾーンのDNSKEYに対応するダイジェストなどを保持します。例えば、<code>example.jp</code> のDNSSEC情報を検証する場合、親である <code>jp</code> ゾーンに <code>example.jp</code> のDSレコードが置かれます。このDSを利用して、子ゾーンから取得したDNSKEYが、親ゾーンによって示された鍵と対応しているか確認します。</p>
+<h3>6-4. 信頼の連鎖の全体図</h3>
+<pre><code class="language-text">① 信頼の起点：ルートゾーン
+   検証側が信頼するルートの公開鍵情報（トラストアンカー）
+             |
+             | 署名とDSを検証
+             v
+② 親ゾーン：jp
+   信頼できるjpのDNSKEYを確立し、example.jpのDSを検証
+             |
+             | DSと子DNSKEYを照合
+             v
+③ 子ゾーン：example.jp
+   取得したDNSKEYが親のDSと対応することを確認
+             |
+             | DNSKEYでRRSIGを検証
+             v
+④ www.example.jp のAレコード
+   RRSIGを検証し、レコード集合の真正性・完全性を確認
+</code></pre>
+<h3>6-5. 検証手順を順番に理解する</h3>
+<p><strong>第1段階：信頼の起点を確立する</strong>。検証側は、あらかじめ信頼しているルートの公開鍵情報を起点とします。</p>
+<p><strong>第2段階：親ゾーンの情報を検証する</strong>。ルートから <code>jp</code> へ、DNSKEYとDS、署名を利用して信頼をつなぎます。</p>
+<p><strong>第3段階：親ゾーンのDSを確認する</strong>。<code>jp</code> ゾーンに登録された <code>example.jp</code> のDSレコードを、信頼済みの <code>jp</code> の鍵によって検証します。</p>
+<p><strong>第4段階：子ゾーンのDNSKEYを確認する</strong>。<code>example.jp</code> から取得したDNSKEYが、親ゾーンのDSと対応していることを確認します。</p>
+<p><strong>第5段階：子ゾーンのRRSIGを検証する</strong>。信頼できると確認した <code>example.jp</code> のDNSKEYを利用して、Aレコード集合に付けられたRRSIGを検証します。このように、上位から下位へ信頼をつないでいきます。</p>
+<h3>6-6. 親のDSは子のAレコードを直接検証するのか</h3>
+<p>いいえ。<strong>DSは子ゾーンのDNSKEYを信頼するための情報</strong>です。Aレコード集合の署名を検証するのは、対応するDNSKEYとRRSIGを利用する処理です。</p>
+<table>
+<thead>
+<tr>
+<th>情報</th>
+<th>検証での役割</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>親のDS</td>
+<td>子のDNSKEYを信頼の連鎖に結び付ける</td>
+</tr>
+<tr>
+<td>子のDNSKEY</td>
+<td>子のRRsetに対するRRSIGを検証する</td>
+</tr>
+<tr>
+<td>子のRRSIG</td>
+<td>対象RRsetの署名を示す</td>
+</tr>
+</tbody>
+</table>
+<h3>6-7. DNSSECの検証が失敗すると</h3>
+<p>DNSSEC検証を行う再帰リゾルバが、不正な署名や鍵の不整合を検出した場合、名前解決に失敗することがあります。例えば、DNSSEC設定の誤りや鍵更新の失敗によって、正規のドメインでもSERVFAILになる場合があります。DNSSECは導入するだけでなく、鍵更新や親ゾーンのDS登録との整合性を管理する必要があります。</p>
+<h3>6-8. 科目Bでの答案例</h3>
+<p><strong>設問</strong>：DNSSECで、親ゾーンのDSレコードが必要な理由を説明せよ。</p>
+<p><strong>答案例</strong>：「親ゾーンで検証したDSレコードと子ゾーンのDNSKEYを照合し、子ゾーンの公開鍵を信頼の連鎖につなぐため。」</p>
+<p><strong>設問</strong>：子ゾーンのAレコードの改ざんを検出する仕組みを説明せよ。</p>
+<p><strong>答案例</strong>：「親ゾーンのDSから信頼性を確認した子ゾーンのDNSKEYを用いて、Aレコード集合のRRSIGを検証する。」</p>
+<p>この二つの答案を区別して書けることが、今回の重要な到達目標です。</p>
+<h2 id="section-07">7. DNSSECと暗号化DNSの違い</h2>
+<h3>7-1. DNSSECは通信内容を隠さない</h3>
+<p>DNSSECはDNSデータの署名検証に関する技術です。DNS問い合わせの内容を第三者に見られないようにする仕組みではありません。</p>
+<h3>7-2. DoTとDoH</h3>
+<table>
+<thead>
+<tr>
+<th>技術</th>
+<th>主な役割</th>
+<th>代表的な通信</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DNSSEC</td>
+<td>DNSデータの真正性・完全性を検証</td>
+<td>DNSの署名検証</td>
+</tr>
+<tr>
+<td>DNS over TLS（DoT）</td>
+<td>DNS通信をTLSで保護</td>
+<td>TCP 853</td>
+</tr>
+<tr>
+<td>DNS over HTTPS（DoH）</td>
+<td>DNS通信をHTTPSで保護</td>
+<td>HTTPS、一般に443番</td>
+</tr>
+</tbody>
+</table>
+<p>DoTやDoHは、クライアントとDNSサービス間などの通信を保護します。しかし、暗号化された通信路の先にあるDNSサービスが誤った情報を返す可能性まで、通信路の暗号化だけで排除できるわけではありません。</p>
+<h3>7-3. 三つの違いを整理する</h3>
+<ul>
+<li><strong>DNSSEC</strong>：返されたDNSデータは正当か。</li>
+<li><strong>DoT/DoH</strong>：DNSの問い合わせ・応答を通信経路上で保護できるか。</li>
+<li><strong>HTTPS</strong>：Webサーバとの通信を保護し、証明書などで接続先を検証できるか。</li>
+</ul>
+<p>保護する対象が違います。</p>
+<h2 id="section-08">8. DNS Rebinding</h2>
+<p><strong>A：必須</strong></p>
+<h3>8-1. DNS Rebindingとは</h3>
+<p>DNS Rebinding（DNSリバインディング）は、攻撃者が管理するドメイン名のDNS応答を変化させ、ブラウザなどから内部ネットワークのサービスへアクセスさせようとする攻撃です。</p>
+<p><strong>攻撃者が正規のDNSキャッシュを偽装する必要がない場合がある</strong>ことがポイントです。攻撃者自身が管理するドメインについて、正当な権威DNSサーバから異なるIPアドレスを返すことができます。</p>
+<h3>8-2. 攻撃の前提</h3>
+<pre><code class="language-text">利用者PC：192.168.1.10
+社内管理サーバ：192.168.1.100
+攻撃者のWebサーバ：203.0.113.200
+</code></pre>
+<p>攻撃者は <code>attacker.example</code> というドメインを管理しているとします。</p>
+<h3>8-3. 攻撃の流れ</h3>
+<p><strong>第1段階：攻撃者のWebサイトへアクセス</strong>。利用者が攻撃者のWebサイトへアクセスします。最初のDNS応答は、攻撃者の外部サーバのIPアドレスです。</p>
+<pre><code class="language-text">attacker.example
+      ↓
+203.0.113.200
+</code></pre>
+<p>ブラウザは攻撃者のWebページを取得します。</p>
+<p><strong>第2段階：攻撃者のスクリプトが実行される</strong>。Webページには、後で同じドメインへアクセスするJavaScriptなどが含まれているとします。</p>
+<p><strong>第3段階：DNS応答が変更される</strong>。一定時間後、同じドメイン名の名前解決結果が内部IPアドレスへ変わるように、攻撃者がDNSを設定します。</p>
+<pre><code class="language-text">attacker.example
+      ↓
+192.168.1.100
+</code></pre>
+<p><strong>第4段階：ブラウザから内部サーバへのアクセスを試みる</strong>。ブラウザが再び <code>attacker.example</code> へ接続しようとしたとき、名前解決結果が内部サーバを指していれば、内部サーバへの接続を試みる可能性があります。</p>
+<p>ただし、現代のブラウザやネットワーク環境では、Private Network Accessなどの制限、DNSキャッシュ、HTTPS証明書の検証、対象サーバのHostヘッダ処理などによって攻撃が阻止される場合があります。DNS応答を変更するだけで必ず成立するわけではありません。</p>
+<h3>8-4. 同一オリジンポリシーとの関係</h3>
+<p>ブラウザの同一オリジンポリシーは、基本的にスキーム、ホスト名、ポート番号などでオリジンを判断します。攻撃者は、同じホスト名を維持したまま、その名前が指すIPアドレスを変化させることで、内部サービスへのアクセスを試みます。このため、DNS Rebindingは、単純な「DNS応答を偽装する攻撃」とは異なる特徴を持ちます。</p>
+<h3>8-5. 対策</h3>
+<ol>
+<li>内部管理サービスに適切な認証・認可を実装する。</li>
+<li>HostヘッダやOriginなどを、サービスの設計に応じて検証する。</li>
+<li>管理用サービスを不要に公開せず、アクセス元を制限する。</li>
+<li>DNSリゾルバで、外部ドメインが内部アドレスを返す不審な応答を制限する対策を検討する。</li>
+<li>ブラウザやサーバのセキュリティ更新を適用する。</li>
+</ol>
+<p>DNSリゾルバによるプライベートIPアドレス応答の制限は、正当な内部用途にも影響する可能性があるため、環境に応じた設計が必要です。</p>
+<h3>8-6. キャッシュポイズニングとの違い</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>キャッシュポイズニング</th>
+<th>DNS Rebinding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主な操作対象</td>
+<td>キャッシュDNSに取り込まれる情報</td>
+<td>攻撃者管理ドメインのDNS応答</td>
+</tr>
+<tr>
+<td>主な狙い</td>
+<td>偽のIPアドレスを返させる</td>
+<td>ブラウザなどから内部サービスへ接続させる</td>
+</tr>
+<tr>
+<td>偽のDNS応答</td>
+<td>攻撃方法によって必要</td>
+<td>必ずしも必要ない</td>
+</tr>
+<tr>
+<td>重要な防御</td>
+<td>DNSSEC、応答検証、ランダム化</td>
+<td>内部サービスの認証・アクセス制限、Host/Origin検証など</td>
+</tr>
+</tbody>
+</table>
+<h2 id="section-09">9. サブドメインテイクオーバー</h2>
+<p><strong>A：必須・IPA採点講評で確認された論点</strong></p>
+<h3>9-1. どのような攻撃か</h3>
+<p>サブドメインテイクオーバーは、組織が管理するサブドメインについて、外部サービスとの紐付けが不適切に残っている場合などに、第三者がそのサブドメインで提供されるコンテンツを制御できるようになる問題です。</p>
+<p>例えば、企業が <code>campaign.example.jp</code> を利用し、外部のWebホスティングサービスやCDNを参照するCNAMEレコードを持っているとします。</p>
+<pre><code class="language-dns">campaign.example.jp. IN CNAME old-site.hosting.example.
+</code></pre>
+<h3>9-2. サービス終了後の設定漏れ</h3>
+<p>キャンペーン終了により、企業が外部ホスティングサービス上のサイトを削除したとします。しかし、DNSのCNAMEレコードを削除し忘れました。</p>
+<pre><code class="language-text">企業のDNS
+campaign.example.jp
+       |
+       | CNAMEが残っている
+       v
+old-site.hosting.example
+
+外部サービス側
+該当リソースは削除済み
+</code></pre>
+<p>外部サービス側の仕様によっては、第三者が削除済みの名前やリソースを再取得できる場合があります。</p>
+<h3>9-3. 攻撃が成立する条件</h3>
+<p><strong>CNAMEが残っているだけで必ずサブドメインテイクオーバーが成立するわけではありません。</strong></p>
+<ul>
+<li>組織のDNSに外部サービスへの参照が残っている。</li>
+<li>外部サービス上で、元の組織が利用していたリソースが削除されている。</li>
+<li>第三者が参照先に対応するリソースや名前を取得できる。</li>
+<li>外部サービスが十分な所有権検証を行わず、当該サブドメインへのコンテンツ提供を許してしまう。</li>
+</ul>
+<p>成立条件はサービスによって異なります。</p>
+<h3>9-4. 攻撃の影響</h3>
+<ul>
+<li>正規組織のサブドメインで偽のWebページが表示される。</li>
+<li>利用者が正規組織のサイトだと誤認する。</li>
+<li>偽のログイン画面などを通じて情報を入力させられる。</li>
+<li>当該サブドメインに対する組織の信用が悪用される。</li>
+</ul>
+<p>実際にHTTPS証明書を取得できるか、Cookieを悪用できるかなどは、サービス設定やブラウザの制約に依存します。</p>
+<h3>9-5. なぜDNSSECだけでは防げないのか</h3>
+<p>企業の権威DNSに次のCNAMEが正規の設定として残っているとします。</p>
+<pre><code class="language-dns">campaign.example.jp. IN CNAME old-site.hosting.example.
+</code></pre>
+<p>DNSSECは、このCNAMEが正規ゾーンから提供されたもので改ざんされていないことを検証できます。しかし、<strong>その参照先が既に廃止されたサービスなのか、第三者に取得され得るのか</strong>までは判断しません。DNSSECの検証が成功していても、DNS設定の運用上の問題は残ります。</p>
+<h3>9-6. 対策</h3>
+<ul>
+<li>利用終了したサービスに対応する不要なCNAMEを削除する。</li>
+<li>DNSレコードを定期的に棚卸しする。</li>
+<li>外部サービスの利用開始・終了時にDNS設定を確認する。</li>
+<li>外部サービス側でドメイン所有権の検証を適切に実施する。</li>
+<li>サブドメインの参照先が有効な管理対象か継続的に確認する。</li>
+</ul>
+<h3>9-7. IPAの設問から学ぶ答案の書き方</h3>
+<p>令和7年度春期のIPA午後試験の採点講評では、CDNやWebサーバの利用終了後にDNSのCNAMEレコードが残存する問題が扱われています。</p>
+<p>「DNSの設定を見直す」という抽象的な回答ではなく、<strong>不要になったCNAMEレコードを削除する</strong>という具体的な設定変更を示すことが重要です。</p>
+<p><strong>答案例</strong>：「利用を終了した外部サービスを参照するCNAMEレコードをDNSゾーンから削除する。」</p>
+<h3>9-8. 三つのDNS攻撃を比較する</h3>
+<table>
+<thead>
+<tr>
+<th>攻撃</th>
+<th>攻撃者が利用する問題</th>
+<th>代表的な対策</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DNSキャッシュポイズニング</td>
+<td>不正なDNS応答がキャッシュに取り込まれる</td>
+<td>DNSSEC検証、応答照合、ランダム化</td>
+</tr>
+<tr>
+<td>DNS Rebinding</td>
+<td>同じドメイン名の解決先を変更し、内部サービスへアクセスを試みる</td>
+<td>内部サービスの認証・アクセス制限、Host/Origin検証</td>
+</tr>
+<tr>
+<td>サブドメインテイクオーバー</td>
+<td>外部サービスの利用終了後もDNS参照が残る</td>
+<td>不要なCNAME削除、DNS棚卸し、所有権検証</td>
+</tr>
+</tbody>
+</table>
+<p>この表は、科目Bの原因と対策を取り違えないために重要です。</p>
+<h2 id="section-10">10. DNSの不正利用とその他の脅威</h2>
+<h3>10-1. DNSリフレクション攻撃</h3>
+<p>DNSは、送信元IPアドレスを偽装したUDP問い合わせによって、第三者への応答を発生させる攻撃に悪用されることがあります。例えば、攻撃者が被害者のIPアドレスを送信元としてDNSサーバへ問い合わせると、DNSサーバが被害者へ応答を送る場合があります。これをDNSリフレクション攻撃と呼びます。</p>
+<h3>10-2. DNS増幅攻撃</h3>
+<p>小さなDNS問い合わせに対して大きなDNS応答が返る場合、攻撃者が送信した通信量よりも大きな通信量を被害者へ発生させられることがあります。これがDNS増幅攻撃です。対策には、送信元IPアドレスの詐称防止、不要な再帰問い合わせの制限、応答レート制限などがあります。</p>
+<h3>10-3. オープンリゾルバ</h3>
+<p>不特定多数からの再帰問い合わせを受け付けるDNSサーバは、第三者に悪用される可能性があります。組織内向けの再帰リゾルバであれば、問い合わせを許可するクライアントを必要な範囲に限定します。</p>
+<h3>10-4. ゾーン転送の設定不備</h3>
+<p>権威DNSサーバが不特定多数へゾーン転送を許可していると、ゾーン内のホスト名などを第三者に取得されるおそれがあります。</p>
+<pre><code class="language-dns">db01.example.jp.  IN A 192.0.2.10
+vpn.example.jp.   IN A 192.0.2.20
+mail.example.jp.  IN A 192.0.2.30
+</code></pre>
+<p>攻撃者がネットワーク構成を推測する手掛かりになる場合があります。対策は、ゾーン転送を許可する相手を正当なセカンダリDNSサーバなどに限定し、必要に応じて認証を利用することです。</p>
+<h3>10-5. DNSトンネリング</h3>
+<p>DNS問い合わせの名前部分などにデータを埋め込み、DNS通信をデータ送受信の経路として悪用する手法があります。通常とは異なる長いサブドメイン名への問い合わせが大量に発生する場合、不審な通信の手掛かりになることがあります。ただし、長いDNS名や問い合わせ回数の多さだけで攻撃と断定することはできません。調査では、問い合わせ先ドメイン、文字列の特徴、頻度、端末の動作、他の通信ログなどを組み合わせます。</p>
+<h2 id="section-11">11. DNSSEC検証失敗の障害調査</h2>
+<p><strong>A：必須・科目B重点</strong></p>
+<h3>11-1. DNSSECを有効にすると障害が起きることもある</h3>
+<p>DNSSECはDNS情報の正当性を検証しますが、設定が誤っていると、正規のドメインであっても検証に失敗する場合があります。例えば、子ゾーンの鍵を更新したのに、親ゾーンのDSレコードが古いままだった場合です。</p>
+<h3>11-2. 鍵更新とDSの不整合</h3>
+<pre><code class="language-text">親ゾーン：
+example.jp のDS → 古いDNSKEYに対応
+
+子ゾーン：
+example.jp のDNSKEY → 新しい鍵
+</code></pre>
+<p>検証側は、親ゾーンのDSと子ゾーンのDNSKEYを照合します。しかし、両者が対応していなければ、信頼の連鎖を正しく構築できません。その結果、DNSSEC検証に失敗する可能性があります。</p>
+<h3>11-3. SERVFAIL</h3>
+<p>DNSSEC検証に失敗した再帰リゾルバは、クライアントへSERVFAILを返す場合があります。</p>
+<pre><code class="language-text">;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: SERVFAIL
+</code></pre>
+<p>ただし、SERVFAILはDNSSEC検証失敗専用の応答ではありません。上流DNSへの問い合わせ失敗やサーバ内部の問題など、別の原因でも発生します。</p>
+<h3>11-4. 障害の切り分け</h3>
+<p>例えば、DNSSEC検証を行う再帰リゾルバではSERVFAILになり、権威DNSへ直接問い合わせるとAレコードが返る場合です。次の情報を確認します。</p>
+<ol>
+<li>親ゾーンのDSレコード。</li>
+<li>子ゾーンのDNSKEYレコード。</li>
+<li>対象レコード集合のRRSIG。</li>
+<li>署名の有効期間。</li>
+<li>再帰リゾルバのDNSSEC検証ログ。</li>
+<li>DNSサーバの時刻設定。</li>
+</ol>
+<h3>11-5. 科目Bの答案例</h3>
+<p><strong>設問</strong>：DNSSEC対応ドメインで鍵更新後に名前解決が失敗した。親ゾーンのDSと子ゾーンのDNSKEYが一致していない場合、失敗する理由を説明せよ。</p>
+<p><strong>答案例</strong>：「親ゾーンのDSから子ゾーンのDNSKEYの正当性を確認できず、DNSSECの信頼の連鎖を構築できないため。」</p>
+<h2 id="section-12">12. DNSログの読み取り演習</h2>
+<h3>12-1. 正常なDNS応答</h3>
+<pre><code class="language-text">10:00:00 QUERY
+Client: 192.168.1.10
+Name: www.example.jp
+Type: A
+TXID: 0x7A31
+
+10:00:00 RESPONSE
+Status: NOERROR
+Answer: 203.0.113.10
+</code></pre>
+<p>このログでは、Aレコード問い合わせに対してIPアドレスが返っています。ただし、DNS応答が正常でも、そのIPアドレスへのWeb接続まで成功したとは限りません。</p>
+<h3>12-2. 不審な応答</h3>
+<pre><code class="language-text">10:05:00 QUERY
+Name: www.example.jp
+Type: A
+
+10:05:00 RESPONSE
+Answer: 203.0.113.200
+</code></pre>
+<p>通常の登録内容が <code>203.0.113.10</code> である場合、調査が必要です。しかし、CDNによる応答の違いや正規の設定変更なども考えられるため、これだけで攻撃と断定しません。権威DNSの設定、キャッシュ、変更履歴、応答元などを照合します。</p>
+<h3>12-3. DNSSEC検証失敗</h3>
+<pre><code class="language-text">10:10:00 DNSSEC VALIDATION FAILED
+
+Zone: example.jp
+Reason: DS/DNSKEY mismatch
+
+Result: SERVFAIL
+</code></pre>
+<p>親ゾーンのDSと子ゾーンのDNSKEYが対応していないことが示されています。DNSSECの信頼の連鎖が成立しないことが、名前解決失敗の原因です。</p>
+<h3>12-4. サブドメインテイクオーバーの疑い</h3>
+<pre><code class="language-dns">campaign.example.jp. IN CNAME old-site.hosting.example.
+</code></pre>
+<p>運用台帳を確認すると、<code>old-site.hosting.example</code> に対応するサービスは既に廃止されていました。この場合、外部サービス側で第三者によるリソース再取得が可能かを確認する必要があります。対策として、不要なCNAMEを削除し、サービス廃止時のDNSレコード確認を運用手順に追加します。</p>
+<h3>12-5. DNS Rebindingが疑われる例</h3>
+<pre><code class="language-text">10:20:00
+attacker.example → 203.0.113.200
+
+10:20:10
+attacker.example → 192.168.1.100
+</code></pre>
+<p>短時間で、同じドメインの解決先が外部IPアドレスから内部IPアドレスへ変化しています。このような変化はDNS Rebindingを疑う手掛かりになります。ただし、正当なDNS設定変更や特殊な運用の可能性もあるため、ブラウザの通信、アクセス先の内部サービス、DNSの管理主体などを合わせて確認します。</p>
+<h2 id="section-13">13. 科目Aの典型論点</h2>
+<table>
+<thead>
+<tr>
+<th>用語</th>
+<th>試験で押さえる内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DNSキャッシュポイズニング</td>
+<td>不正なDNS情報をキャッシュに取り込ませる</td>
+</tr>
+<tr>
+<td>DNSトランザクションID</td>
+<td>問い合わせと応答を対応付ける16ビットの値</td>
+</tr>
+<tr>
+<td>ポートランダム化</td>
+<td>偽のDNS応答を推測しにくくする</td>
+</tr>
+<tr>
+<td>DNSSEC</td>
+<td>DNSデータの真正性・完全性を検証</td>
+</tr>
+<tr>
+<td>DNSKEY</td>
+<td>署名検証用の公開鍵</td>
+</tr>
+<tr>
+<td>RRSIG</td>
+<td>DNSレコード集合に対する署名</td>
+</tr>
+<tr>
+<td>DS</td>
+<td>親ゾーンから子ゾーンの鍵へ信頼をつなぐ</td>
+</tr>
+<tr>
+<td>信頼の連鎖</td>
+<td>信頼の起点から下位ゾーンの鍵・署名を検証する</td>
+</tr>
+<tr>
+<td>SERVFAIL</td>
+<td>DNSサーバが処理に失敗した応答</td>
+</tr>
+<tr>
+<td>DNS Rebinding</td>
+<td>DNSの解決先を変化させ、内部サービスへのアクセスを試みる</td>
+</tr>
+<tr>
+<td>サブドメインテイクオーバー</td>
+<td>不適切に残ったDNS参照と外部サービスの管理状態を悪用</td>
+</tr>
+<tr>
+<td>DNSリフレクション</td>
+<td>偽装送信元へDNS応答を送らせる</td>
+</tr>
+<tr>
+<td>DNS増幅</td>
+<td>小さな問い合わせで大きな応答を発生させる</td>
+</tr>
+<tr>
+<td>オープンリゾルバ</td>
+<td>不特定多数に再帰問い合わせを許可するDNSサーバ</td>
+</tr>
+<tr>
+<td>ゾーン転送</td>
+<td>DNSサーバ間でゾーン情報を転送する</td>
+</tr>
+</tbody>
+</table>
+<h2 id="section-14">14. 科目Bの答案作成ポイント</h2>
+<h3>14-1. 設問例①：キャッシュポイズニング</h3>
+<p><strong>設問</strong>：DNSキャッシュポイズニングによって利用者が偽サイトへ誘導される理由を説明せよ。</p>
+<p><strong>答案例</strong>：「再帰リゾルバに不正なIPアドレスがキャッシュされ、利用者の名前解決時に偽サイトのIPアドレスが返されるため。」</p>
+<h3>14-2. 設問例②：ポートランダム化</h3>
+<p><strong>設問</strong>：DNS問い合わせの送信元ポート番号をランダム化する目的を説明せよ。</p>
+<p><strong>答案例</strong>：「攻撃者がDNS応答の宛先ポート番号を推測しにくくし、偽のDNS応答が受理される可能性を低下させるため。」</p>
+<h3>14-3. 設問例③：DNSSEC</h3>
+<p><strong>設問</strong>：DNSSECを利用する目的を説明せよ。</p>
+<p><strong>答案例</strong>：「DNSデータに対するデジタル署名を検証し、取得したDNS情報の真正性と完全性を確認するため。」</p>
+<h3>14-4. 設問例④：DSレコード</h3>
+<p><strong>設問</strong>：DNSSECにおいて、親ゾーンのDSレコードが必要な理由を説明せよ。</p>
+<p><strong>答案例</strong>：「親ゾーンで検証したDSと子ゾーンのDNSKEYを照合し、子ゾーンの公開鍵を信頼の連鎖につなぐため。」</p>
+<h3>14-5. 設問例⑤：DNS Rebinding</h3>
+<p><strong>設問</strong>：DNS Rebindingによって、ブラウザから内部サーバへのアクセスが試みられる仕組みを説明せよ。</p>
+<p><strong>答案例</strong>：「攻撃者管理ドメインの名前解決先を外部サーバから内部サーバのIPアドレスへ変更し、ブラウザから同じホスト名を使って内部サーバへの接続を試みるため。」</p>
+<h3>14-6. 設問例⑥：サブドメインテイクオーバー</h3>
+<p><strong>設問</strong>：外部サービスを廃止した後もCNAMEレコードが残っている。サブドメインテイクオーバーを防ぐための具体的な対策を説明せよ。</p>
+<p><strong>答案例</strong>：「利用を終了した外部サービスを参照する不要なCNAMEレコードをDNSゾーンから削除する。」</p>
+<h3>14-7. 設問例⑦：DNSSECでは防げない理由</h3>
+<p><strong>設問</strong>：DNSSECを導入していても、サブドメインテイクオーバーが成立する可能性がある理由を説明せよ。</p>
+<p><strong>答案例</strong>：「DNSSECはDNSデータの真正性を検証するが、正規ゾーンに残ったCNAMEの参照先が第三者に取得可能かどうかまでは検証しないため。」</p>
+<h3>14-8. 設問例⑧：DNSSEC障害</h3>
+<p><strong>設問</strong>：親ゾーンのDSと子ゾーンのDNSKEYが対応しない場合、DNSSEC検証に失敗する理由を説明せよ。</p>
+<p><strong>答案例</strong>：「親ゾーンのDSを使って子ゾーンのDNSKEYを信頼できると確認できず、署名検証の信頼の連鎖を構築できないため。」</p>
+<h3>14-9. 答案作成の判断手順</h3>
+<ol>
+<li><strong>攻撃対象を確認する。</strong> キャッシュ、権威DNS、DNS委任、外部サービス、ブラウザのどれか。</li>
+<li><strong>攻撃者が操作できるものを確認する。</strong> 偽の応答、攻撃者管理ドメイン、外部サービスのリソースなど。</li>
+<li><strong>攻撃成立条件を確認する。</strong> 偽応答の受理、DNSの解決先変更、CNAMEの残存など。</li>
+<li><strong>影響を確認する。</strong> 偽サイトへの誘導、内部サービスへのアクセス、サブドメインの乗っ取りなど。</li>
+<li><strong>対策を対応付ける。</strong> DNSSEC、ポートランダム化、アクセス制御、CNAME削除など。</li>
+<li><strong>設問にある具体的な設定・ログを答案へ反映する。</strong></li>
+</ol>
+<p>「DNSを安全にする」「設定を見直す」といった抽象的な回答ではなく、何をどう変更するかまで記述することが重要です。</p>
+<h2 id="section-15">15. 重要事項の整理</h2>
+<p><strong>第一に、DNSキャッシュポイズニングは、不正なDNS情報を再帰リゾルバなどのキャッシュに取り込ませる攻撃です。</strong> 偽のIPアドレスが返されることで、利用者が意図しないサーバへ誘導される可能性があります。</p>
+<p><strong>第二に、DNSトランザクションIDや送信元ポート番号のランダム化は、偽応答の推測を困難にする対策です。</strong> DNSデータ自体の暗号学的な真正性を検証する仕組みとは異なります。</p>
+<p><strong>第三に、DNSSECはDNSデータの真正性・完全性を検証します。</strong> DNS通信の内容を暗号化して隠す技術ではありません。</p>
+<p><strong>第四に、DNSSECではDNSKEY・RRSIG・DSの役割を区別します。</strong> DNSKEYは公開鍵、RRSIGはレコード集合の署名、DSは親ゾーンから子ゾーンへ信頼をつなぐ情報です。</p>
+<p><strong>第五に、DNSSECの信頼の連鎖は、信頼の起点から親ゾーンのDS、子ゾーンのDNSKEY、対象RRsetのRRSIGへと検証を進めます。</strong> これは今回の最重要復習事項です。</p>
+<p><strong>第六に、DNS Rebindingは、攻撃者管理ドメインの解決先を変化させ、内部サービスへのアクセスを試みる攻撃です。</strong> キャッシュポイズニングとは攻撃の仕組みが異なります。</p>
+<p><strong>第七に、サブドメインテイクオーバーは、外部サービスの利用終了後に残ったCNAMEなどが悪用される場合があります。</strong> DNSSECを導入していても、正規ゾーンの不要なCNAMEは自動的に削除されません。</p>
+<p><strong>第八に、科目Bでは攻撃と対策を正確に対応付けます。</strong> キャッシュポイズニングならDNS応答の検証、サブドメインテイクオーバーなら不要なCNAMEの削除、DNS Rebindingなら内部サービスの認証やアクセス制御などです。</p>
+<h3>C：発展学習として切り分ける内容</h3>
+<p>今回の理解度チェックでは、次の内容を前提としません。</p>
+<ul>
+<li>DNSSECの署名アルゴリズムの数学的な詳細</li>
+<li>KSK・ZSKの高度な鍵ロールオーバー設計</li>
+<li>NSEC/NSEC3のビット単位の仕様</li>
+<li>DNSキャッシュポイズニングの攻撃コード</li>
+<li>DNS Rebindingのブラウザ別実装差異</li>
+<li>個別クラウドサービスでのサブドメイン取得操作</li>
+</ul>
+<p>今回の最優先事項は、<strong>DNS攻撃の成立条件を区別し、DNSSECの信頼の連鎖と具体的な対策を科目Bの答案として説明できること</strong>です。</p>
+<a class="back" href="#section-01">↑ 講義の先頭へ</a></main></div></body></html>
