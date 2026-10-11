@@ -1,0 +1,781 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第17講｜UDP｜SC合格講座</title><style>
+:root{color-scheme:light;--ink:#1c3045;--muted:#53697b;--accent:#176c78;--line:#dbe5eb;--bg:#f5f8fa}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;background:var(--bg);color:var(--ink);line-height:1.85}.layout{display:grid;grid-template-columns:255px minmax(0,850px);gap:34px;max-width:1200px;margin:auto;padding:30px 22px}nav{position:sticky;top:18px;align-self:start;max-height:calc(100vh - 36px);overflow:auto;background:white;border:1px solid var(--line);border-radius:14px;padding:20px}nav strong{display:block;margin-bottom:12px}nav a{display:block;font-size:13px;line-height:1.55;padding:7px 2px;color:var(--muted);text-decoration:none;border-bottom:1px solid #f0f3f5}nav a:hover{color:var(--accent)}main{background:white;border:1px solid var(--line);border-radius:16px;padding:42px 48px;box-shadow:0 6px 30px #263b4b0a}h1{font-size:2.1rem;line-height:1.35;color:#113e57;margin:0 0 16px}h2{font-size:1.55rem;line-height:1.45;border-bottom:2px solid #9ac8ce;padding-bottom:10px;margin-top:58px;scroll-margin-top:24px}h3{font-size:1.15rem;color:#14606d;margin-top:28px}p{margin:12px 0}strong{font-weight:750}ul,ol{padding-left:1.6em}li{margin:5px 0}table{border-collapse:collapse;width:100%;margin:18px 0 26px;font-size:.92rem}th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}th{background:#eaf3f5}tr:nth-child(even) td{background:#fafcfd}pre{background:#12283b;color:#edf6fb;padding:18px 20px;border-radius:10px;overflow:auto;line-height:1.65;font-size:.9rem}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}p code,li code,td code{background:#edf3f6;padding:2px 5px;border-radius:4px;font-size:.92em}.back{display:inline-block;margin-top:40px;color:var(--accent)}@media(max-width:880px){.layout{display:block;padding:10px}nav{position:static;max-height:none;margin-bottom:12px}nav a{display:inline-block;padding:5px 8px;border:none}main{padding:24px 18px}h1{font-size:1.7rem}h2{font-size:1.3rem}table{display:block;overflow-x:auto}pre{font-size:.8rem}}@media print{body{background:white}.layout{display:block;padding:0}nav{display:none}main{border:0;box-shadow:none;padding:0}h2{break-after:avoid}pre,table{break-inside:avoid}}
+</style></head><body><div class="layout"><nav><strong>第17講｜目次</strong><a href="#section-01">1. 到達目標・参考書・学習優先度</a>
+<a href="#section-02">2. UDPは何をするプロトコルなのか</a>
+<a href="#section-03">3. TCPとUDPの違いを整理する</a>
+<a href="#section-04">4. UDPヘッダの構造</a>
+<a href="#section-05">5. UDP通信の具体的な流れ</a>
+<a href="#section-06">6. UDPの信頼性とアプリケーション側の制御</a>
+<a href="#section-07">7. UDPとICMP Port Unreachable</a>
+<a href="#section-08">8. UDPが攻撃に悪用されやすい理由</a>
+<a href="#section-09">9. UDP Flood攻撃</a>
+<a href="#section-10">10. DNSリフレクション攻撃</a>
+<a href="#section-11">11. DNS増幅攻撃</a>
+<a href="#section-12">12. NTPリフレクション攻撃</a>
+<a href="#section-13">13. UDPに対するセキュリティ対策</a>
+<a href="#section-14">14. ステートフルファイアウォールとUDP</a>
+<a href="#section-15">15. UDP通信のログ分析</a>
+<a href="#section-16">16. 科目Aで押さえる典型論点</a>
+<a href="#section-17">17. 科目Bの答案作成ポイント</a>
+<a href="#section-18">18. 重要事項の整理</a></nav><main><h1>第17講｜UDP</h1>
+<p><strong>情報処理安全確保支援士（SC）合格講座｜第1〜23講・詳細再執筆シリーズ</strong></p>
+<p>第16講ではTCPの3ウェイハンドシェイク、シーケンス番号、ACK、再送制御、SYN Floodを学びました。今回のテーマはもう一つの代表的なトランスポート層プロトコルである<strong>UDP（User Datagram Protocol）</strong>です。</p>
+<p>UDPはTCPと違い、コネクションを確立せず、データの到達確認や再送を標準機能として行いません。しかし「UDPはTCPより簡単で高速」という理解だけではSC試験の科目Bには対応できません。<strong>UDPがなぜDNSなどで利用されるのか、なぜ送信元IPアドレスの偽装を利用した攻撃に悪用されやすいのか、通信ログから攻撃と正常通信をどう区別するのか</strong>を重視します。</p>
+<p>第17講は既修了講義の再執筆です。既存の採点・弱点履歴は保持し、確認問題は再学習用として扱います（本HTMLには理解度チェックを収録しません）。</p>
+<h2 id="section-01">1. 到達目標・参考書・学習優先度</h2>
+<h3>1-1. 到達目標</h3>
+<ol>
+<li>TCPとUDPの機能の違いを説明できる。</li>
+<li>UDPヘッダの構造とポート番号の役割を理解する。</li>
+<li>UDPでデータを送受信する流れを説明できる。</li>
+<li>UDPがDNS、音声・映像通信などで利用される理由を説明できる。</li>
+<li>UDP通信で発生するパケット消失、順序逆転、重複の扱いを理解する。</li>
+<li>UDP Flood、DNSリフレクション攻撃、DNS増幅攻撃の仕組みを説明できる。</li>
+<li>送信元IPアドレスの偽装が攻撃に与える影響を理解する。</li>
+<li>ファイアウォールや通信ログを読み、適切な対策を記述できる。</li>
+</ol>
+<h3>1-2. 参考書の対応箇所</h3>
+<p>基本参考書は『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』です。前回のチャット講義で示した参照範囲は次のとおりです。</p>
+<table>
+<thead>
+<tr>
+<th>参考書の箇所</th>
+<th>今回扱う内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第3章 3-1-3「TCPとUDP」pp.175–176</td>
+<td>トランスポート層の役割、TCPとUDPの違い</td>
+</tr>
+<tr>
+<td>同節 p.176</td>
+<td>UDPのコネクションレス型・データグラム型の性質、用途</td>
+</tr>
+<tr>
+<td>同節 pp.176–177</td>
+<td>ポート番号の役割</td>
+</tr>
+<tr>
+<td>第7章 7-6-2「UDPに関する攻撃」p.502以降</td>
+<td>UDPを利用した攻撃</td>
+</tr>
+</tbody>
+</table>
+<p>参考書の説明を基礎としつつ、UDPヘッダの詳細、DNS通信の例、リフレクション・増幅攻撃の通信経路、ログ分析、科目Bの答案例は理解を深めるための講師独自の補足です。</p>
+<h3>1-3. 学習優先度</h3>
+<table>
+<thead>
+<tr>
+<th>優先度</th>
+<th>学習内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A：必須</strong></td>
+<td>UDPの特徴、TCPとの比較、ポート番号、DNS通信、UDP Flood、リフレクション・増幅攻撃、送信元IP偽装、対策、ログ分析</td>
+</tr>
+<tr>
+<td><strong>B：理解補助</strong></td>
+<td>UDPヘッダ、チェックサム、ICMP Port Unreachable、アプリケーション側の信頼性制御、ステートフルFW</td>
+</tr>
+<tr>
+<td><strong>C：発展</strong></td>
+<td>QUICの内部実装、RTP/RTCPの細部、UDPの特殊なオプションや高度なNAT越え技術</td>
+</tr>
+</tbody>
+</table>
+<h2 id="section-02">2. UDPは何をするプロトコルなのか</h2>
+<h3>2-1. トランスポート層の役割</h3>
+<p>トランスポート層には、主に<strong>受信したデータを適切なアプリケーションへ渡す</strong>役割があります。一台のサーバでDNSとWebサービスが稼働している例を考えます。</p>
+<pre><code class="language-text">サーバ：192.0.2.10
+DNSサーバ       UDP 53番ポート
+Webサーバ       TCP 443番ポート
+</code></pre>
+<p>IPアドレスが同じでも、トランスポート層のプロトコルとポート番号によって、通信を適切に振り分けられます。</p>
+<h3>2-2. UDPはコネクションレス型</h3>
+<p>UDPはTCPのような3ウェイハンドシェイクを行いません。送信側は宛先IPアドレスと宛先ポート番号などを指定してデータグラムを送信します。</p>
+<pre><code class="language-text">送信元：192.0.2.100:53000
+宛先　：192.0.2.10:53
+</code></pre>
+<p>事前にSYN、SYN+ACK、ACKを交換する必要はありません。ただし、<strong>コネクションレスとは、通信相手を一切識別しないという意味ではありません</strong>。IPアドレスやポート番号で通信を識別でき、アプリケーション側でセッションを管理することもできます。</p>
+<h3>2-3. UDPはデータグラム型</h3>
+<p>TCPは順序のあるバイトストリームを提供します。一方、UDPは個々のメッセージの境界を保つデータグラム型です。</p>
+<pre><code class="language-text">送信①：「ABC」
+送信②：「DEFG」
+送信③：「HI」
+</code></pre>
+<p>UDPはそれぞれを別のデータグラムとして扱います。TCPの場合は、送信時のデータの区切りがそのまま受信側に保証されるわけではありません。</p>
+<h3>2-4. UDPが保証しないこと</h3>
+<ul>
+<li>データが相手に到達したことの確認</li>
+<li>消失したデータの自動再送</li>
+<li>送信順序どおりの受信</li>
+<li>重複データの排除</li>
+<li>TCPのようなフロー制御・輻輳制御</li>
+</ul>
+<pre><code class="language-text">送信側                    受信側
+① ────────────────────→ ①
+② ─────────── X          消失
+③ ────────────────────→ ③
+</code></pre>
+<p>UDP自体は②の消失を検出して自動再送しません。ただし、アプリケーションが独自に確認応答や再送を行うことは可能です。<strong>「UDPには再送機能がない」と「UDPを利用する通信では再送できない」は別の意味です。</strong></p>
+<h2 id="section-03">3. TCPとUDPの違いを整理する</h2>
+<h3>3-1. 基本的な比較</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>TCP</th>
+<th>UDP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>通信方式</td>
+<td>コネクション型</td>
+<td>コネクションレス型</td>
+</tr>
+<tr>
+<td>データ形式</td>
+<td>バイトストリーム</td>
+<td>データグラム</td>
+</tr>
+<tr>
+<td>接続確立</td>
+<td>通常3ウェイハンドシェイク</td>
+<td>不要</td>
+</tr>
+<tr>
+<td>順序制御</td>
+<td>あり</td>
+<td>UDP自体にはなし</td>
+</tr>
+<tr>
+<td>再送制御</td>
+<td>あり</td>
+<td>UDP自体にはなし</td>
+</tr>
+<tr>
+<td>フロー制御</td>
+<td>あり</td>
+<td>UDP自体にはなし</td>
+</tr>
+<tr>
+<td>輻輳制御</td>
+<td>あり</td>
+<td>UDP自体にはなし</td>
+</tr>
+<tr>
+<td>基本ヘッダ長</td>
+<td>20バイト</td>
+<td>8バイト</td>
+</tr>
+<tr>
+<td>主な用途</td>
+<td>HTTPS、SSH、メールなど</td>
+<td>DNS、音声・映像通信、QUICなど</td>
+</tr>
+</tbody>
+</table>
+<h3>3-2. UDPは必ずTCPより速いのか</h3>
+<p>UDPはTCPよりヘッダが小さく、接続確立や確認応答などの処理を標準では行いません。低遅延が求められる用途に適していますが、<strong>UDPを使用すれば必ずTCPより高速になるわけではありません</strong>。UDP上のアプリケーションが厳密な再送・順序制御を実装すれば処理が必要です。性能はネットワーク品質、アプリケーションの実装、輻輳制御の方式などにも左右されます。</p>
+<h3>3-3. UDPを使う理由</h3>
+<p><strong>① 接続確立の往復を省きたい。</strong> 小さな要求と応答をやり取りするDNSなどでは、事前のTCP接続確立を省けることが利点になります。</p>
+<p><strong>② 古いデータより新しいデータを優先したい。</strong> リアルタイム音声では遅れて届いた古いデータより、現在の音声を再生することが重要な場合があります。</p>
+<p><strong>③ アプリケーションに合わせた制御を実装したい。</strong> QUICのようにUDP上で暗号化、信頼性制御、輻輳制御などを実装するプロトコルもあります。UDPは「信頼性が不要な通信専用」ではありません。</p>
+<h2 id="section-04">4. UDPヘッダの構造</h2>
+<p><strong>B：理解補助。ただしポート番号はA：必須</strong></p>
+<h3>4-1. UDPヘッダは8バイト</h3>
+<p>UDPの基本ヘッダは四つのフィールドで構成されます。</p>
+<table>
+<thead>
+<tr>
+<th>先頭16ビット</th>
+<th>次の16ビット</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>送信元ポート番号（16bit）</td>
+<td>宛先ポート番号（16bit）</td>
+</tr>
+<tr>
+<td>Length（16bit）</td>
+<td>Checksum（16bit）</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-text">┌────────────────────────┬────────────────────────┐
+│ 送信元ポート（16bit）  │ 宛先ポート（16bit）    │
+├────────────────────────┼────────────────────────┤
+│ Length（16bit）        │ Checksum（16bit）      │
+└────────────────────────┴────────────────────────┘
+│ データ（可変長）                                │
+└─────────────────────────────────────────────────┘
+</code></pre>
+<p>16ビット×4フィールド＝64ビット＝8バイトです。TCPに存在するシーケンス番号、確認応答番号、SYN・FINなどの制御フラグ、ウィンドウサイズはUDPヘッダにはありません。</p>
+<h3>4-2. 送信元・宛先ポート番号</h3>
+<pre><code class="language-text">送信元IP：192.0.2.100
+送信元UDPポート：53000
+宛先IP：192.0.2.53
+宛先UDPポート：53
+</code></pre>
+<p>宛先ポート53はDNSサービスへの問い合わせを示します。送信元ポート53000は、応答をクライアント側の適切な通信へ対応付けるために使用されます。UDPポート番号は16ビットで0〜65535ですが、利用可能なポートや割当てには用途・OS上の制約があります。</p>
+<h3>4-3. Length</h3>
+<p>Lengthフィールドは<strong>UDPヘッダとUDPデータを合わせた長さ</strong>です。</p>
+<pre><code class="language-text">UDPヘッダ：8バイト
+UDPデータ：100バイト
+UDP Length = 108バイト
+</code></pre>
+<p>IPパケット全体の長さと混同しないようにします。</p>
+<h3>4-4. Checksum</h3>
+<p>UDPチェックサムは、UDPヘッダやデータなどの破損を検出します。送信元・宛先IPアドレスなどを含む疑似ヘッダも計算に使われます。ただし、暗号学的な認証ではありません。攻撃者はチェックサムを正しく計算できます。<strong>チェックサムが正しくても送信元IPアドレスが本物であることは保証されません。</strong> IPv4のUDPではチェックサムを使用しないことも規格上可能ですが、IPv6のUDPでは原則必須です（特定用途の例外あり）。</p>
+<h2 id="section-05">5. UDP通信の具体的な流れ</h2>
+<h3>5-1. DNSの名前解決を例にする</h3>
+<p>クライアントPC <code>192.0.2.100</code> がDNSサーバ <code>192.0.2.53</code> に <code>www.example.com</code> のIPアドレスを問い合わせます。</p>
+<pre><code class="language-text">クライアントPC                        DNSサーバ
+192.0.2.100:53000                    192.0.2.53:53
+       │                                     │
+       │ ① DNS Query（UDP 53000 → 53）     │
+       ├────────────────────────────────────→│
+       │                                     │
+       │ ② DNS Response（UDP 53 → 53000）   │
+       │←────────────────────────────────────┤
+       │                                     │
+</code></pre>
+<h3>5-2. 第1段階：DNS Query</h3>
+<pre><code class="language-text">Source IP   : 192.0.2.100
+Source Port : 53000
+Destination IP   : 192.0.2.53
+Destination Port : 53
+Protocol : UDP
+</code></pre>
+<p>この段階ではTCPの3ウェイハンドシェイクは発生しません。</p>
+<h3>5-3. 第2段階：DNS Response</h3>
+<pre><code class="language-text">Source IP   : 192.0.2.53
+Source Port : 53
+Destination IP   : 192.0.2.100
+Destination Port : 53000
+Protocol : UDP
+</code></pre>
+<p>要求と応答では送信元・宛先のIPアドレスとポート番号が入れ替わります。</p>
+<h3>5-4. UDPに接続確立がなくても応答を対応付けられる理由</h3>
+<p>DNSなどのアプリケーションはUDPのIPアドレスとポート番号に加え、アプリケーションプロトコル自身の識別情報を使用します。DNSにはトランザクションIDがあります。正当な応答か判断する際には送信元IP、ポート、問い合わせ内容なども重要です。<strong>UDPにTCPのコネクション管理がないことと、アプリケーションが要求・応答を対応付けられないことは別です。</strong></p>
+<h2 id="section-06">6. UDPの信頼性とアプリケーション側の制御</h2>
+<h3>6-1. 応答がないとき何が起こるか</h3>
+<pre><code class="language-text">PC                         DNSサーバ
+DNS Query ───────────────→ 受信
+          ←───── X          DNS Response消失
+</code></pre>
+<p>UDP自体にDNS Queryを再送する機能はありません。しかしDNSクライアントの処理として、一定時間待って再問い合わせしたり別のDNSサーバへ問い合わせたりできます。<strong>UDP上で再送が観測されてもUDPプロトコル自身が再送したとは限りません。</strong></p>
+<h3>6-2. 順序が逆転した場合</h3>
+<pre><code class="language-text">送信：① → ② → ③
+受信：② → ① → ③
+</code></pre>
+<p>UDP自体は元の順序に並べ替えません。必要ならアプリケーション側でシーケンス番号などを用意します。</p>
+<h3>6-3. リアルタイム音声の例</h3>
+<p>20ミリ秒ごとの音声データを送る場合を考えます。</p>
+<pre><code class="language-text">音声① → 音声② → 音声③ → 音声④
+</code></pre>
+<p>音声②が消失して再送しても、到着が遅すぎれば再生に間に合いません。欠落を補間したり次の音声へ進んだりする方が適切なことがあります。重視されるのは完全な再送より<strong>再生時刻に間に合うこと</strong>です。ただし、すべての音声・映像通信がUDPを使うわけではありません。</p>
+<h2 id="section-07">7. UDPとICMP Port Unreachable</h2>
+<p><strong>B：第15講との接続</strong></p>
+<h3>7-1. 宛先ポートで受信するサービスがない場合</h3>
+<p>UDPの宛先ホストに該当ポートの受信先が存在しない場合、ICMP Port Unreachableが返ることがあります。</p>
+<pre><code class="language-text">PC：192.0.2.100
+サーバ：192.0.2.10
+UDP宛先ポート：9999
+
+ICMPv4
+Type = 3
+Code = 3
+</code></pre>
+<h3>7-2. UDPではTCP RSTを返さない</h3>
+<p>UDPにはRSTフラグがありません。</p>
+<table>
+<thead>
+<tr>
+<th>状況</th>
+<th>代表的な応答</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TCPの未使用ポートへSYN</td>
+<td>TCP RSTなど</td>
+</tr>
+<tr>
+<td>UDPの未使用ポートへデータ送信</td>
+<td>ICMP Port Unreachableなど</td>
+</tr>
+<tr>
+<td>FWが黙って破棄</td>
+<td>応答なしの場合もある</td>
+</tr>
+</tbody>
+</table>
+<h3>7-3. 応答がないことの意味</h3>
+<ul>
+<li>宛先ポートにサービスが存在しない。</li>
+<li>ファイアウォールがUDPを破棄している。</li>
+<li>サービスは存在するがアプリケーションが応答しない。</li>
+<li>応答パケットが途中で失われた。</li>
+<li>ICMPエラーの生成・送信が制限されている。</li>
+</ul>
+<p><strong>UDPで応答がないことだけを根拠に、ポートが閉じていると断定できません。</strong></p>
+<h2 id="section-08">8. UDPが攻撃に悪用されやすい理由</h2>
+<p><strong>A：必須</strong></p>
+<h3>8-1. 3ウェイハンドシェイクがない</h3>
+<p>TCPでは通常SYN、SYN+ACK、ACKを交換しますがUDPにはありません。UDPサービスは受信したデータグラムを処理し、送信元IPアドレスとポート番号に応答することがあります。送信元IPが偽装されていても、アプリケーションが見抜けるとは限りません。</p>
+<h3>8-2. IPスプーフィング</h3>
+<p>IPスプーフィングは送信元IPアドレスを偽装することです。</p>
+<pre><code class="language-text">実際の送信者：攻撃者
+IPヘッダの送信元：203.0.113.100（被害者）
+IPヘッダの宛先：192.0.2.53（DNSサーバ）
+</code></pre>
+<p>DNSサーバが送信元と記載された <code>203.0.113.100</code> へ応答すると、<strong>問い合わせを送っていない被害者へDNS応答が届きます。</strong></p>
+<h3>8-3. TCPでは送信元偽装が不可能なのか</h3>
+<p>TCPでも送信元IPアドレスを偽装したパケットを送れます。ただし通常のTCP接続を確立するにはSYN+ACKに対応するACKが必要です。偽装した攻撃者が戻り通信を受信できなければ難しくなります。一方UDPサービスには、接続確立の確認なしに応答を返すものがあります。</p>
+<h3>8-4. 重要な区別</h3>
+<table>
+<thead>
+<tr>
+<th>用語</th>
+<th>意味</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IPスプーフィング</td>
+<td>送信元IPアドレスを偽装する</td>
+</tr>
+<tr>
+<td>リフレクション攻撃</td>
+<td>第三者のサーバに被害者宛ての応答を送らせる</td>
+</tr>
+<tr>
+<td>増幅攻撃</td>
+<td>小さな要求から大きな応答などを発生させ通信量を増やす</td>
+</tr>
+</tbody>
+</table>
+<p>リフレクションと増幅は組み合わされることが多いものの、意味は異なります。</p>
+<h2 id="section-09">9. UDP Flood攻撃</h2>
+<h3>9-1. UDP Floodとは</h3>
+<p>大量のUDPデータグラムを対象へ送信し、ネットワーク帯域やサーバ・ネットワーク機器の処理能力を消費させるDoS攻撃です。</p>
+<ul>
+<li>受信回線の帯域が消費される。</li>
+<li>サーバが大量のパケットを処理する。</li>
+<li>ファイアウォールやルータの処理能力が消費される。</li>
+<li>宛先ポートが閉じている場合、ICMPエラーの生成負荷が生じることがある。</li>
+</ul>
+<h3>9-2. UDP Floodの流れ</h3>
+<pre><code class="language-text">攻撃者・複数の攻撃端末
+      |
+      | 大量のUDPデータグラム
+      v
+インターネット
+      |
+      v
+被害サーバ
+      |
+      ├─ 回線帯域の消費
+      ├─ パケット処理負荷
+      └─ 正規通信の遅延・失敗
+</code></pre>
+<h3>9-3. SYN Floodとの違い</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>SYN Flood</th>
+<th>UDP Flood</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主な対象</td>
+<td>TCP接続確立処理</td>
+<td>UDP受信・転送処理や帯域</td>
+</tr>
+<tr>
+<td>利用する通信</td>
+<td>TCP SYN</td>
+<td>UDPデータグラム</td>
+</tr>
+<tr>
+<td>典型的な負荷</td>
+<td>未完了接続の状態管理</td>
+<td>帯域・パケット処理</td>
+</tr>
+<tr>
+<td>代表的な対策</td>
+<td>SYN Cookie、SYN Proxyなど</td>
+<td>レート制限、フィルタリング、DDoS対策</td>
+</tr>
+</tbody>
+</table>
+<p>SYN CookieはTCPの接続確立処理に対する対策であり、UDP Floodの直接的な対策ではありません。</p>
+<h3>9-4. 対策</h3>
+<p>サーバが処理しきれない場合は手前で不要なUDPを制限します。しかし回線自体が大量通信で埋まっている場合、サーバ側FWで遮断しても回線の混雑は解消できません。<strong>ISPやDDoS対策サービスなど、被害組織の回線へ到達する前の段階で通信を処理する対策</strong>が必要です。</p>
+<h2 id="section-10">10. DNSリフレクション攻撃</h2>
+<p><strong>A：必須・科目B重点</strong></p>
+<h3>10-1. 攻撃の全体像</h3>
+<p>DNSリフレクション攻撃はDNSサーバを第三者への応答の中継役として悪用します。攻撃者はDNS Queryの送信元IPアドレスを被害者のIPアドレスに偽装し、DNSサーバはそのIPへDNS Responseを送信します。被害者へDNS応答が集中します。</p>
+<h3>10-2. 具体例</h3>
+<pre><code class="language-text">攻撃者    ：198.51.100.10
+DNSサーバ ：192.0.2.53
+被害者    ：203.0.113.100
+
+① 攻撃者 → DNSサーバ
+   DNS Query送信（IP送信元は被害者に偽装）
+   Source: 203.0.113.100 → Destination: 192.0.2.53
+
+② DNSサーバ → 被害者
+   DNS Response送信
+   Source: 192.0.2.53 → Destination: 203.0.113.100
+
+③ 被害者へ多数の応答が集中
+   被害者は問い合わせていないのに応答を受信する
+</code></pre>
+<h3>10-3. 攻撃者が直接被害者へ送らない理由</h3>
+<p>DNSサーバが応答パケットの送信元になるため、被害者から見ると通信元はDNSサーバです。攻撃者は第三者のDNSサーバを利用して通信を集中させます。これが「反射（reflection）」と呼ばれる理由です。</p>
+<h3>10-4. オープンリゾルバの問題</h3>
+<p>不特定多数から再帰問い合わせを受け付けるDNSキャッシュサーバはオープンリゾルバと呼ばれます。攻撃者が利用できると偽装した送信元IPへDNS応答を発生させられる可能性があります。<strong>再帰問い合わせを許可する送信元を正当な利用者に限定する</strong>ことが重要です。ただし権威DNSサーバは外部からの問い合わせに応答する必要がある場合があり、すべてのDNSサーバの外部問い合わせを禁止すればよいわけではありません。</p>
+<h2 id="section-11">11. DNS増幅攻撃</h2>
+<h3>11-1. リフレクションと増幅の違い</h3>
+<p>リフレクションでは第三者DNSサーバから被害者へ応答を送らせます。<strong>小さな問い合わせに対して大きな応答を返させる</strong>ことで通信量を増やすのがDNS増幅攻撃です。</p>
+<h3>11-2. 増幅率の例</h3>
+<pre><code class="language-text">DNS Query   ：100バイト
+DNS Response：2,000バイト
+増幅率 = 2,000 ÷ 100 = 20倍
+</code></pre>
+<p>説明用の例であり、すべてのDNS通信が20倍になるわけではありません。応答サイズは問い合わせ内容、DNS設定、EDNS、応答データなどによって変わります。</p>
+<h3>11-3. なぜDNSで大きな応答が発生するのか</h3>
+<p>問い合わせ内容によって複数のリソースレコードが含まれる場合があります。DNSSECの署名情報などで応答が大きくなることもあります。DNSSECは真正性検証の重要な仕組みであり、<strong>DNSSEC自体が攻撃を目的としているのではなく、大きな応答が生じ得る性質が悪用されます。</strong></p>
+<h3>11-4. DNS増幅攻撃の成立条件</h3>
+<ol>
+<li>攻撃者が送信元IPアドレスを偽装できる。</li>
+<li>DNSサーバが偽装された送信元に応答する。</li>
+<li>問い合わせに対して大きな応答が発生する。</li>
+<li>多数の問い合わせ・DNSサーバを利用して被害者へ応答を集中させる。</li>
+</ol>
+<p>送信元IPアドレスの偽装を防ぐことは重要な防御策です。</p>
+<h3>11-5. DNS増幅攻撃への対策</h3>
+<table>
+<thead>
+<tr>
+<th>対策</th>
+<th>防ぐ対象・効果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>送信元IPアドレスの検証</td>
+<td>偽装した送信元からのパケット送出を抑える</td>
+</tr>
+<tr>
+<td>オープンリゾルバの解消</td>
+<td>不特定多数による再帰問い合わせの悪用を抑える</td>
+</tr>
+<tr>
+<td>DNS応答のレート制限</td>
+<td>過剰な応答を抑える</td>
+</tr>
+<tr>
+<td>DDoS対策サービス</td>
+<td>被害者へ集中する大量通信を上流で処理する</td>
+</tr>
+<tr>
+<td>DNSサーバの役割分離・適切な設定</td>
+<td>必要な問い合わせだけを処理する構成にする</td>
+</tr>
+</tbody>
+</table>
+<h2 id="section-12">12. NTPリフレクション攻撃</h2>
+<p><strong>A：攻撃の構造と対策／B：NTP固有の背景</strong></p>
+<h3>12-1. NTPとは</h3>
+<p>NTP（Network Time Protocol）はコンピュータやネットワーク機器の時刻同期のためのプロトコルで、通常UDP 123番ポートを使用します。機器のログ時刻が大きくずれると、インシデント調査で順序を判断できなくなります。</p>
+<h3>12-2. NTPリフレクション</h3>
+<p>攻撃者が送信元IPを被害者に偽装してNTPサーバへ要求を送り、NTPサーバから被害者へ応答を送らせます。基本構造はDNSリフレクションと同じです。</p>
+<h3>12-3. monlistの悪用</h3>
+<p>参考書では古いNTP管理・状態確認機能 <code>monlist</code> を悪用した増幅攻撃が紹介されています。小さな要求に対して多数の情報を含む応答が返る場合がありました。ただし、<strong>monlistはすべての現行NTPサーバに存在する機能ではありません</strong>。旧式実装における代表例として理解します。</p>
+<h3>12-4. 対策</h3>
+<p>不要な <code>monlist</code> 機能を無効化します。加えてNTPソフトウェアを更新し、不要な管理用機能を外部公開せず、問い合わせ元を適切に制限します。</p>
+<h3>12-5. DNSとNTPの共通点</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>DNSリフレクション</th>
+<th>NTPリフレクション</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主な通信</td>
+<td>UDP 53</td>
+<td>UDP 123</td>
+</tr>
+<tr>
+<td>攻撃の基本</td>
+<td>偽装した送信元への応答</td>
+<td>偽装した送信元への応答</td>
+</tr>
+<tr>
+<td>増幅の要因</td>
+<td>要求より大きなDNS応答</td>
+<td>特定の管理要求などへの大きな応答</td>
+</tr>
+<tr>
+<td>代表的な対策</td>
+<td>再帰問い合わせ制限、応答制御</td>
+<td>不要な管理機能の無効化、アクセス制限</td>
+</tr>
+<tr>
+<td>共通対策</td>
+<td>送信元IP偽装対策、DDoS対策</td>
+<td>送信元IP偽装対策、DDoS対策</td>
+</tr>
+</tbody>
+</table>
+<p>サービス名よりも、<strong>IPスプーフィングと応答の反射・増幅という共通構造</strong>を理解します。</p>
+<h2 id="section-13">13. UDPに対するセキュリティ対策</h2>
+<h3>13-1. 送信元IPアドレスの偽装を防ぐ</h3>
+<p>リフレクション攻撃では攻撃者が被害者のIPを送信元に指定します。ネットワーク境界で送信元IPの妥当性を検証することが重要です。</p>
+<pre><code class="language-text">社内ネットワーク：192.0.2.0/24
+</code></pre>
+<p>このネットワークから外へ出るパケットの送信元がまったく別のアドレスなら遮断する構成が考えられます。送信元アドレス検証、イングレス・エグレスフィルタリングの考え方です。</p>
+<h3>13-2. 外部から内部アドレスを名乗るパケット</h3>
+<pre><code class="language-text">インターネット
+       |
+       | 送信元IP：社内アドレス
+       v
+社内境界FW
+       |
+       X  不正な送信元として遮断
+       |
+社内ネットワーク
+</code></pre>
+<p>外部インターフェースから自組織内部のアドレスを名乗るパケットが来たら偽装を疑います。ただしVPN、トンネル、特殊なルーティングなど正当な構成を考慮します。</p>
+<h3>13-3. uRPF</h3>
+<p>uRPF（Unicast Reverse Path Forwarding）は送信元IPへの戻り経路などを利用し送信元の妥当性を検証します。厳格な方式では非対称ルーティングによって正当な通信を拒否する可能性があるため、構成に合う方式を選択します。</p>
+<h3>13-4. 不要なUDPサービスを公開しない</h3>
+<p>社内向けDNSキャッシュサーバは不特定多数の再帰問い合わせを受け付ける必要がありません。再帰問い合わせ元を社内に限定し、不要なUDPサービスは停止するかFWで制限します。</p>
+<h3>13-5. レート制限</h3>
+<p>DNSやNTPの異常な頻度の要求・応答を制限します。過度なレート制限は正当な通信にも影響するため、正常時の通信量を把握して設定します。</p>
+<h3>13-6. DDoS対策は上流での対応も必要</h3>
+<p>大量のUDP応答が回線へ流入すると、組織内FWで破棄してもそこまでの回線帯域は消費済みです。ISPやDDoS対策サービスと連携し上流側で処理する必要があります。</p>
+<h2 id="section-14">14. ステートフルファイアウォールとUDP</h2>
+<p><strong>A：ログ・通信制御／B：状態管理の仕組み</strong></p>
+<h3>14-1. UDPにはコネクションがないのに状態管理できるのか</h3>
+<p>できます。ステートフルFWはUDPの通信情報を一定時間保持し、要求に対応する戻り通信を識別できます。</p>
+<pre><code class="language-text">社内PC：192.0.2.100:53000
+DNSサーバ：198.51.100.53:53
+</code></pre>
+<p>FWは通信元・先のIPとポートなどをもとに状態を記録し、戻りUDP Responseをポリシーに従い許可します。</p>
+<h3>14-2. UDPの疑似的なセッション管理</h3>
+<pre><code class="language-text">① 内部PC → 外部DNS
+   UDP 53000 → 53
+          ↓
+② FWが通信情報を記録
+   IP・ポート・プロトコル・タイムアウトなど
+          ↓
+③ 外部DNS → 内部PC
+   UDP 53 → 53000
+          ↓
+④ 記録した通信に対応すればポリシーに従って許可
+</code></pre>
+<p>これはTCPの3ウェイハンドシェイクの監視ではなく、<strong>FW独自のUDP通信状態管理</strong>です。</p>
+<h3>14-3. UDPのタイムアウト</h3>
+<p>UDPにはTCPのFINのような終了通知がないため、FWは一定時間通信がないと状態を削除することがあります。</p>
+<pre><code class="language-text">10:00:00 PC → DNS：Query
+10:00:00 FW：UDP通信状態を記録
+（一定時間経過）
+FW：UDP通信状態を削除
+10:01:30 DNS → PC：Response
+FW：対応する状態がなく拒否
+</code></pre>
+<p>タイムアウト値や状態管理方法は製品・設定によって異なります。</p>
+<h3>14-4. UDPなら外部から自由に通信できるのか</h3>
+<p>いいえ。UDPがコネクションレスであることとFWが無条件に許可することは別です。FWはIP、ポート、方向、状態、通信量などで制御できます。</p>
+<h2 id="section-15">15. UDP通信のログ分析</h2>
+<h3>15-1. 正常なDNS通信</h3>
+<pre><code class="language-text">10:00:01.100
+192.0.2.100:53000 → 192.0.2.53:53
+UDP DNS Query
+
+10:00:01.120
+192.0.2.53:53 → 192.0.2.100:53000
+UDP DNS Response
+</code></pre>
+<p>要求と応答で送信元・宛先のIP・ポートが入れ替わります。応答の正当性はDNSトランザクションIDや問い合わせ内容なども確認します。</p>
+<h3>15-2. UDPの応答がない場合</h3>
+<pre><code class="language-text">10:05:01.100
+192.0.2.100:53000 → 192.0.2.53:53
+UDP DNS Query
+
+10:05:03.100
+192.0.2.100:53000 → 192.0.2.53:53
+UDP DNS Query
+</code></pre>
+<p>DNSサーバの無応答、応答の途中破棄、アプリケーションが応答を受け付けないことなどが考えられます。<strong>再送のように見える通信はDNSクライアント側の処理かもしれません。</strong></p>
+<h3>15-3. DNSリフレクション攻撃を疑うログ</h3>
+<pre><code class="language-text">10:10:01 192.0.2.53:53 → 203.0.113.100:53000 UDP DNS Response
+10:10:01 192.0.2.54:53 → 203.0.113.100:53000 UDP DNS Response
+10:10:01 192.0.2.55:53 → 203.0.113.100:53000 UDP DNS Response
+</code></pre>
+<p>複数DNSサーバから被害者に短時間で大量応答が届いている場合、リフレクションの可能性があります。調査点は次のとおりです。</p>
+<ol>
+<li>被害者が実際にDNS Queryを送信したか。</li>
+<li>応答の件数・サイズが通常より大きいか。</li>
+<li>複数のDNSサーバから応答が集中しているか。</li>
+<li>トランザクションIDや問い合わせ内容が正当な通信と一致するか。</li>
+<li>通信量増加が回線やサービスへ影響しているか。</li>
+</ol>
+<p>大量のDNS応答だけで攻撃と断定しません。</p>
+<h3>15-4. IPスプーフィングを疑うログ</h3>
+<pre><code class="language-text">Interface : WAN
+Direction : IN
+Source IP : 192.0.2.100
+Destination IP : 192.0.2.10
+Protocol : UDP
+Action : DENY
+</code></pre>
+<p>社内ネットワークが <code>192.0.2.0/24</code> なら、WAN側から社内アドレスを送信元とするパケットが来たことになります。通常構成では偽装が疑われます。<strong>どのインターフェースから受信したか</strong>が重要な根拠です。</p>
+<h3>15-5. DNSの応答を遮断したログ</h3>
+<pre><code class="language-text">10:20:01 ALLOW
+192.0.2.100:53000 → 198.51.100.53:53 UDP
+
+10:20:05 DENY
+198.51.100.53:53 → 192.0.2.100:53000 UDP
+Reason: No matching session
+</code></pre>
+<p>要求は許可され応答は拒否されています。<code>No matching session</code> は製品依存のログ表現例です。UDP状態のタイムアウト、戻り経路の相違などが考えられますが、このログだけで確定せず設定や経路を調査します。</p>
+<h2 id="section-16">16. 科目Aで押さえる典型論点</h2>
+<table>
+<thead>
+<tr>
+<th>論点</th>
+<th>覚えるべきこと</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UDP</td>
+<td>コネクションレス型、データグラム型</td>
+</tr>
+<tr>
+<td>UDPヘッダ</td>
+<td>基本ヘッダは8バイト</td>
+</tr>
+<tr>
+<td>UDPのProtocol番号</td>
+<td>17</td>
+</tr>
+<tr>
+<td>ポート番号</td>
+<td>アプリケーションの通信端点を識別する</td>
+</tr>
+<tr>
+<td>UDPの再送</td>
+<td>UDP自体にはない</td>
+</tr>
+<tr>
+<td>UDPの順序制御</td>
+<td>UDP自体にはない</td>
+</tr>
+<tr>
+<td>DNS</td>
+<td>UDP 53を利用することがある</td>
+</tr>
+<tr>
+<td>NTP</td>
+<td>通常UDP 123</td>
+</tr>
+<tr>
+<td>IPスプーフィング</td>
+<td>送信元IPアドレスの偽装</td>
+</tr>
+<tr>
+<td>UDP Flood</td>
+<td>大量のUDP通信による帯域・処理負荷</td>
+</tr>
+<tr>
+<td>リフレクション攻撃</td>
+<td>第三者のサーバから被害者へ応答を送らせる</td>
+</tr>
+<tr>
+<td>増幅攻撃</td>
+<td>小さな要求から大きな応答を発生させる</td>
+</tr>
+<tr>
+<td>オープンリゾルバ</td>
+<td>不特定多数の再帰問い合わせを受け付けるDNSサーバ</td>
+</tr>
+<tr>
+<td>送信元偽装対策</td>
+<td>送信元アドレス検証、フィルタリング</td>
+</tr>
+<tr>
+<td>UDPとFW</td>
+<td>FWが独自に疑似的な通信状態を管理できる</td>
+</tr>
+</tbody>
+</table>
+<p>特に<strong>UDPのコネクションレス性、IPスプーフィング、リフレクション、増幅の関係</strong>を押さえます。</p>
+<h2 id="section-17">17. 科目Bの答案作成ポイント</h2>
+<h3>17-1. 設問例①：UDPとTCPの違い</h3>
+<p><strong>設問</strong>：UDPがTCPと異なり、コネクションレス型と呼ばれる理由を説明せよ。</p>
+<p><strong>答案例</strong>：「UDPはTCPの3ウェイハンドシェイクのような事前のコネクション確立を行わず、データグラムを送信するため。」</p>
+<p><strong>解説</strong>：単に「UDPは速いから」ではなく、通信開始時の処理の違いを示します。</p>
+<h3>17-2. 設問例②：UDPとIPスプーフィング</h3>
+<p><strong>設問</strong>：UDPを使用するDNSサーバが、送信元IPアドレスを偽装した要求に対して被害者へ応答を送ってしまう理由を説明せよ。</p>
+<p><strong>答案例</strong>：「UDPにはTCPのような接続確立時の応答確認がなく、DNSサーバが要求パケットに記載された送信元IPアドレスへ応答するため。」</p>
+<p><strong>解説</strong>：コネクションレス性と応答先に送信元IPアドレスを利用することを結び付けます。</p>
+<h3>17-3. 設問例③：DNSリフレクション攻撃</h3>
+<p><strong>設問</strong>：DNSリフレクション攻撃の仕組みを説明せよ。</p>
+<p><strong>答案例</strong>：「攻撃者が送信元IPアドレスを被害者に偽装してDNSサーバへ問い合わせ、DNSサーバからの応答を被害者へ集中させる攻撃。」</p>
+<p><strong>解説</strong>：「誰が偽装するか」「誰が応答するか」「誰に届くか」を明確にします。</p>
+<h3>17-4. 設問例④：DNS増幅攻撃</h3>
+<p><strong>設問</strong>：DNS増幅攻撃で攻撃者の送信量より大きな通信量が被害者へ届く理由を説明せよ。</p>
+<p><strong>答案例</strong>：「小さなDNS問い合わせに対して大きなDNS応答を返す性質を利用し、送信元を偽装した問い合わせによって、その応答を被害者へ送らせるため。」</p>
+<h3>17-5. 設問例⑤：IPスプーフィング対策</h3>
+<p><strong>設問</strong>：外部インターフェースから、送信元IPアドレスが自組織の内部ネットワークに属するパケットを受信した。どのような対策を行うべきか。</p>
+<p><strong>答案例</strong>：「外部から受信したパケットの送信元IPアドレスを検証し、自組織の内部アドレスを不正に名乗るパケットを境界機器で遮断する。」</p>
+<h3>17-6. 設問例⑥：UDP Floodと対策場所</h3>
+<p><strong>設問</strong>：UDP Floodによってインターネット接続回線が飽和している。社内ファイアウォールだけで遮断する対策が不十分な理由を説明せよ。</p>
+<p><strong>答案例</strong>：「社内ファイアウォールへ到達する前に大量のUDP通信が接続回線の帯域を消費するため、ISPなどの上流側で通信を遮断・処理する必要がある。」</p>
+<h3>17-7. 記述問題で意識する因果関係</h3>
+<pre><code class="language-text">① UDPにはTCPの接続確立手順がない
+          ↓
+② 送信元IPを偽装した要求に応答するサービスがある
+          ↓
+③ 第三者のサーバが被害者へ応答を送る
+          ↓
+④ 大きな応答が多数集中すると通信量が増幅される
+          ↓
+⑤ 送信元偽装対策・サービスのアクセス制御・上流DDoS対策で防ぐ
+</code></pre>
+<p>この流れを理解すれば、DNS、NTPなどサービスが変わっても同じ考え方で設問に対応できます。</p>
+<h2 id="section-18">18. 重要事項の整理</h2>
+<p><strong>第一に、UDPはコネクションレス型のトランスポート層プロトコルです。</strong> TCPのような3ウェイハンドシェイクを行わず、データグラムを送信します。</p>
+<p><strong>第二に、UDP自体は再送、順序制御、フロー制御を提供しません。</strong> ただし必要な制御をアプリケーション側で実装できます。</p>
+<p><strong>第三に、UDPヘッダは8バイトです。</strong> 送信元ポート、宛先ポート、Length、Checksumの四つのフィールドがあります。</p>
+<p><strong>第四に、UDPはDNS、NTP、リアルタイム通信などで利用されます。</strong> 接続確立を省けることやアプリケーション独自の制御を行えることが利点です。</p>
+<p><strong>第五に、IPスプーフィングは送信元IPアドレスの偽装です。</strong> UDPの接続確立手順がない性質と組み合わさりリフレクション攻撃に悪用されます。</p>
+<p><strong>第六に、リフレクションと増幅は異なる概念です。</strong> リフレクションは第三者に応答を送らせること、増幅は要求より大きな通信量を発生させることです。</p>
+<p><strong>第七に、UDP Floodは大量のUDP通信によって帯域や処理能力を消費させる攻撃です。</strong> 回線飽和の場合は上流側での対策が必要です。</p>
+<p><strong>第八に、UDPはコネクションレスでも、ファイアウォールは通信状態を管理できます。</strong> 要求・応答の対応付けやタイムアウトを理解すると通信障害ログを分析できます。</p>
+<h3>C：発展学習として切り分ける内容</h3>
+<ul>
+<li>QUICの暗号化ハンドシェイクとストリーム管理の詳細</li>
+<li>RTP・RTCPの詳細なパケット構造</li>
+<li>STUN、TURN、ICEなどのNAT越え技術</li>
+<li>UDP-Liteなどの特殊なトランスポートプロトコル</li>
+<li>製品固有のDDoS防御アルゴリズム</li>
+</ul>
+<p>今回の最優先事項は、<strong>UDPの仕組みを説明し、IPスプーフィングを利用した攻撃の成立理由と適切な対策を、科目Bの短い答案として記述できること</strong>です。</p>
+<a class="back" href="#section-01">↑ 講義の先頭へ</a></main></div></body></html>
