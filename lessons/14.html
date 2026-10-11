@@ -1,0 +1,147 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第14講 IPv6｜SC合格講座 詳細チャット講義本文</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f3f6fa;color:#192b3b;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;line-height:1.9}header{background:linear-gradient(130deg,#123a52,#175e64);color:#fff;padding:48px max(22px,calc((100vw - 1050px)/2)) 42px}header h1{font-size:clamp(27px,4vw,40px);margin:8px 0}header p{max-width:880px;color:#e0eff0}.eyebrow{font-size:13px;letter-spacing:.08em;opacity:.85}.wrap{max-width:1100px;margin:auto;display:grid;grid-template-columns:250px minmax(0,1fr);gap:25px;padding:24px}nav{position:sticky;top:16px;align-self:start;background:white;border:1px solid #dde5eb;border-radius:14px;padding:17px;max-height:calc(100vh - 30px);overflow:auto}nav b{font-size:14px}nav a{display:block;text-decoration:none;color:#426175;font-size:12px;padding:6px 3px;border-bottom:1px solid #f1f3f6}nav a:hover{color:#04766d}main{min-width:0}section{background:white;border:1px solid #dce5ea;border-radius:16px;margin-bottom:18px;padding:clamp(18px,3vw,33px);box-shadow:0 4px 18px #123b4b08}section h2{font-size:23px;color:#143e50;margin:0 0 18px;border-bottom:2px solid #d9e9e8;padding-bottom:11px}h3{font-size:17px;margin:28px 0 8px;color:#205d65}p{margin:10px 0 16px}ul,ol{padding-left:24px}li{margin:5px 0}table{border-collapse:collapse;width:100%;font-size:14px;margin:15px 0;display:block;overflow-x:auto}th,td{border:1px solid #dce4e9;padding:10px 12px;text-align:left;vertical-align:top}th{background:#eaf2f4;color:#1c4c59}tr:nth-child(even) td{background:#fafcfd}pre{background:#152d3b;color:#f0f6fb;padding:18px;border-radius:9px;overflow-x:auto;line-height:1.7;font-size:13px;white-space:pre}code{background:#edf2f6;border-radius:4px;padding:2px 4px;font-size:.91em}pre code{background:transparent}blockquote{margin:14px 0;padding:14px 18px;border-left:4px solid #278576;background:#eef8f5;border-radius:0 8px 8px 0}.priority{display:inline-block;background:#e8f5f1;color:#116e5d;padding:2px 10px;border-radius:30px;font-size:12px;font-weight:700}.two,.three{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.three{grid-template-columns:repeat(3,minmax(0,1fr))}.panel,.diagram,.sequence{border:1px solid #d8e4e7;background:#f7fafb;border-radius:12px;padding:14px;margin:12px 0}.diagram .three>div{background:#fff;border:1px solid #dbe5e9;text-align:center;padding:14px 5px;border-radius:8px;font-weight:700}.stat{font-size:25px;font-weight:800}.minor,.note{font-size:12px;color:#607887}.bar{background:#e6eef0;border-radius:7px;height:12px;overflow:hidden}.bar i{display:block;height:100%;background:#769cbd}.octets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.octets div{background:#eaf1f3;border-radius:6px;text-align:center;padding:7px 3px}.octets small{display:block;font-size:10px;color:#5b6f7a}.steps>div{padding:13px;background:#f0f5f6;border:1px solid #dfe9e9;border-radius:8px;margin:8px 0}.steps>div+div:before{content:'↓';display:block;text-align:center;color:#4e807c;margin:-21px 0 7px;font-size:18px}.foot{font-size:12px;color:#66808a;margin:22px 0}@media(max-width:780px){.wrap{display:block;padding:12px}nav{position:static;max-height:none;margin-bottom:16px}nav .links{columns:2}section{padding:19px}.octets{grid-template-columns:repeat(4,1fr)}.three{gap:4px}.diagram .three>div{font-size:12px}}@media print{body{background:white}header{background:#174557!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}nav{display:none}.wrap{display:block;padding:0}section{box-shadow:none;break-inside:auto;border:0;border-bottom:1px solid #bbb;border-radius:0}h2,h3{break-after:avoid}pre,table,.diagram{break-inside:avoid}}</style></head><body><header><div class="eyebrow">情報処理安全確保支援士（SC）合格講座 ｜ 第1〜23講・詳細再執筆シリーズ</div><h1>第14講｜IPv6</h1><p>第II部 ネットワーク完全攻略</p><p>IPv6の128ビットアドレス、NDP、RS・RA、SLAAC、ICMPv6、偽RA・偽NAの攻撃と対策を、科目A・科目Bの解答に結び付けて学びます。</p><p style="font-size:13px">チャット講義の第1〜17節を収録。第18節「理解度チェック」は含めません。</p></header><div class="wrap"><nav><b>目次｜全17節</b><div class="links"><a href="#s1">1. 到達目標・参考書・学習優先度</a><a href="#s2">2. IPv6が必要になった理由</a><a href="#s3">3. IPv6アドレスの表記方法</a><a href="#s4">4. IPv6のアドレス種別</a><a href="#s5">5. IPv6ヘッダとIPv4ヘッダの違い</a><a href="#s6">6. IPv6でARPを使わない理由</a><a href="#s7">7. NSとNAによるアドレス解決</a><a href="#s8">8. RS・RA・SLAACによる自動設定</a><a href="#s9">9. DAD（Duplicate Address Detection）</a><a href="#s10">10. IPv6に対する主な攻撃</a><a href="#s11">11. IPv6特有の攻撃への対策</a><a href="#s12">12. ICMPv6を一律遮断してはいけない理由</a><a href="#s13">13. IPv6のログ・設定例</a><a href="#s14">14. IPv4とIPv6の共存</a><a href="#s15">15. 科目Aの典型論点</a><a href="#s16">16. 科目Bの答案作成ポイント</a><a href="#s17">17. 重要事項の整理</a></div></nav><main><section id="s1"><h2>1. 到達目標・参考書・学習優先度</h2>
+<h3>到達目標</h3><p>この講義では、次の七つを目指します。</p><ol><li>IPv4とIPv6の違いを説明できる。</li><li>IPv6アドレスを正しく省略・展開できる。</li><li>リンクローカル、グローバルユニキャスト、ULA、マルチキャストを区別できる。</li><li>NDPのNS・NAと、ARPの違いを説明できる。</li><li>RS・RA・SLAACによるアドレス自動設定を説明できる。</li><li>偽RAや偽NAによる攻撃の仕組みと対策を説明できる。</li><li>IPv6の通信ログや設定を読み、科目Bで原因・影響・対策を簡潔に記述できる。</li></ol>
+<h3>参考書の確認箇所</h3><p>『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』第3章「ネットワーク基礎技術」3-1「TCP/IP」内「IPv6（Internet Protocol version 6）」、pp.173〜174。</p><p>参考書で確認できたのは、128ビットのアドレス、省略表記、自動設定、IPv6ヘッダの簡素化、IPsecへの対応、ユニキャスト・マルチキャスト・エニーキャストなどです。また、同章p.171〜172のARPの説明には、IPv6ではARPの代わりにICMPv6の近隣探索メッセージを使うことが記載されています。</p><p>NDPの各メッセージ、偽RA・偽NAの攻撃、ログ・設定例は、試験での応用判断を目的とした講師独自の補足です。今回はIPA過去問との個別照合までは実施していないため、出題頻度の断定はしません。</p>
+<h3>A・B・Cの学習範囲</h3><table><tr><th>優先度</th><th>内容</th></tr><tr><td><strong>A：必須</strong></td><td>IPv6アドレス、基本的なアドレス種別、NDP、NS・NA、RS・RA、SLAAC、ICMPv6、偽RA・偽NA、対策</td></tr><tr><td><strong>B：理解補助</strong></td><td>IPv6ヘッダ、DAD、DHCPv6、DNSのAAAAレコード、IPv4との共存</td></tr><tr><td><strong>C：発展</strong></td><td>拡張ヘッダの細部、SENDの暗号学的な仕組み、複雑なIPv6経路設計</td></tr></table></section><section id="s2"><h2>2. IPv6が必要になった理由</h2>
+<h3>2-1. IPv4アドレスの限界</h3><p>IPv4アドレスは32ビットです。<strong>2<sup>32</sup> = 4,294,967,296</strong>、約43億個のアドレスを表現できます。しかし、すべてのアドレスが一般的なインターネット接続端末に割り当てられるわけではありません。予約済みの範囲もあり、世界中の端末に十分なグローバルIPv4アドレスを配ることは困難です。</p><p>IPv4では、プライベートアドレスとNAT/NAPTによってアドレス不足を緩和してきました。</p><pre>192.168.1.10
+192.168.1.11
+192.168.1.12</pre><p>家庭内の複数端末がこれらを使い、ルータで送信元IPアドレスやポート番号を変換して、少数のグローバルIPv4アドレスを共有できます。ただし、NAT/NAPTはアドレス不足への対処方法であり、IPv4アドレス空間そのものを増やすわけではありません。</p>
+<h3>2-2. IPv6は128ビット</h3><div class="two"><div class="panel"><span class="minor">IPv4</span><div class="stat">32ビット</div><p>約43億通り</p><div class="bar"><i style="width:25%"></i></div></div><div class="panel"><span class="minor">IPv6</span><div class="stat">128ビット</div><p>約3.4×10<sup>38</sup>通り</p><div class="bar"><i style="width:100%;background:#22866d"></i></div></div></div><p>IPv6で表現できるアドレス数は <strong>2<sup>128</sup> ≒ 3.4×10<sup>38</sup></strong> です。これはIPv4の4倍ではありません。ビット数が4倍なので、表現できる組合せは2<sup>96</sup>倍になります。</p>
+<h3>2-3. IPv6はIPv4と互換なのか</h3><p>IPv6はIPv4の単純な拡張ではありません。IPv4とIPv6は異なるパケット形式を使うため、<strong>IPv6だけを理解する端末が、IPv4だけの端末とそのまま直接通信できるわけではありません。</strong> 実際のネットワークでは、デュアルスタックや各種変換・トンネル技術によって共存させます。</p></section><section id="s3"><h2>3. IPv6アドレスの表記方法</h2>
+<h3>3-1. 16進数で表す</h3><p>IPv4は8ビットずつ区切った10進数で表記します。</p><pre>192.168.1.10</pre><p>一方、IPv6は16ビットずつ八つのグループに分け、16進数で表記します。</p><pre>2001:0db8:0000:0000:0000:0000:0000:0001</pre><p>各グループは16ビットなので、16進数4桁で表現できます。</p><div class="octets"><div><b>2001</b><small>16ビット</small></div><div><b>0db8</b><small>16ビット</small></div><div><b>0000</b><small>16ビット</small></div><div><b>0000</b><small>16ビット</small></div><div><b>0000</b><small>16ビット</small></div><div><b>0000</b><small>16ビット</small></div><div><b>0000</b><small>16ビット</small></div><div><b>0001</b><small>16ビット</small></div></div><p class="note">16ビット × 8グループ = 128ビット</p>
+<h3>3-2. 先頭の0は省略できる</h3><p>各グループの先頭にある0は省略できます。</p><pre>0db8 → db8
+0001 → 1
+0000 → 0</pre><p>そのため、次のように書けます。</p><pre>2001:0db8:0000:0000:0000:0000:0000:0001
+↓
+2001:db8:0:0:0:0:0:1</pre>
+<h3>3-3. 連続する0は :: にまとめられる</h3><p>連続する0のグループは、<code>::</code> で省略できます。</p><pre>2001:db8:0:0:0:0:0:1
+↓
+2001:db8::1</pre><p>ただし、<strong>:: を使えるのは一つのIPv6アドレスにつき1回だけ</strong>です。<code>2001::abcd::1</code> は不正です。二つあると、それぞれ何個の0グループを省略したのか一意に決まらないからです。</p>
+<h3>3-4. 展開の考え方</h3><p><code>2001:db8:12::34</code> では、明示されているグループは2001、db8、12、34の四つです。全体は八つなので、省略されているのは四つです。</p><pre>2001:0db8:0012:0000:0000:0000:0000:0034</pre>
+<h3>3-5. プレフィックス長</h3><p>IPv6でもCIDR表記を使います。<code>2001:db8:1234:5678::1/64</code> は、先頭64ビットをネットワークのプレフィックスとして扱うことを示します。IPv6では /64 が一般的なLANのサブネット長として広く使われています。ただし、すべてのIPv6ネットワークが必ず /64 でなければならないわけではありません。用途によって異なるプレフィックス長も使われます。</p></section><section id="s4"><h2>4. IPv6のアドレス種別</h2>
+<p>IPv4では、グローバルIPアドレス、プライベートIPアドレス、ブロードキャストアドレスなどを学びました。IPv6では、用途に応じて異なる種類のアドレスを使います。</p>
+<h3>4-1. グローバルユニキャストアドレス</h3><p>グローバルなIPv6通信に使われるアドレスです。一般的な割当ては <code>2000::/3</code> の範囲にあります。例示用には <code>2001:db8::/32</code> が予約されています。この講義でも例示用アドレスとして使用します。</p>
+<h3>4-2. リンクローカルアドレス</h3><p>同一リンク内で使用するIPv6アドレスです。代表的な範囲は <code>fe80::/10</code>、例えば <code>fe80::1234:5678</code> です。近隣探索やルータとの通信などに使用され、通常、ルータを越えて別リンクへ転送されません。グローバルユニキャストアドレスが設定されていなくても、リンクローカルアドレスを使って同一リンク内の通信ができる場合があります。</p>
+<h3>4-3. ULA（Unique Local Address）</h3><p>組織内などのローカルな用途に使用するIPv6アドレスです。範囲は <code>fc00::/7</code>、実際のローカル割当てでは通常 <code>fd00::/8</code> を使います。IPv4のプライベートIPアドレスに似た用途がありますが、仕様やアドレス生成方法は同一ではありません。通常、公開インターネット上でルーティングされません。</p>
+<h3>4-4. マルチキャストアドレス</h3><p>範囲は <code>ff00::/8</code>。特定のグループに属する機器を対象とする通信です。<code>ff02::1</code> は同一リンク上の全IPv6ノード、<code>ff02::2</code> は同一リンク上の全IPv6ルータを対象とします。</p>
+<h3>4-5. エニーキャスト</h3><p>複数の機器に同じアドレスを設定し、ルーティング上、適切な一つの機器へ通信を届ける方式です。地理的に分散した複数のDNSサーバで同じエニーキャストアドレスを利用する構成があります。マルチキャストのように「グループ全員へ送信する」ものではありません。</p>
+<h3>4-6. IPv6にはブロードキャストがない</h3><p>IPv6には、IPv4のようなブロードキャストアドレスがありません。代わりにマルチキャストを利用します。</p><table><tr><th>IPv4</th><th>IPv6</th></tr><tr><td>ARP Requestでブロードキャストを使用</td><td>NDPでマルチキャストを使用</td></tr><tr><td>255.255.255.255 などのブロードキャスト</td><td>ブロードキャストなし</td></tr><tr><td>DHCPなどでブロードキャストを利用する場面がある</td><td>RS・RA・NDPなどでマルチキャストを利用</td></tr></table><p>ただし、ブロードキャストがないからといって、同一リンク上の複数端末への通信が存在しないという意味ではありません。</p></section><section id="s5"><h2>5. IPv6ヘッダとIPv4ヘッダの違い</h2>
+<p class="priority">A：基本的な違い／B：フィールドの詳細</p><p>IPv6は、IPv4のアドレス長だけを変更したプロトコルではありません。ヘッダの構造も変更されています。</p>
+<h3>5-1. 基本ヘッダは40バイト固定</h3><p>IPv4のヘッダはオプションなしの場合20バイトで、オプションを含むと長さが変わります。IPv6の基本ヘッダは<strong>40バイト固定</strong>です。</p><table><tr><th>項目</th><th>IPv4</th><th>IPv6</th></tr><tr><td>アドレス長</td><td>32ビット</td><td>128ビット</td></tr><tr><td>基本ヘッダ長</td><td>可変、最小20バイト</td><td>固定40バイト</td></tr><tr><td>TTLに相当する項目</td><td>TTL</td><td>Hop Limit</td></tr><tr><td>上位プロトコル等の識別</td><td>Protocol</td><td>Next Header</td></tr><tr><td>ヘッダチェックサム</td><td>あり</td><td>なし</td></tr><tr><td>途中ルータでのフラグメント化</td><td>条件により可能</td><td>行わない</td></tr><tr><td>ブロードキャスト</td><td>あり</td><td>なし</td></tr></table>
+<h3>5-2. Hop Limit</h3><p>IPv4のTTLに相当します。例えばHop Limitが64のパケットがルータを通過すると、通常63になります。ルータが転送できる残りのホップ数を制限し、ルーティングループによる無限転送を防ぎます。</p>
+<h3>5-3. Next Header</h3><p>IPv6基本ヘッダの後に続くヘッダの種類を識別します。後続がTCPやUDPである場合もあれば、IPv6拡張ヘッダである場合もあります。<strong>Next Headerが常にTCPやUDPを直接示すとは限りません。</strong></p>
+<h3>5-4. フラグメント化</h3><p>IPv4では条件によって途中のルータがIPパケットを分割します。IPv6では途中のルータはパケットを分割しません。転送先リンクのMTUより大きなパケットを転送できない場合、通常はICMPv6 Packet Too Bigを送信元へ通知します。送信元はその情報を利用してパケットサイズを調整します。これはPath MTU Discoveryと関係します。ICMPv6を無条件ですべて遮断すると正常な通信まで障害になる可能性があります。</p></section><section id="s6"><h2>6. IPv6でARPを使わない理由</h2>
+<p>第11講では、IPv4で宛先MACアドレスを調べるためにARPを使うことを学びました。IPv6ではARPを使用せず、<strong>ICMPv6を利用するNDP（Neighbor Discovery Protocol、近隣探索プロトコル）</strong>を使います。</p>
+<h3>6-1. NDPの役割</h3><ul><li>同一リンク上のIPv6アドレスに対応するリンク層アドレスの解決</li><li>近隣機器への到達可能性の確認</li><li>ルータの発見</li><li>IPv6プレフィックスなどの情報の取得</li><li>IPv6アドレスの重複確認</li></ul><p>NDPはIPv4のARPよりも広い役割を担っています。</p>
+<h3>6-2. NDPの主要メッセージ</h3><table><tr><th>メッセージ</th><th>略称</th><th>主な役割</th></tr><tr><td>Router Solicitation</td><td>RS</td><td>ルータへ情報の通知を要求</td></tr><tr><td>Router Advertisement</td><td>RA</td><td>ルータがプレフィックス等を通知</td></tr><tr><td>Neighbor Solicitation</td><td>NS</td><td>近隣機器のアドレス解決・到達確認・重複確認</td></tr><tr><td>Neighbor Advertisement</td><td>NA</td><td>近隣機器がアドレス情報等を通知</td></tr><tr><td>Redirect</td><td>—</td><td>より適切な次ホップなどを通知</td></tr></table><p>これらはICMPv6メッセージです。IPv4でARPが独立したプロトコルだったのに対し、IPv6の近隣探索はICMPv6に組み込まれています。</p></section><section id="s7"><h2>7. NSとNAによるアドレス解決</h2>
+<p class="priority">A：必須</p><h3>7-1. 具体的な通信例</h3><p>同一リンク上に二つのPCがあるとします。</p><pre>PC-A
+IPv6：2001:db8:1::10
+MAC ：AA:AA:AA:AA:AA:AA
+
+PC-B
+IPv6：2001:db8:1::20
+MAC ：BB:BB:BB:BB:BB:BB</pre><p>PC-AがPC-Bへ通信したいとき、IPv6アドレスは知っていますがMACアドレスをまだ知りません。IPv4ならARP Requestを送信する場面です。IPv6ではNSを送信します。</p>
+<h3>7-2. NSの送信</h3><p>PC-AはPC-BのIPv6アドレスに対応する<strong>Solicited-Node Multicast Address（要請ノードマルチキャストアドレス）</strong>を宛先としてNSを送信します。対象IPv6アドレスの下位24ビットを使って作られます。</p><pre>PC-BのIPv6アドレス：2001:db8:1::20
+対応するマルチキャスト：ff02::1:ff00:20
+
+NS
+  Target Address：2001:db8:1::20</pre><p>IPv4のARP Requestと異なり、Ethernetのブロードキャストではなく対象に応じたマルチキャストを使います。</p>
+<h3>7-3. NAの返信</h3><p>PC-Bは自分のIPv6アドレスがNSのターゲットになっていることを確認すると、通常NAを返します。NAなどの情報を利用してPC-Aは対応関係を学習します。</p><pre>2001:db8:1::20
+        ↓
+BB:BB:BB:BB:BB:BB</pre><p>この対応関係はNeighbor Cache（近隣キャッシュ）で管理されます。</p>
+<h3>7-4. 通信の流れ</h3><div class="sequence"><div class="two"><div class="panel"><b>PC-A</b><br><code>2001:db8:1::10</code></div><div class="panel"><b>PC-B</b><br><code>2001:db8:1::20</code></div></div><p>① PC-A → NS：このIPv6アドレスの機器は？</p><p>② PC-B → NA：対応するリンク層アドレスを通知</p><p>③ PC-A → 解決したMACアドレスで通信</p></div>
+<h3>7-5. ARPとの比較</h3><table><tr><th>観点</th><th>IPv4のARP</th><th>IPv6のNDP</th></tr><tr><td>使用プロトコル</td><td>ARP</td><td>ICMPv6</td></tr><tr><td>問い合わせ</td><td>ARP Request</td><td>NS</td></tr><tr><td>応答</td><td>ARP Reply</td><td>NA</td></tr><tr><td>問い合わせの配送</td><td>通常ブロードキャスト</td><td>通常マルチキャスト</td></tr><tr><td>対応関係の管理</td><td>ARPキャッシュ</td><td>Neighbor Cache</td></tr><tr><td>追加機能</td><td>主にアドレス解決</td><td>ルータ発見、到達確認、重複検出など</td></tr></table>
+<h3>7-6. 別ネットワーク宛ての場合</h3><p>最終宛先が別ネットワークにある場合、通常、最終宛先のMACアドレスを直接調べるわけではありません。ルーティングで選択した<strong>次ホップのルータのリンク層アドレス</strong>をNDPで解決します。インターネット上のIPv6サーバ宛てであっても、最初のEthernetフレームの宛先MACアドレスは通常、同一リンク上のルータのMACアドレスです。</p></section><section id="s8"><h2>8. RS・RA・SLAACによる自動設定</h2>
+<p class="priority">A：必須</p><h3>8-1. SLAACとは</h3><p>SLAACはStateless Address Autoconfigurationの略です。端末がルータから通知されたプレフィックス情報などを使って自分のIPv6アドレスを設定します。手動設定を減らす目的がありますが、SLAACとDHCPv6は異なる仕組みです。</p>
+<h3>8-2. RSとRA</h3><p>端末はルータの情報を取得するためにRS（Router Solicitation）を送信できます。ルータはRA（Router Advertisement）を送信してネットワーク情報を通知します。</p><ul><li>IPv6プレフィックス</li><li>デフォルトルータに関する情報</li><li>アドレス自動設定に関するフラグ</li><li>有効期間などの情報</li></ul>
+<h3>8-3. 自動設定の流れ</h3><div class="steps"><div>① 端末がリンクローカルアドレスを設定<br><code>fe80::1234</code></div><div>② 端末がRSを送信：ルータへ情報の通知を要求</div><div>③ ルータがRAを送信：<code>2001:db8:100:1::/64</code> を通知</div><div>④ 端末がIPv6アドレスを生成：プレフィックスとインタフェース識別子などを組み合わせる</div><div>⑤ 重複確認などを経てアドレスを利用：必要に応じてデフォルトルータ情報も設定</div></div><p>RAはRSへの応答としてだけ送信されるわけではなく、ルータが定期的に送信する場合もあります。また、インタフェース識別子は必ずMACアドレスから生成されるわけではありません。プライバシー保護や安定性のために別の生成方法が利用されます。</p>
+<h3>8-4. DHCPv6との関係</h3><p>IPv6でもDHCPv6を使用できます。構成によってアドレスやDNS関連情報などを配布します。一方、<strong>IPv6のデフォルトルータは通常RAによって通知されます。</strong> DHCPv6だけですべてのIPv6ネットワーク設定を配布する、という理解は不正確です。</p><table><tr><th>方式</th><th>主な役割</th></tr><tr><td>SLAAC</td><td>RAの情報などを利用した端末自身のアドレス設定</td></tr><tr><td>Stateful DHCPv6</td><td>DHCPv6サーバによるアドレス割当て</td></tr><tr><td>Stateless DHCPv6</td><td>アドレス以外の設定情報の取得</td></tr><tr><td>RA</td><td>プレフィックス、デフォルトルータなどの通知</td></tr></table></section><section id="s9"><h2>9. DAD（Duplicate Address Detection）</h2>
+<p class="priority">B：理解補助</p><h3>9-1. DADの目的</h3><p>IPv6端末がアドレスを設定するとき、そのアドレスが同一リンク上で既に使用されていないか確認する仕組みです。IPv4でのアドレス重複と同様に、同じアドレスを複数の端末が使用すると通信に問題が生じます。</p>
+<h3>9-2. DADの通信</h3><p>端末は使用予定のIPv6アドレスをターゲットとするNSを送信します。まだアドレスを正式に使用していないため、通常、送信元IPv6アドレスに未指定アドレス <code>::</code> を使います。</p><pre>IPv6送信元：::
+ICMPv6     ：NS
+Target     ：使用予定のIPv6アドレス</pre><p>同じアドレスを使用する別の機器から応答などがあれば、アドレスの重複が検出されます。</p>
+<h3>9-3. セキュリティ上の意味</h3><p>DADはアドレス重複を検出しますが、攻撃者が不正なNDPメッセージを送信することで正規端末のアドレス設定を妨害する可能性もあります。NDPを利用する仕組みがあるからといって、その情報が自動的に信頼できるわけではありません。</p></section><section id="s10"><h2>10. IPv6に対する主な攻撃</h2>
+<p class="priority">A：必須</p><p>IPv6では、NDPやRAによって端末がネットワーク情報を学習します。不正な機器が偽の情報を送信すると、通信経路の誘導や通信妨害につながる可能性があります。</p>
+<h3>10-1. 偽RA（Rogue Router Advertisement）</h3><p>攻撃者が正規ルータになりすまし、不正なRAを送信する攻撃です。</p><pre>正規ルータ
+  IPv6：fe80::1
+
+攻撃者
+  IPv6：fe80::bad
+
+被害端末
+  IPv6：2001:db8:100:1::10</pre><p>本来、被害端末は正規ルータをデフォルトルータとして使用するべきです。攻撃者が不正なRAで自分をルータとして認識させると、被害端末が攻撃者へパケットを送る可能性があります。</p><div class="diagram"><strong>偽RAによる経路誘導の概念図</strong><div class="three"><div>被害端末</div><div>攻撃者<br><small>偽RAを送信</small></div><div>正規ルータ</div></div><p>攻撃前：被害端末 → 正規ルータ → 外部ネットワーク</p><p>攻撃後：被害端末 → 攻撃者 → 外部ネットワーク（攻撃者が転送する場合）</p></div><p>攻撃者が通信を転送すれば中間者攻撃、転送しなければ通信不能になる可能性があります。ただし、偽RAを送信しただけで必ず成功するわけではなく、端末のRA受理条件、ルータ優先度、既存の経路情報、L2の保護設定などに依存します。</p>
+<h3>10-2. 偽NA（Neighbor Advertisement Spoofing）</h3><p>攻撃者が偽のNAを送信してNeighbor Cacheに誤った対応関係を登録させる攻撃で、Neighbor Cache Poisoningなどと呼びます。</p><pre>正規ルータ：fe80::1
+正規MAC   ：AA:AA:AA:AA:AA:AA
+
+攻撃者が学習させたい偽の対応：
+fe80::1 → CC:CC:CC:CC:CC:CC</pre><p>被害端末が偽の対応を受理すると、正規ルータ宛てに送るべきEthernetフレームを攻撃者へ送信してしまう可能性があります。</p>
+<h3>10-3. 攻撃の流れ</h3><div class="steps"><div>① 正常なNeighbor Cache：<code>fe80::1 → AA:AA:AA:AA:AA:AA</code></div><div>② 攻撃者が偽NAを送信：ルータのIPv6アドレスに攻撃者のMACアドレスを対応付けようとする</div><div>③ 被害端末が誤った情報を受理：<code>fe80::1 → CC:CC:CC:CC:CC:CC</code></div><div>④ ルータ宛ての通信が攻撃者へ送られる可能性：中間者攻撃や通信妨害につながる</div></div><p>Neighbor Cacheの更新には状態や受信メッセージの条件があり、任意の偽NAが必ずキャッシュを書き換えるわけではありません。</p>
+<h3>10-4. ARP Spoofingとの比較</h3><table><tr><th>観点</th><th>ARP Spoofing</th><th>偽NAによる攻撃</th></tr><tr><td>対象</td><td>IPv4</td><td>IPv6</td></tr><tr><td>偽装する情報</td><td>IPv4とMACの対応</td><td>IPv6とMACの対応</td></tr><tr><td>使用する仕組み</td><td>ARP</td><td>ICMPv6のNDP</td></tr><tr><td>主な影響</td><td>経路誘導、MITM、通信妨害</td><td>経路誘導、MITM、通信妨害</td></tr><tr><td>防御の例</td><td>DAIなど</td><td>ND Inspection、アクセス制御など</td></tr></table>
+<h3>10-5. IPv6でもTLSは必要</h3><p>攻撃者が通信経路を誘導できても、適切に検証されたTLS通信の内容を自由に復号・改ざんできるわけではありません。IPv6のネットワーク層での安全性と、HTTPS/TLSによる通信内容の保護は別の問題です。</p></section><section id="s11"><h2>11. IPv6特有の攻撃への対策</h2>
+<h3>11-1. RA Guard</h3><p>RA GuardはL2スイッチなどで不正なRAを制限する仕組みです。正規ルータ接続ポートからのRAを許可し、一般端末用ポートからのRAを遮断する構成が考えられます。</p><pre>正規ルータ接続ポート
+  RA：許可
+
+一般端末接続ポート
+  RA：拒否</pre><p>一般端末が勝手にルータとしてRAを送信することを抑制できます。ただし、効果は機器の実装や設定、IPv6拡張ヘッダへの対応などに依存します。</p>
+<h3>11-2. ND Inspection</h3><p>ND InspectionなどはNDPメッセージの妥当性を検査し、不正な近隣情報の学習を抑制します。IPv4のDAIと同様に、信頼できない端末からのアドレス対応情報を無条件に受け入れないという考え方です。ただし、DAIとND Inspectionは同一のプロトコルではありません。</p>
+<h3>11-3. 802.1Xによる接続認証</h3><p>802.1Xを利用してネットワークに接続する端末を認証し、攻撃者が勝手に社内LANへ接続するリスクを下げます。ただし、認証済み端末が後から不正なNDPメッセージを送信する可能性は残るため、802.1Xだけで偽RA・偽NAを完全に防止できるわけではありません。</p>
+<h3>11-4. IPv6対応のファイアウォール・監視</h3><p>IPv4のファイアウォール設定があっても、IPv6通信に同じ条件が適用されているとは限りません。IPv4で遮断していてもIPv6では許可される設定漏れが発生する可能性があります。</p><ul><li>IPv6通信に適切なACL・ファイアウォールルールを設定する。</li><li>IPv6ルーティングとRA送信元を確認する。</li><li>NDPやICMPv6のログを監視する。</li><li>IPv4とIPv6の双方でセキュリティポリシーの整合性を確認する。</li></ul></section><section id="s12"><h2>12. ICMPv6を一律遮断してはいけない理由</h2>
+<p class="priority">A：必須</p><h3>12-1. ICMPv6はエラー通知だけではない</h3><p>IPv4のICMPはpingやエラー通知などで使われます。ICMPv6はさらに多くの役割を担います。</p><ul><li>NS・NAによる近隣探索</li><li>RS・RAによるルータ発見</li><li>Packet Too Bigによる経路MTU情報の通知</li><li>Destination Unreachableなどのエラー通知</li></ul>
+<h3>12-2. 一律遮断すると何が起きるか</h3><pre>deny all ICMPv6</pre><p>適用する場所や通信方向によっては、次の問題が起きます。</p><table><tr><th>遮断するメッセージ</th><th>起こり得る問題</th></tr><tr><td>NS・NA</td><td>同一リンク上のアドレス解決ができない</td></tr><tr><td>RS・RA</td><td>ルータ情報やプレフィックス情報を取得できない</td></tr><tr><td>Packet Too Big</td><td>経路MTUに応じたサイズ調整ができず通信障害が発生する</td></tr><tr><td>Destination Unreachable</td><td>障害原因の把握が難しくなる</td></tr></table>
+<h3>12-3. 適切な対策</h3><p>ICMPv6をすべて許可することでも、すべて拒否することでもありません。<strong>必要なICMPv6メッセージを適切な範囲で許可し、不正な送信元や不適切な通信を制限すること</strong>です。端末向けポートからの不正なRAをRA Guardで遮断する一方、正規ルータからのRAは利用できるようにします。Path MTU Discoveryに必要なPacket Too Bigも無条件で遮断しないようにします。科目Bでは、何のために必要なメッセージをどの条件で許可するか説明すると正確です。</p></section><section id="s13"><h2>13. IPv6のログ・設定例</h2>
+<h3>13-1. 正常なアドレス設定の例</h3><pre>IPv6 Address:
+  2001:db8:100:1::1234/64
+
+Link-local Address:
+  fe80::1234
+
+Default Gateway:
+  fe80::1</pre><p>この構成はIPv6として自然です。デフォルトゲートウェイがリンクローカルアドレスであることは異常ではありません。同一リンク上のルータをリンクローカルアドレスで識別して利用することが一般的だからです。</p>
+<h3>13-2. 不審なRAのログ</h3><pre>10:15:01 RA received
+Source IPv6 : fe80::1
+Source MAC  : AA:AA:AA:AA:AA:AA
+Prefix      : 2001:db8:100:1::/64
+
+10:15:08 RA received
+Source IPv6 : fe80::bad
+Source MAC  : CC:CC:CC:CC:CC:CC
+Prefix      : 2001:db8:999:1::/64</pre><p>正規ルータ <code>fe80::1</code> 以外から異なるプレフィックスを通知するRAが届いています。偽RAの可能性を調査する必要があります。ただし、複数の正規ルータが存在するネットワークもあるため、RAの送信元が複数あるだけで攻撃と断定してはいけません。</p><ol><li><code>fe80::bad</code> は正規のルータか。</li><li>そのMACアドレスが接続されているスイッチポートはどこか。</li><li>通知されたプレフィックスはネットワーク設計に存在するか。</li><li>端末のデフォルトルートやIPv6アドレスが変更されていないか。</li><li>RA Guardなどが適切に設定されているか。</li></ol>
+<h3>13-3. Neighbor Cacheの異常</h3><pre>10:20:00
+fe80::1 → AA:AA:AA:AA:AA:AA
+
+10:20:10
+fe80::1 → CC:CC:CC:CC:CC:CC</pre><p>同じIPv6アドレスに対するMACアドレスの対応が短時間で変化しています。偽NAによるNeighbor Cache Poisoningの可能性がありますが、ルータ交換、冗長化構成の切替え、正当なMAC変更でも起こり得ます。機器構成とNDPメッセージを照合します。</p>
+<h3>13-4. ICMPv6の遮断による通信障害</h3><pre>Firewall Log
+
+Action : DENY
+Proto  : ICMPv6
+Type   : Packet Too Big</pre><p>Path MTU Discoveryに必要な通知が遮断されている可能性があります。小さなデータは通信できるのに大きなデータで通信が停止する場合、経路MTU障害を疑う材料になります。ただし、ログが一つあるだけで原因と断定せず、通信経路、MTU、パケットサイズ、発生条件を確認します。</p></section><section id="s14"><h2>14. IPv4とIPv6の共存</h2>
+<p class="priority">B：理解補助</p><h3>14-1. デュアルスタック</h3><p>端末やネットワーク機器がIPv4とIPv6の両方を使用する方式です。</p><pre>IPv4：
+192.168.1.10/24
+
+IPv6：
+2001:db8:100:1::10/64</pre><p>通信先や名前解決の結果に応じてIPv4またはIPv6を利用します。</p>
+<h3>14-2. DNSのAレコードとAAAAレコード</h3><table><tr><th>レコード</th><th>対応するアドレス</th></tr><tr><td>A</td><td>IPv4アドレス</td></tr><tr><td>AAAA</td><td>IPv6アドレス</td></tr></table><pre>example.test A
+  192.0.2.10
+
+example.test AAAA
+  2001:db8::10</pre><p>同じホスト名に両方が登録されることがあります。ただし、AAAAレコードが存在するだけで必ずIPv6通信になるとは限らず、端末設定や到達性、アドレス選択などによって変わります。</p>
+<h3>14-3. IPv6の設定漏れ</h3><pre>IPv4：
+管理ネットワークからのみTCP 22を許可
+
+IPv6：
+すべての送信元からTCP 22を許可</pre><p>IPv4で制限しているつもりでも、IPv6経由で管理用サービスにアクセスされる可能性があります。デュアルスタック環境では、<strong>IPv4とIPv6の両方に対して通信制御を設計する必要があります。</strong></p>
+<h3>14-4. IPv6ならIPsecで必ず暗号化されるのか</h3><p>誤解です。IPv6はIPsecを利用できますが、IPv6通信が自動的にすべてIPsecで暗号化されるわけではありません。IPsecの利用には適切な設定や鍵管理が必要です。IPv6であること自体は、通信内容の暗号化や送信者認証を保証しません。</p></section><section id="s15"><h2>15. 科目Aの典型論点</h2>
+<table><tr><th>論点</th><th>覚えるべき内容</th></tr><tr><td>IPv6アドレス長</td><td>128ビット</td></tr><tr><td>アドレス表記</td><td>16進数、8グループ</td></tr><tr><td>::</td><td>連続する0グループの省略。1回だけ使用</td></tr><tr><td>グローバルユニキャスト</td><td>一般的な割当ては 2000::/3</td></tr><tr><td>リンクローカル</td><td>fe80::/10</td></tr><tr><td>ULA</td><td>fc00::/7</td></tr><tr><td>マルチキャスト</td><td>ff00::/8</td></tr><tr><td>ループバック</td><td>::1</td></tr><tr><td>ブロードキャスト</td><td>IPv6には存在しない</td></tr><tr><td>アドレス解決</td><td>ICMPv6のNS・NA</td></tr><tr><td>ルータ発見</td><td>RS・RA</td></tr><tr><td>自動設定</td><td>SLAAC</td></tr><tr><td>重複確認</td><td>DAD</td></tr><tr><td>不正RAへの対策例</td><td>RA Guard</td></tr><tr><td>不正な近隣情報への対策例</td><td>ND Inspection</td></tr><tr><td>ICMPv6</td><td>正常通信に必要なメッセージがある</td></tr><tr><td>IPv6基本ヘッダ</td><td>40バイト固定</td></tr><tr><td>TTLに相当</td><td>Hop Limit</td></tr></table><p>特に混同しやすいのはNS・NAとRS・RAです。</p><ul><li><strong>NS・NA</strong>：近隣のアドレス解決や到達確認など</li><li><strong>RS・RA</strong>：ルータ発見やネットワーク情報の通知</li></ul></section><section id="s16"><h2>16. 科目Bの答案作成ポイント</h2>
+<h3>16-1. 設問例①：ARPとNDPの違い</h3><p><strong>設問</strong>：IPv6ではARPの代わりに何を使用し、どのようにリンク層アドレスを取得するか説明せよ。</p><blockquote>ICMPv6のNDPを使用し、対象IPv6アドレスについてNSを送信し、NAなどの情報から対応するリンク層アドレスを取得する。</blockquote><p><strong>解説</strong>：「NDPを使う」だけでなく、NSとNAの役割まで書けるようにしてください。</p>
+<h3>16-2. 設問例②：偽RA</h3><p><strong>設問</strong>：攻撃者が偽のRAを送信することで発生するセキュリティ上の問題を説明せよ。</p><blockquote>端末が攻撃者をデフォルトルータとして認識すると、外部宛ての通信が攻撃者へ送られ、中間者攻撃や通信妨害につながる可能性がある。</blockquote><pre>偽RAの送信
+  ↓
+不正なルータ情報の学習
+  ↓
+通信経路の誘導
+  ↓
+中間者攻撃または通信妨害</pre><p><strong>解説</strong>：「偽RAで情報漏えいする」とだけ書くのでは、なぜ情報漏えいにつながるのかが不明確です。</p>
+<h3>16-3. 設問例③：偽NA</h3><p><strong>設問</strong>：偽NAによるNeighbor Cache Poisoningの仕組みを説明せよ。</p><blockquote>攻撃者が偽のNAを送信し、正規ルータのIPv6アドレスに攻撃者のMACアドレスを対応付けさせることで、正規ルータ宛ての通信を攻撃者へ誘導する。</blockquote><p><strong>解説</strong>：ARP Spoofingと同様に、アドレスの対応関係を偽装することが本質です。</p>
+<h3>16-4. 設問例④：ICMPv6を一律遮断してはいけない理由</h3><p><strong>設問</strong>：IPv6ネットワークでICMPv6をすべて遮断することが不適切な理由を説明せよ。</p><blockquote>ICMPv6は近隣探索、ルータ発見、経路MTUの通知などに必要であり、一律に遮断するとIPv6のアドレス解決や正常な通信ができなくなる可能性があるため。</blockquote><p><strong>解説</strong>：「ICMPv6は重要だから」では不十分です。どの処理に必要で、遮断すると何が起きるかを具体的に書いてください。</p>
+<h3>16-5. 設問例⑤：IPv6のファイアウォール設定</h3><p><strong>設問</strong>：IPv4の管理用通信を制限しているにもかかわらず、IPv6側で同等の制限をしていなかった場合の問題と対策を説明せよ。</p><blockquote>IPv6経由で管理用サービスへ不正に接続される可能性があるため、IPv6側にもIPv4と整合するアクセス制御ルールを設定する。</blockquote><p><strong>解説</strong>：IPv4とIPv6は異なる通信方式です。IPv4で通信制御を行っていても、IPv6に同じ制御が適用されるとは限りません。</p></section><section id="s17"><h2>17. 重要事項の整理</h2>
+<p><strong>第一に、IPv6アドレスは128ビットです。</strong> 16進数8グループで表し、連続する0のグループを <code>::</code> で省略できます。</p><p><strong>第二に、IPv6にはブロードキャストがありません。</strong> 代わりにマルチキャストを利用します。</p><p><strong>第三に、IPv6ではARPを使いません。</strong> ICMPv6を利用するNDPによって、NS・NAを用いたアドレス解決などを行います。</p><p><strong>第四に、RS・RAとSLAACを理解します。</strong> 端末はルータからプレフィックスなどの情報を受け取り、IPv6アドレスを自動設定できます。</p><p><strong>第五に、NDPやRAは攻撃対象になります。</strong> 偽RAによる不正なルータ情報の通知、偽NAによるNeighbor Cache Poisoningなどに注意します。</p><p><strong>第六に、ICMPv6を一律遮断してはいけません。</strong> IPv6の正常な動作に必要なメッセージが含まれているからです。</p><p><strong>第七に、IPv6であること自体は通信の安全性を保証しません。</strong> IPv4と同様に、適切なアクセス制御、認証、暗号化、監視が必要です。</p>
+<h3>C：発展として切り分けた内容</h3><ul><li>IPv6拡張ヘッダの全種類と詳細な処理</li><li>SEND（Secure Neighbor Discovery）の暗号学的な検証方式</li><li>IPv6の複雑な経路集約</li><li>IPv6移行技術の実装上の細部</li><li>製品固有のRA GuardやND Inspectionの設定コマンド</li></ul><p>これらは必要になったときに補講として扱います。</p></section><p class="foot">既修了講義の再学習教材。既存の採点履歴・進捗表は変更しません。</p></main></div></body></html>
