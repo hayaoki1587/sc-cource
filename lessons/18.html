@@ -1,0 +1,813 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第18講｜ポート番号とソケット｜全17節</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f1f5f9;color:#203044;font:16px/1.92 -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}main{max-width:1020px;margin:36px auto;padding:42px 58px;background:white;border:1px solid #dce4ed;border-radius:16px;box-shadow:0 12px 40px #0f172a0a}h1{font-size:2.1rem;color:#12375a;border-bottom:4px solid #2563eb;padding-bottom:16px}h2{font-size:1.5rem;color:#174a79;margin:58px 0 22px;padding:12px 15px;border-left:6px solid #2563eb;background:#eff6ff;scroll-margin-top:16px}h3{font-size:1.16rem;color:#1e40af;margin:30px 0 13px}p{margin:12px 0}strong{color:#103b68}table{border-collapse:collapse;width:100%;margin:20px 0 26px;font-size:.92rem}th,td{border:1px solid #cbd5e1;padding:10px 12px;text-align:left;vertical-align:top}th{background:#eaf1f9;color:#153e62}tr:nth-child(even){background:#f8fafc}pre{overflow-x:auto;background:#132337;color:#e6f1ff;border-radius:9px;padding:18px 20px;line-height:1.6;font-size:.9rem}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#eef2f7;padding:2px 5px;border-radius:4px;font-size:.9em}pre code{background:none;color:inherit;padding:0}ul,ol{padding-left:1.65rem}li{padding:3px 0}hr{border:0;border-top:1px solid #dbe3ee;margin:35px 0}.intro{color:#64748b;font-size:.93rem}.toc{background:#f8fafc;border:1px solid #dce5f0;border-radius:12px;padding:20px 28px;margin:25px 0}.toc h2{background:none;border:0;padding:0;margin:0 0 10px;font-size:1.2rem}.toc ol{columns:2;column-gap:30px;margin:0}.toc li{break-inside:avoid;font-size:.9rem}.toc a{color:#185b9c;text-decoration:none}.toc a:hover{text-decoration:underline}.footnote{margin-top:55px;padding:18px;background:#f8fafc;border-radius:10px;color:#475569;font-size:.85rem}@media(max-width:720px){main{margin:0;padding:24px 18px;border:0;border-radius:0}h1{font-size:1.6rem}h2{font-size:1.24rem}.toc ol{columns:1}table{display:block;overflow-x:auto}pre{font-size:.78rem}}@media print{body{background:white}main{margin:0;padding:0;border:0;box-shadow:none}h2{break-after:avoid}pre,table{break-inside:avoid}}</style></head><body><main><div class="intro">情報処理安全確保支援士（SC）合格講座｜第18講・再執筆版｜理解度チェックなし</div><nav class="toc" aria-label="目次"><h2>目次</h2><ol><li><a href="#section-1">1. 到達目標・参考書・学習優先度</a></li><li><a href="#section-2">2. IPアドレスだけでは通信先を特定できない</a></li><li><a href="#section-3">3. ポート番号の範囲と種類</a></li><li><a href="#section-4">4. 主要なポート番号を覚える</a></li><li><a href="#section-5">5. ソケットとは何か</a></li><li><a href="#section-6">6. TCPサーバはどのように接続を受け付けるのか</a></li><li><a href="#section-7">7. TCPコネクションと4タプル</a></li><li><a href="#section-8">8. TCPとUDPで同じポート番号を使える理由</a></li><li><a href="#section-9">9. 待受けポートと通信中のポート</a></li><li><a href="#section-10">10. NAPTとポート番号</a></li><li><a href="#section-11">11. ファイアウォールとポート番号</a></li><li><a href="#section-12">12. ポートスキャンの仕組み</a></li><li><a href="#section-13">13. ポート番号に関係するセキュリティ対策</a></li><li><a href="#section-14">14. 通信ログとソケット状態の読み取り</a></li><li><a href="#section-15">15. 科目Aで押さえる典型論点</a></li><li><a href="#section-16">16. 科目Bの答案作成ポイント</a></li><li><a href="#section-17">17. 重要事項の整理</a></li></ol></nav><h1>第18講｜ポート番号とソケット</h1>
+<p><strong>情報処理安全確保支援士（SC）合格講座｜第1〜23講・詳細再執筆シリーズ</strong></p>
+<p>第16講ではTCP、第17講ではUDPを学びました。今回は、それらの通信を<strong>どのアプリケーションに届けるのか</strong>を決める「ポート番号」と、アプリケーションがネットワーク通信を利用するための「ソケット」を扱います。</p>
+<p>例えば、同じサーバでHTTPS、SSH、DNSが同時に稼働していても、通信を正しいサービスに振り分けられるのはなぜでしょうか。また、ファイアウォールでTCP 443番を許可したのに、Webサイトへ接続できない場合、何を確認すればよいのでしょうか。</p>
+<p>この講義では、ポート番号の暗記だけでなく、<strong>IPアドレス・ポート番号・プロトコル・ソケット・通信状態の関係</strong>を理解し、科目Bのログ分析やアクセス制御の問題に対応できるようにします。</p>
+<p><strong>既存学習記録：第18講／14点（15点満点）／理解済み。</strong> 既修了講義の再執筆であり、過去の得点・修了履歴は変更しません。</p>
+<h2 id="section-1">1. 到達目標・参考書・学習優先度</h2>
+<h3>1-1. 到達目標</h3>
+<ol>
+<li>IPアドレスとポート番号の役割の違いを説明できる。</li>
+<li>TCPとUDPでポート番号が独立して管理されることを理解する。</li>
+<li>ウェルノウンポート、登録済みポート、動的・プライベートポートの違いを説明できる。</li>
+<li>主要なサービスのポート番号とプロトコルを判断できる。</li>
+<li>ソケットとTCPコネクションの関係を説明できる。</li>
+<li>複数クライアントが同じサーバポートに同時接続できる理由を説明できる。</li>
+<li>ファイアウォールやNAPTのログから通信を識別できる。</li>
+<li>ポートスキャンや不適切な公開設定の脅威と対策を説明できる。</li>
+</ol>
+<h3>1-2. 参考書の対応箇所</h3>
+<p>基本参考書：『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』</p>
+<table>
+<thead>
+<tr>
+  <th>章・節</th>
+  <th>ページ</th>
+  <th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>第3章「ネットワーク基礎技術」3-1-3「TCPとUDP」</td>
+  <td>p.175</td>
+  <td>トランスポート層とポート番号の役割</td>
+</tr>
+<tr>
+  <td>同節</td>
+  <td>pp.176–177</td>
+  <td>TCP・UDP、ウェルノウンポート、動的な送信元ポート</td>
+</tr>
+<tr>
+  <td>同節</td>
+  <td>pp.177–178</td>
+  <td>TCP・UDPの代表的なサービスとポート番号</td>
+</tr>
+<tr>
+  <td>第3章のNAPTに関する説明</td>
+  <td>該当箇所</td>
+  <td>IPアドレス・ポート番号・プロトコルによる通信の対応付け</td>
+</tr>
+</tbody>
+</table>
+<p>参考書のポート番号とトランスポート層の説明を土台にしています。ソケットAPI、TCPの待受けソケットと接続済みソケットの違い、ポートスキャンのログ、ファイアウォールの判定例などは、<strong>講師による技術・試験対策上の補足</strong>です。</p>
+<h3>1-3. A・B・Cの学習優先度</h3>
+<table>
+<thead>
+<tr>
+  <th>優先度</th>
+  <th>学習内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>A：必須</strong></td>
+  <td>IPとポートの違い、TCP/UDP別のポート、主要ポート番号、通信の識別、FW・NAPT・ログ、ポートスキャン、科目B答案</td>
+</tr>
+<tr>
+  <td><strong>B：理解補助</strong></td>
+  <td>ソケット、bind・listen・accept、待受けと接続済みソケット、動的ポートの割当て</td>
+</tr>
+<tr>
+  <td><strong>C：発展</strong></td>
+  <td>OS固有のソケット実装、SO_REUSEPORTなどのオプション、カーネル内部のポート管理</td>
+</tr>
+</tbody>
+</table>
+<h2 id="section-2">2. IPアドレスだけでは通信先を特定できない</h2>
+<h3>2-1. 一台のサーバで複数のサービスが動く</h3>
+<pre><code class="language-text">サーバIP：203.0.113.10
+
+HTTPSサーバ ─ TCP 443
+SSHサーバ   ─ TCP 22
+DNSサーバ   ─ UDP 53
+</code></pre>
+<p>宛先IPアドレスがすべて <code>203.0.113.10</code> でも、どのアプリケーションへ渡すかは分かりません。そこで、TCPやUDPのヘッダに含まれる<strong>宛先ポート番号</strong>を使います。</p>
+<pre><code class="language-text">                サーバ：203.0.113.10
+                         │
+           ┌─────────────┼─────────────┐
+           ▼             ▼             ▼
+      HTTPSサーバ     SSHサーバ      DNSサーバ
+       TCP 443        TCP 22        UDP 53
+</code></pre>
+<h3>2-2. IPアドレスとポート番号の役割</h3>
+<table>
+<thead>
+<tr>
+  <th>情報</th>
+  <th>主な役割</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>宛先IPアドレス</td>
+  <td>通信先のホストやネットワークインターフェースなどを識別する</td>
+</tr>
+<tr>
+  <td>IPのプロトコル番号</td>
+  <td>TCP、UDPなど、上位のプロトコルを識別する</td>
+</tr>
+<tr>
+  <td>宛先ポート番号</td>
+  <td>受信先のサービス・通信端点を識別する</td>
+</tr>
+<tr>
+  <td>送信元ポート番号</td>
+  <td>応答先や通信の識別に使用する</td>
+</tr>
+</tbody>
+</table>
+<p>ポート番号はIPアドレスの代わりにはなりません。<code>TCP 443</code> だけでは世界中のどのWebサーバか分からず、<code>203.0.113.10:443</code> のように組み合わせます。</p>
+<h3>2-3. OSはポート番号だけで振り分けるのか</h3>
+<p>厳密には、OSはトランスポート層のプロトコル、宛先IPアドレス、宛先ポート番号、ソケットの状態なども考慮して受信先を判断します。DNSではTCP 53とUDP 53の両方が使われますが、これらは別の通信です。<strong>ポート番号は、TCPとUDPをまたいで一つの共通番号空間を使っているわけではありません。</strong></p>
+<h2 id="section-3">3. ポート番号の範囲と種類</h2>
+<h3>3-1. ポート番号は16ビット</h3>
+<p>TCPとUDPのポート番号は、それぞれ16ビットで表現され、値の範囲は <strong>0〜65535</strong> です。ただし0番は通常のサービス待受けに使う番号として扱うものではなく、特別な用途があります。</p>
+<h3>3-2. 三つの区分</h3>
+<table>
+<thead>
+<tr>
+  <th>区分</th>
+  <th>範囲</th>
+  <th>主な意味</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Well-Known Ports</td>
+  <td>0–1023</td>
+  <td>標準的・広く知られたサービス</td>
+</tr>
+<tr>
+  <td>Registered Ports</td>
+  <td>1024–49151</td>
+  <td>登録されたアプリケーションなど</td>
+</tr>
+<tr>
+  <td>Dynamic / Private Ports</td>
+  <td>49152–65535</td>
+  <td>動的割当てや私的利用</td>
+</tr>
+</tbody>
+</table>
+<h3>3-3. ウェルノウンポート</h3>
+<p>SSHはTCP 22、HTTPはTCP 80、HTTPSはTCP 443が代表的です。しかし<strong>サービスが必ず標準ポート番号で稼働するとは限りません</strong>。SSHをTCP 2222番で待ち受けさせることもできます。</p>
+<h3>3-4. 登録済みポート</h3>
+<p>登録済みポートはアプリケーションなどに割り当てられる範囲です。番号の登録は、その通信が安全であることや、その番号以外で利用できないことを保証しません。</p>
+<h3>3-5. 動的・プライベートポート</h3>
+<p>クライアントが接続するとき、送信元ポートは通常OSによって動的に選択されます。</p>
+<pre><code class="language-text">192.0.2.100:53124 → 203.0.113.10:443
+</code></pre>
+<p>ここで53124がクライアントの送信元ポートです。<strong>OSが実際に使用する動的ポート範囲は、必ずしも49152〜65535に固定されません。</strong> IANAの区分とOSの一時ポート選択範囲は別です。</p>
+<h3>3-6. なぜ送信元ポート番号が必要なのか</h3>
+<pre><code class="language-text">192.0.2.100:53124 → 203.0.113.10:443
+192.0.2.100:53125 → 203.0.113.10:443
+</code></pre>
+<p>宛先が同じでも送信元ポートが異なれば、別のTCPコネクションとして識別できます。</p>
+<h2 id="section-4">4. 主要なポート番号を覚える</h2>
+<p><strong>A：必須。</strong> ポート番号は標準的な利用例であり、番号だけでアプリケーションの実体を断定できるわけではありません。</p>
+<h3>4-1. TCPの代表的なポート番号</h3>
+<table>
+<thead>
+<tr>
+  <th>ポート</th>
+  <th>サービス</th>
+  <th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>TCP 20</td>
+  <td>FTP-data</td>
+  <td>FTPのデータ転送で使われる場合がある</td>
+</tr>
+<tr>
+  <td>TCP 21</td>
+  <td>FTP</td>
+  <td>FTPの制御接続</td>
+</tr>
+<tr>
+  <td>TCP 22</td>
+  <td>SSH</td>
+  <td>暗号化されたリモートログイン</td>
+</tr>
+<tr>
+  <td>TCP 23</td>
+  <td>Telnet</td>
+  <td>平文のリモートログイン</td>
+</tr>
+<tr>
+  <td>TCP 25</td>
+  <td>SMTP</td>
+  <td>主にメールサーバ間の転送</td>
+</tr>
+<tr>
+  <td>TCP 53</td>
+  <td>DNS</td>
+  <td>DNSのTCP通信</td>
+</tr>
+<tr>
+  <td>TCP 80</td>
+  <td>HTTP</td>
+  <td>Web通信</td>
+</tr>
+<tr>
+  <td>TCP 110</td>
+  <td>POP3</td>
+  <td>メール受信</td>
+</tr>
+<tr>
+  <td>TCP 143</td>
+  <td>IMAP</td>
+  <td>メール受信・管理</td>
+</tr>
+<tr>
+  <td>TCP 443</td>
+  <td>HTTPS</td>
+  <td>TLSを用いたWeb通信</td>
+</tr>
+<tr>
+  <td>TCP 587</td>
+  <td>Submission</td>
+  <td>メール送信の受付</td>
+</tr>
+<tr>
+  <td>TCP 993</td>
+  <td>IMAPS</td>
+  <td>TLSを用いたIMAP</td>
+</tr>
+<tr>
+  <td>TCP 995</td>
+  <td>POP3S</td>
+  <td>TLSを用いたPOP3</td>
+</tr>
+</tbody>
+</table>
+<h3>4-2. UDPの代表的なポート番号</h3>
+<table>
+<thead>
+<tr>
+  <th>ポート</th>
+  <th>サービス</th>
+  <th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>UDP 53</td>
+  <td>DNS</td>
+  <td>名前解決の問い合わせなど</td>
+</tr>
+<tr>
+  <td>UDP 67</td>
+  <td>DHCPサーバ</td>
+  <td>IPv4のアドレス設定情報を提供</td>
+</tr>
+<tr>
+  <td>UDP 68</td>
+  <td>DHCPクライアント</td>
+  <td>IPv4のアドレス設定情報を受信</td>
+</tr>
+<tr>
+  <td>UDP 69</td>
+  <td>TFTP</td>
+  <td>簡易ファイル転送</td>
+</tr>
+<tr>
+  <td>UDP 123</td>
+  <td>NTP</td>
+  <td>時刻同期</td>
+</tr>
+<tr>
+  <td>UDP 161</td>
+  <td>SNMP</td>
+  <td>ネットワーク機器の管理情報取得など</td>
+</tr>
+<tr>
+  <td>UDP 162</td>
+  <td>SNMP Trap</td>
+  <td>管理イベントなどの通知</td>
+</tr>
+<tr>
+  <td>UDP 520</td>
+  <td>RIP</td>
+  <td>ルーティング情報の交換</td>
+</tr>
+<tr>
+  <td>UDP 546</td>
+  <td>DHCPv6クライアント</td>
+  <td>IPv6の設定情報を受信</td>
+</tr>
+<tr>
+  <td>UDP 547</td>
+  <td>DHCPv6サーバ</td>
+  <td>IPv6の設定情報を提供</td>
+</tr>
+</tbody>
+</table>
+<h3>4-3. DNSはUDP 53だけではない</h3>
+<p>DNSはUDP 53だけでなくTCP 53も利用します。通常の問い合わせにUDPが使われる場合がある一方、大きな応答などではTCPを使うことがあります。DoTやDoHなど暗号化したDNSもあるため、「UDP 53以外はDNSではない」は誤りです。</p>
+<h3>4-4. HTTPSはTCP 443だけではない</h3>
+<p>従来のHTTPSではTCP 443が代表的ですが、HTTP/3はQUICを使い、通常UDP 443で通信します。</p>
+<pre><code class="language-text">TCP 443：HTTPS（HTTP/1.1、HTTP/2など）
+UDP 443：HTTP/3（QUIC）など
+</code></pre>
+<p><strong>UDP 443を観測したからといって直ちに不正通信とは判断できません。</strong></p>
+<h3>4-5. FTPのポート番号に関する注意</h3>
+<p>FTPは制御用とデータ転送用の通信を分けます。制御接続は通常TCP 21ですが、データ転送で常にTCP 20を使うわけではありません。パッシブモードではサーバが指定した別のポートへクライアントが接続する場合があります。FW制御で問題になりやすい理由です。</p>
+<h3>4-6. 暗号化の有無はポート番号だけでは決まらない</h3>
+<p>TCP 443という番号だけでは、TLSが適切に設定されている保証はありません。標準ポート以外でTLS通信を行うこともできます。<strong>安全性は実際のプロトコル、暗号化設定、証明書検証、認証などで判断します。</strong></p>
+<h2 id="section-5">5. ソケットとは何か</h2>
+<h3>5-1. アプリケーションがネットワーク通信を利用する窓口</h3>
+<p>ソケット（Socket）は、アプリケーションがOSのネットワーク機能を利用して通信するための端点です。</p>
+<pre><code class="language-text">Webサーバのプログラム
+        │
+        ▼
+     ソケット
+        │
+        ▼
+       TCP
+        │
+        ▼
+        IP
+        │
+        ▼
+   ネットワーク
+</code></pre>
+<p>アプリケーションが毎回TCPヘッダやIPヘッダを自作する必要はなく、通常はOSのソケットAPIを利用します。</p>
+<h3>5-2. ポート番号とソケットは同じものではない</h3>
+<table>
+<thead>
+<tr>
+  <th>用語</th>
+  <th>意味</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>ポート番号</td>
+  <td>TCP・UDPの通信端点を識別する数値</td>
+</tr>
+<tr>
+  <td>ソケット</td>
+  <td>アプリケーションが通信に利用するOS上の端点</td>
+</tr>
+<tr>
+  <td>TCPコネクション</td>
+  <td>二つの通信端点の間に確立されるTCP通信</td>
+</tr>
+<tr>
+  <td>ソケットAPI</td>
+  <td>アプリケーションがソケットを操作するための仕組み</td>
+</tr>
+</tbody>
+</table>
+<h3>5-3. ソケットをIPアドレスとポート番号の組と説明してよいか</h3>
+<p>入門的には「IPアドレスとポート番号の組」と説明されますが、厳密には不十分です。TCPとUDPでは通信端点が別であり、TCPの待受けソケットと接続済みソケットも役割が違います。<strong>IPとポートは識別情報、ソケットはアプリケーションが通信するためのOS上の仕組み</strong>です。</p>
+<h2 id="section-6">6. TCPサーバはどのように接続を受け付けるのか</h2>
+<h3>6-1. 待受けソケット</h3>
+<pre><code class="language-text">① socket()  ソケットを作成
+② bind()    ローカルIPアドレス・ポート番号を設定
+③ listen()  TCP接続要求の待受けを開始
+④ accept()  接続を受け付ける
+</code></pre>
+<p>これは代表的なソケットAPIの概念的な流れで、OSや実装によって異なります。</p>
+<h3>6-2. bindの役割</h3>
+<p><code>bind()</code> はソケットをローカルIPアドレスとポート番号に結び付けます。<code>203.0.113.10:443</code> だけで待ち受ける構成も、<code>0.0.0.0:443</code> のように複数のIPv4ローカルアドレスで待ち受ける構成もあります。</p>
+<h3>6-3. listenの役割</h3>
+<p><code>listen()</code> はTCP接続要求の待受けを開始します。クライアントのSYNに対して通常TCPスタックがSYN+ACKを返しますが、FWやサーバ負荷などで結果は異なります。</p>
+<h3>6-4. acceptの役割</h3>
+<p><code>accept()</code> は確立された接続をアプリケーションが受け取るために使います。<strong>待受けソケットと個々のクライアント用の接続済みソケットを区別します。</strong></p>
+<pre><code class="language-text">          待受けソケット：TCP 443
+                    │
+       ┌────────────┼────────────┐
+       ▼            ▼            ▼
+    接続A          接続B         接続C
+ クライアントA  クライアントB  クライアントC
+</code></pre>
+<h3>6-5. acceptするたびに443番が増えるのか</h3>
+<p>いいえ。接続済みソケットが増えてもサーバのローカルポートは通常443のままです。送信元・宛先IPとポート番号の組合せなどで区別します。</p>
+<h2 id="section-7">7. TCPコネクションと4タプル</h2>
+<h3>7-1. 4タプルとは</h3>
+<p>TCPコネクションは一般に、<strong>送信元IP、送信元ポート、宛先IP、宛先ポート</strong>の四つの値で識別されます。</p>
+<pre><code class="language-text">192.0.2.101:53001 → 203.0.113.10:443
+
+(192.0.2.101, 53001, 203.0.113.10, 443)
+</code></pre>
+<h3>7-2. 複数のクライアントが同時接続できる理由</h3>
+<table>
+<thead>
+<tr>
+  <th>接続</th>
+  <th>送信元</th>
+  <th>宛先</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>A</td>
+  <td>192.0.2.101:53001</td>
+  <td>203.0.113.10:443</td>
+</tr>
+<tr>
+  <td>B</td>
+  <td>192.0.2.102:53002</td>
+  <td>203.0.113.10:443</td>
+</tr>
+<tr>
+  <td>C</td>
+  <td>192.0.2.103:53003</td>
+  <td>203.0.113.10:443</td>
+</tr>
+</tbody>
+</table>
+<p>サーバ側はすべてTCP 443でも、送信元IP・ポートが異なるので別の接続です。<strong>一つのポートでは一つのクライアントとしか通信できない、は誤りです。</strong></p>
+<h3>7-3. 同じクライアントから複数接続する場合</h3>
+<pre><code class="language-text">192.0.2.101:53001 → 203.0.113.10:443
+192.0.2.101:53002 → 203.0.113.10:443
+192.0.2.101:53003 → 203.0.113.10:443
+</code></pre>
+<p>同じクライアントIPからでも送信元ポートを変えれば区別できます。</p>
+<h3>7-4. 5タプルとは</h3>
+<p>ファイアウォールやフローログでは、4タプルに<strong>プロトコル（TCP/UDP）</strong>を加えた5タプルを使います。</p>
+<pre><code class="language-text">送信元IP／送信元ポート／宛先IP／宛先ポート／プロトコル
+</code></pre>
+<p>IPとポートが同じでもTCP 53とUDP 53は別の通信です。<strong>4タプルと5タプルの違いはプロトコル情報を明示的に含めるかどうか</strong>です。</p>
+<h2 id="section-8">8. TCPとUDPで同じポート番号を使える理由</h2>
+<h3>8-1. TCP 53とUDP 53</h3>
+<pre><code class="language-text">DNSサーバ：203.0.113.53
+TCP 53 → DNSのTCP通信
+UDP 53 → DNSのUDP通信
+</code></pre>
+<p>TCPとUDPは別々のプロトコルとしてポートを管理するため競合しません。</p>
+<h3>8-2. ポート番号が同じなら同じサービスか</h3>
+<p>必ずしもそうではありません。TCP 443とUDP 443はWeb関連で利用されますが通信方式は違います。また、管理者が標準と異なるサービスを動かすこともできます。<strong>ポート番号とプロトコルの両方を確認します。</strong></p>
+<h3>8-3. ポート番号だけで攻撃を判定しない</h3>
+<p>UDP 443が大量に観測されても、それだけでは不審とは断定できません。HTTP/3の可能性があります。通信先、通信量、アプリケーション、利用者操作なども確認します。</p>
+<h2 id="section-9">9. 待受けポートと通信中のポート</h2>
+<h3>9-1. LISTENとESTABLISHED</h3>
+<pre><code class="language-text">Local Address          Foreign Address        State
+0.0.0.0:443            0.0.0.0:0              LISTEN
+203.0.113.10:443       192.0.2.101:53001     ESTABLISHED
+203.0.113.10:443       192.0.2.102:53002     ESTABLISHED
+</code></pre>
+<p>TCP 443で待ち受け、二つのクライアントとの接続が確立しています。</p>
+<h3>9-2. LISTENは何を意味するか</h3>
+<p><code>LISTEN</code> はTCP接続要求の待受けです。しかし外部から接続できる保証はありません。FWの遮断、ループバックだけでの待受け、ルーティング障害、接続先IPの誤りなどが考えられます。</p>
+<h3>9-3. 127.0.0.1での待受け</h3>
+<pre><code class="language-text">127.0.0.1:8080  LISTEN
+</code></pre>
+<p>通常は同じホスト内からの接続を受け付ける設定です。外部端末がLAN側IPへ接続しても、この待受けには直接接続できません。一方 <code>0.0.0.0:8080 LISTEN</code> は通常すべてのIPv4ローカルアドレスを対象とします。ただし外部到達性はFWなどにも左右されます。</p>
+<h3>9-4. UDPにはLISTENがないのか</h3>
+<p>UDPはTCPのような接続確立状態を持たず、OSの状態表示でTCPと同じ <code>LISTEN</code> や <code>ESTABLISHED</code> が表示されないことがあります。それでもUDPアプリケーションはポートで受信待ちできます。</p>
+<h2 id="section-10">10. NAPTとポート番号</h2>
+<h3>10-1. NAPTが必要になる理由</h3>
+<p>NAPTはIPアドレスとTCP/UDPポート番号を変換する仕組みです。二台の社内PCが同じ送信元ポート50000で同じWebサーバへ接続する例を考えます。</p>
+<pre><code class="language-text">社内PC-A 192.168.1.10:50000 ─┐
+                              ├─ NAPTルータ 198.51.100.1
+社内PC-B 192.168.1.11:50000 ─┘
+</code></pre>
+<h3>10-2. NAPT変換テーブルの例</h3>
+<table>
+<thead>
+<tr>
+  <th>内部の送信元</th>
+  <th>変換後の送信元</th>
+  <th>外部の宛先</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>192.168.1.10:50000</td>
+  <td>198.51.100.1:60001</td>
+  <td>203.0.113.10:443</td>
+</tr>
+<tr>
+  <td>192.168.1.11:50000</td>
+  <td>198.51.100.1:60002</td>
+  <td>203.0.113.10:443</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-text">198.51.100.1:60001 → 203.0.113.10:443
+198.51.100.1:60002 → 203.0.113.10:443
+</code></pre>
+<p>同じグローバルIPでも送信元ポートが異なります。</p>
+<h3>10-3. 戻り通信の処理</h3>
+<pre><code class="language-text">203.0.113.10:443 → 198.51.100.1:60001 → PC-A
+203.0.113.10:443 → 198.51.100.1:60002 → PC-B
+</code></pre>
+<p>NAPTルータが変換テーブルで内部端末に戻します。</p>
+<h3>10-4. 送信元ポートは必ず変換されるか</h3>
+<p>必ずしもそうではありません。元のポートを維持できればそのまま使う実装もあります。<strong>複数の内部通信を識別するためにポート番号の変換・管理を使う</strong>ことが重要です。</p>
+<h3>10-5. NAPTログで重要なこと</h3>
+<p>外部から <code>198.51.100.1:60002</code> の不審通信が報告された場合、グローバルIPだけでは内部端末を特定できません。<strong>該当時刻の変換前後のIP・ポート対応</strong>を確認します。</p>
+<h2 id="section-11">11. ファイアウォールとポート番号</h2>
+<h3>11-1. ファイアウォールの通信制御</h3>
+<p>FWは送信元・宛先IP、プロトコル、送信元・宛先ポート、通信方向、状態などを利用します。</p>
+<pre><code class="language-text">送信元：社内ネットワーク
+宛先：Webサーバ
+プロトコル：TCP
+宛先ポート：443
+動作：ALLOW
+</code></pre>
+<h3>11-2. TCP 443を許可すればUDP 443も許可されるか</h3>
+<p>いいえ。<code>ALLOW TCP 443</code> と <code>DENY UDP 443</code> は両立します。HTTP/3はUDP 443を使うため、Web通信の制御時に重要です。</p>
+<h3>11-3. 宛先ポートと送信元ポートを混同しない</h3>
+<pre><code class="language-text">要求：192.0.2.100:53124 → 203.0.113.10:443
+応答：203.0.113.10:443 → 192.0.2.100:53124
+</code></pre>
+<p>戻り通信の宛先ポートは443ではなく、クライアントの動的ポート53124です。</p>
+<h3>11-4. ステートフルファイアウォール</h3>
+<pre><code class="language-text">PC → Server：TCP SYN、宛先443
+Server → PC：TCP SYN+ACK、宛先53124
+PC → Server：TCP ACK
+</code></pre>
+<p>ステートフルFWは内部から開始した接続を追跡して戻り通信を許可できます。ステートレスACLでは戻り方向の条件を別途設定する必要がある場合があります。</p>
+<h3>11-5. ポートを開けることの意味</h3>
+<p>「ポートを開ける」には、(1) サーバのアプリケーションがそのポートで待ち受ける、(2) FWがそのポートへの通信を許可する、という別の意味があります。FWが許可してもサービスが停止していれば接続できず、サービスが待ち受けてもFWが遮断すれば外部から接続できません。</p>
+<h2 id="section-12">12. ポートスキャンの仕組み</h2>
+<h3>12-1. ポートスキャンとは</h3>
+<p>対象ホストの利用可能なポートやサービスを調査する行為です。正当な管理・診断にも攻撃前の探索にも使われ、<strong>ポートスキャンだけで不正アクセス成功とはいえません</strong>。</p>
+<h3>12-2. TCP SYNスキャンの考え方</h3>
+<pre><code class="language-text">調査端末 → 対象サーバ：SYN（宛先22）
+調査端末 ← 対象サーバ：SYN+ACK
+
+調査端末 → 対象サーバ：SYN（宛先9999）
+調査端末 ← 対象サーバ：RST（返る場合）
+</code></pre>
+<h3>12-3. SYNスキャンの結果を読む</h3>
+<table>
+<thead>
+<tr>
+  <th>観測結果</th>
+  <th>考えられる状態</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>SYNに対してSYN+ACK</td>
+  <td>TCPポートが接続を受け付けている可能性</td>
+</tr>
+<tr>
+  <td>SYNに対してRST</td>
+  <td>ポートが閉じている可能性</td>
+</tr>
+<tr>
+  <td>応答なし</td>
+  <td>FWによる破棄、通信障害、応答制限などの可能性</td>
+</tr>
+</tbody>
+</table>
+<p><strong>応答がない＝閉じていると断定しません。</strong></p>
+<h3>12-4. UDPスキャンの難しさ</h3>
+<p>UDPにSYN/RSTはありません。UDP未使用ポートへ送るとICMP Port Unreachableが返ることがありますが、応答なしなら開いていて応答しない、FWが破棄、ICMP制限、応答消失など複数の可能性があります。</p>
+<h3>12-5. ポートスキャンと脆弱性</h3>
+<p>ポートが開いているだけでは必ずしも脆弱性ではありません。公開WebサーバのTCP 443は必要な場合があります。問題は不要サービスの公開、弱い認証、ソフトウェア脆弱性、不適切なアクセス制御などです。</p>
+<h2 id="section-13">13. ポート番号に関係するセキュリティ対策</h2>
+<h3>13-1. 不要なサービスを停止する</h3>
+<p>不要なサービスが待ち受けると攻撃対象が増えます。Telnet（TCP 23）は通常通信内容を暗号化しないため、不要なら停止し、必要なリモート管理にはSSHなどを利用します。</p>
+<h3>13-2. 管理ポートのアクセス制限</h3>
+<pre><code class="language-text">ALLOW Source:192.0.2.0/24 Destination:203.0.113.10
+      Protocol:TCP Destination Port:22
+DENY  Source:その他 Destination:203.0.113.10
+      Protocol:TCP Destination Port:22
+</code></pre>
+<p>管理端末やVPN接続元に絞ることが考えられます。ただしIP制限だけで十分な認証にはならず、公開鍵認証などを組み合わせます。</p>
+<h3>13-3. ポート番号を変更すれば安全になるか</h3>
+<p>SSHを22から2222に変更しても、スキャンで発見され得ます。<strong>ポート番号変更は認証強化や脆弱性対策の代わりにはなりません。</strong></p>
+<h3>13-4. 最小権限の通信制御</h3>
+<p>必要な送信元、宛先、プロトコル、ポートだけを許可します。DNS問い合わせが必要だからといって、すべての外部宛てポートを無条件に許可する必要はありません。</p>
+<h3>13-5. IPv4とIPv6の両方を確認する</h3>
+<p>IPv4でSSHを制限していてもIPv6側で同じ制御がなければIPv6経由で到達される可能性があります。両方の公開状態を確認します。</p>
+<h2 id="section-14">14. 通信ログとソケット状態の読み取り</h2>
+<h3>14-1. 正常なHTTPS接続</h3>
+<pre><code class="language-text">2026-10-12 10:00:01
+Source IP   : 192.0.2.100
+Source Port : 53124
+Destination IP   : 203.0.113.10
+Destination Port : 443
+Protocol : TCP
+Action   : ALLOW
+</code></pre>
+<p>分かるのはこの通信がFWで許可されたことです。<strong>ALLOWだけでTCP接続確立やHTTPS成功までは分かりません</strong>。SYN+ACK、ACK、サーバログなどを確認します。</p>
+<h3>14-2. サーバが待ち受けていない場合</h3>
+<pre><code class="language-text">Client → Server  TCP SYN   Destination Port:443
+Server → Client  TCP RST
+</code></pre>
+<p>サーバが待ち受けていない可能性がありますが、FWなどがRSTを返すこともあり、送信元を確認します。</p>
+<h3>14-3. ファイアウォールで遮断された場合</h3>
+<pre><code class="language-text">2026-10-12 10:05:00
+Source      : 192.0.2.100:53124
+Destination : 203.0.113.10:443
+Protocol    : TCP
+Action      : DENY
+</code></pre>
+<p>送信元・宛先IP、TCP/UDPの取り違え、宛先ポート、方向、ルールへの一致を確認します。</p>
+<h3>14-4. TCPとUDPの取り違え</h3>
+<pre><code class="language-text">Rule 10：ALLOW TCP 53
+Rule 20：DENY  UDP 53
+</code></pre>
+<p>DNSクライアントのUDP 53問い合わせはRule 10では許可されません。TCPとUDPは別だからです。</p>
+<h3>14-5. ソケット状態の例</h3>
+<pre><code class="language-text">Proto  Local Address       Foreign Address       State
+tcp    0.0.0.0:22          0.0.0.0:0             LISTEN
+tcp    203.0.113.10:443    192.0.2.100:53124    ESTABLISHED
+tcp    203.0.113.10:443    192.0.2.101:53125    ESTABLISHED
+udp    0.0.0.0:53          0.0.0.0:0
+</code></pre>
+<p>TCP 22は待受け、TCP 443は二つの接続確立、UDP 53は受信ソケットが存在します。表示は模式例で、OSやコマンドで異なります。</p>
+<h3>14-6. ポートスキャンを疑うログ</h3>
+<pre><code class="language-text">10:10:01  198.51.100.20 → 203.0.113.10:21  TCP SYN
+10:10:01  198.51.100.20 → 203.0.113.10:22  TCP SYN
+10:10:01  198.51.100.20 → 203.0.113.10:23  TCP SYN
+10:10:01  198.51.100.20 → 203.0.113.10:25  TCP SYN
+10:10:01  198.51.100.20 → 203.0.113.10:80  TCP SYN
+10:10:01  198.51.100.20 → 203.0.113.10:443 TCP SYN
+</code></pre>
+<p>同じ送信元から多数ポートへの短時間のSYNはスキャンの可能性があります。ただし正当な診断・監視の可能性もあるため、送信元、時刻、診断作業の有無、頻度を照合します。</p>
+<h2 id="section-15">15. 科目Aで押さえる典型論点</h2>
+<table>
+<thead>
+<tr>
+  <th>論点</th>
+  <th>覚えるべきこと</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>IPアドレス</td>
+  <td>通信先ホストなどを識別する</td>
+</tr>
+<tr>
+  <td>ポート番号</td>
+  <td>通信先サービス・端点を識別する</td>
+</tr>
+<tr>
+  <td>ポート番号の長さ</td>
+  <td>16ビット</td>
+</tr>
+<tr>
+  <td>番号の範囲</td>
+  <td>0〜65535</td>
+</tr>
+<tr>
+  <td>Well-Known</td>
+  <td>0〜1023</td>
+</tr>
+<tr>
+  <td>Registered</td>
+  <td>1024〜49151</td>
+</tr>
+<tr>
+  <td>Dynamic/Private</td>
+  <td>49152〜65535</td>
+</tr>
+<tr>
+  <td>TCPとUDPのポート</td>
+  <td>別々に管理される</td>
+</tr>
+<tr>
+  <td>ソケット</td>
+  <td>アプリケーションの通信端点</td>
+</tr>
+<tr>
+  <td>TCP 4タプル</td>
+  <td>送信元・宛先IPと各ポート</td>
+</tr>
+<tr>
+  <td>5タプル</td>
+  <td>4タプル＋プロトコル</td>
+</tr>
+<tr>
+  <td>LISTEN</td>
+  <td>TCP接続要求の待受け</td>
+</tr>
+<tr>
+  <td>ESTABLISHED</td>
+  <td>TCPコネクション確立済み</td>
+</tr>
+<tr>
+  <td>NAPT</td>
+  <td>IPアドレスとポート番号を変換・管理する</td>
+</tr>
+<tr>
+  <td>ポートスキャン</td>
+  <td>利用可能なサービスなどを調査する</td>
+</tr>
+<tr>
+  <td>FWの通信制御</td>
+  <td>IP、ポート、プロトコル、方向、状態などで判断する</td>
+</tr>
+</tbody>
+</table>
+<h3>特に重要なポート番号</h3>
+<table>
+<thead>
+<tr>
+  <th>ポート</th>
+  <th>サービス</th>
+  <th>プロトコル</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>22</td>
+  <td>SSH</td>
+  <td>TCP</td>
+</tr>
+<tr>
+  <td>53</td>
+  <td>DNS</td>
+  <td>TCP/UDP</td>
+</tr>
+<tr>
+  <td>80</td>
+  <td>HTTP</td>
+  <td>TCP</td>
+</tr>
+<tr>
+  <td>443</td>
+  <td>HTTPS</td>
+  <td>TCP/UDP（HTTP/3はQUIC）</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td>SMTP</td>
+  <td>TCP</td>
+</tr>
+<tr>
+  <td>123</td>
+  <td>NTP</td>
+  <td>UDP</td>
+</tr>
+<tr>
+  <td>67/68</td>
+  <td>DHCP</td>
+  <td>UDP</td>
+</tr>
+<tr>
+  <td>161/162</td>
+  <td>SNMP</td>
+  <td>UDP</td>
+</tr>
+<tr>
+  <td>587</td>
+  <td>Submission</td>
+  <td>TCP</td>
+</tr>
+</tbody>
+</table>
+<p>UDP 443はHTTP/3（QUIC）などで利用されます。TCP 443とは別の通信です。</p>
+<h2 id="section-16">16. 科目Bの答案作成ポイント</h2>
+<h3>16-1. 設問例①：同じポートへの複数接続</h3>
+<p><strong>設問</strong>：複数のクライアントが同じWebサーバのTCP 443番ポートへ同時に接続できる理由を説明せよ。</p>
+<p><strong>答案例</strong>：「TCPコネクションは送信元・宛先のIPアドレスとポート番号の組合せで識別され、クライアントごとに異なる接続として管理できるため。」</p>
+<p><strong>解説</strong>：「サーバが高性能だから」ではなく、通信の識別情報を示します。</p>
+<h3>16-2. 設問例②：TCPとUDPの取り違え</h3>
+<p><strong>設問</strong>：FWでTCP 53を許可したが、DNSクライアントのUDP 53問い合わせが失敗した。原因を説明せよ。</p>
+<p><strong>答案例</strong>：「TCPとUDPは別のプロトコルとして制御されるため、TCP 53を許可してもUDP 53の通信は許可されないため。」</p>
+<h3>16-3. 設問例③：NAPTログの必要性</h3>
+<p><strong>設問</strong>：複数の内部端末がNAPTで一つのグローバルIPから通信している。不正アクセス報告時にポート番号と時刻を含む変換ログが必要な理由を説明せよ。</p>
+<p><strong>答案例</strong>：「複数の内部端末が同じグローバルIPアドレスを共有するため、通信時刻と変換後のポート番号を内部IPアドレス・ポート番号に対応付け、送信元端末を特定する必要があるため。」</p>
+<h3>16-4. 設問例④：サービスは起動しているのに接続できない</h3>
+<p><strong>設問</strong>：WebサーバでTCP 443の待受けが確認できるが外部から接続できない。調査点を二つ挙げよ。</p>
+<p><strong>答案例</strong>：「ファイアウォールで外部からのTCP 443が許可されているか、Webサーバが外部から到達可能なIPアドレスで待ち受けているかを確認する。」</p>
+<p><strong>解説</strong>：待受けとネットワーク到達性は別です。</p>
+<h3>16-5. 設問例⑤：ポートスキャンの判定</h3>
+<p><strong>設問</strong>：同じ送信元からサーバの多数のTCPポートへ短時間にSYNが送られた。行為と追加確認事項を説明せよ。</p>
+<p><strong>答案例</strong>：「利用可能なサービスを探索するポートスキャンの可能性があるため、送信元、通信頻度、許可された脆弱性診断の実施有無などを確認する。」</p>
+<h3>16-6. 設問例⑥：SSHのポート番号変更</h3>
+<p><strong>設問</strong>：SSHを22から2222へ変更するだけでは十分な対策でない理由を説明せよ。</p>
+<p><strong>答案例</strong>：「ポートスキャンによって変更後の待受けポートを発見される可能性があり、認証の強化や接続元の制限、脆弱性対策の代わりにはならないため。」</p>
+<h3>16-7. 設問例⑦：戻り通信のポート番号</h3>
+<p><strong>設問</strong>：クライアント <code>192.0.2.100:53124</code> がサーバ <code>203.0.113.10:443</code> にTCP接続した。応答の送信元ポートと宛先ポートを答えよ。</p>
+<p><strong>答案例</strong>：「送信元ポートは443、宛先ポートは53124。」</p>
+<p><strong>解説</strong>：要求と応答では送信元・宛先が入れ替わります。</p>
+<h3>16-8. 科目Bの答案を作る手順</h3>
+<ol>
+<li><strong>通信元と通信先を確認する。</strong> どの端末からどのサーバへ送っているか。</li>
+<li><strong>プロトコルを確認する。</strong> TCPかUDPか。</li>
+<li><strong>送信元・宛先ポートを確認する。</strong> 要求と応答で入れ替わるか。</li>
+<li><strong>通信状態を確認する。</strong> 待受け、確立、拒否、タイムアウトなど。</li>
+<li><strong>制御点を確認する。</strong> サーバ、FW、NAPT、ルーティングのどこか。</li>
+<li><strong>原因と対策を対応させる。</strong> UDP 53拒否なら必要なUDP通信の許可を検討する。</li>
+</ol>
+<h2 id="section-17">17. 重要事項の整理</h2>
+<p><strong>第一に、IPアドレスとポート番号は役割が異なります。</strong> IPアドレスは通信先ホストなど、ポート番号はサービス・通信端点を識別します。</p>
+<p><strong>第二に、TCPとUDPは別々のポート番号空間を持ちます。</strong> TCP 53とUDP 53は別の通信です。</p>
+<p><strong>第三に、ポート番号は16ビットです。</strong> Well-Known、Registered、Dynamic/Privateの区分と主要サービスの標準ポートを覚えます。</p>
+<p><strong>第四に、ソケットはアプリケーションが通信を行うための端点です。</strong> TCPでは待受けソケットと接続済みソケットを区別します。</p>
+<p><strong>第五に、一つのサーバポートで複数のTCPコネクションを扱えます。</strong> 送信元・宛先IPとポートの組合せで接続を識別します。</p>
+<p><strong>第六に、NAPTではポート番号が重要です。</strong> 一つのグローバルIPを共有する内部端末の通信をポート変換・管理で区別します。</p>
+<p><strong>第七に、FWではポートだけでなくプロトコル、方向、通信状態を確認します。</strong> TCP 443を許可してもUDP 443は許可されません。</p>
+<p><strong>第八に、ポートスキャンはサービス探索に使われます。</strong> 正当な診断にも使われるため、ログだけで侵入成功とは断定しません。</p>
+<h3>C：発展学習として切り分ける内容</h3>
+<ul>
+<li><code>SO_REUSEADDR</code>、<code>SO_REUSEPORT</code> などのソケットオプションの細部</li>
+<li>OSカーネル内部のソケット管理構造</li>
+<li>複数プロセスによる待受けの高度な設計</li>
+<li>ソケットプログラミングの詳細なコード実装</li>
+<li>特殊なNAT越え・ポート割当てアルゴリズム</li>
+</ul>
+<p>最優先は、<strong>通信の5タプルを読み取り、ポート番号・ソケット・FW・NAPTの関係から、通信障害や不審なアクセスの原因を説明できること</strong>です。</p>
+<div class="footnote">第1〜17節の講義本文・図解・ログ例・科目B答案例を収録。第18節「理解度チェック」は含めていません。既存の採点・進捗履歴は変更していません。</div></main></body></html>
