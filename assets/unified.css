@@ -1,0 +1,34 @@
+/* SC course unified visual skin v1.0 — original lecture body remains unchanged */
+:root{color-scheme:light!important;--sc-ink:#203349;--sc-navy:#153c61;--sc-blue:#216b91;--sc-border:#dce6ef;--sc-bg:#f3f6fa}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{background:var(--sc-bg)!important;color:var(--sc-ink)!important;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif!important;font-size:16px!important;line-height:1.9!important;overflow-wrap:anywhere}
+body>header,body>.hero,body>.top,body>.banner{background:#153c61!important;color:white!important}
+body>header h1,body>.hero h1,body>.top h1,body>.banner h1{color:white!important}
+body>header p,body>.hero p,body>.top p,body>.banner p{color:#e6f0f8!important}
+body main,body>article,.container main,.wrapper main,.page main{width:min(100%,980px)!important;max-width:980px!important;margin:24px auto!important;padding:clamp(22px,4vw,52px)!important;background:#fff!important;border:1px solid var(--sc-border)!important;border-radius:14px!important;box-shadow:0 4px 20px #1736510b!important;min-width:0}
+body main main{border:0!important;padding:0!important;margin:0!important;box-shadow:none!important}
+h1,h2,h3,h4{font-family:inherit!important;line-height:1.5!important;letter-spacing:0!important}
+h1{font-size:clamp(1.7rem,4vw,2.25rem)!important;color:var(--sc-navy)!important}
+h2{font-size:clamp(1.3rem,3vw,1.55rem)!important;color:var(--sc-navy)!important;background:transparent!important;border:0!important;border-bottom:2px solid var(--sc-border)!important;padding:0 0 11px!important;margin:44px 0 20px!important}
+h3{font-size:1.16rem!important;color:#235b80!important;background:transparent!important;border:0!important;margin:28px 0 13px!important;padding:0!important}
+h4{font-size:1.04rem!important;color:var(--sc-navy)!important}
+p,li,td,th,dd,dt{line-height:1.85!important}
+a{color:#17658e}a:hover{text-decoration:underline}
+table{border-collapse:collapse!important;width:100%!important;max-width:100%!important;font-size:.94rem!important;margin:20px 0!important}
+th,td{border:1px solid #d9e3ec!important;padding:10px 12px!important;vertical-align:top!important;text-align:left}
+th{background:#edf4fa!important;color:#173c5c!important}
+pre{background:#1d2d40!important;color:#f1f6fc!important;padding:18px!important;border-radius:9px!important;overflow-x:auto!important;white-space:pre!important;max-width:100%!important;font-size:.9rem!important}
+code{overflow-wrap:anywhere}pre code{overflow-wrap:normal}
+svg,img,canvas,video{max-width:100%!important;height:auto}
+figure{max-width:100%;margin:22px 0}
+figcaption{font-size:.9rem;color:#61758a}
+blockquote{border-left:4px solid #3a81a8!important;background:#f1f7fc!important;padding:15px 20px!important;margin:22px 0!important}
+nav:not(.sc-global-nav){background:#f0f6fc!important;border:1px solid #dce8f3!important;border-radius:10px!important;padding:16px 20px!important;max-width:100%}
+nav:not(.sc-global-nav) a{color:#17658e!important}
+details{max-width:100%}summary{cursor:pointer}
+.sc-global-nav{position:sticky!important;top:0!important;z-index:9999!important;display:flex!important;align-items:center!important;gap:12px!important;justify-content:space-between!important;padding:10px max(16px,calc((100vw - 980px)/2))!important;background:#153c61!important;color:white!important;box-shadow:0 2px 12px #10283c25!important;font:600 14px/1.5 system-ui,sans-serif!important}
+.sc-global-nav a{color:white!important;text-decoration:none!important;padding:7px 10px!important;border-radius:7px!important;background:#ffffff1c!important;white-space:nowrap!important}
+.sc-global-nav a:hover{background:#ffffff36!important}
+.sc-global-nav span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:700px){body main,body>article,.container main,.wrapper main,.page main{margin:0 auto!important;padding:21px 16px 38px!important;border-radius:0!important;border-left:0!important;border-right:0!important}body>header,body>.hero,body>.top,body>.banner{padding:25px 18px!important}table{font-size:.83rem!important;display:block!important;overflow-x:auto!important}th,td{padding:8px!important}nav:not(.sc-global-nav) ol{columns:1!important}.sc-global-nav{padding:8px 10px!important;gap:4px!important;font-size:12px!important}.sc-global-nav a{padding:7px 6px!important}}
