@@ -1,0 +1,816 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第11講｜ARP（Address Resolution Protocol）｜講義本文HTML版</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{background:#f2f5fa;color:#1d2939;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;line-height:1.88;margin:0}main{max-width:960px;background:white;border:1px solid #dce4ef;box-shadow:0 8px 28px #1234560c;margin:32px auto;padding:48px 60px;border-radius:12px}h1{color:#17446e;font-size:2rem;border-bottom:3px solid #356b9e;padding-bottom:18px;line-height:1.4}h2{font-size:1.48rem;color:#17446e;border-bottom:1px solid #c7d8e7;padding-bottom:8px;margin:3.2rem 0 1rem}h3{font-size:1.14rem;color:#23577f;margin:2rem 0 .65rem}p{margin:.9rem 0}strong{color:#17446e}table{border-collapse:collapse;width:100%;font-size:.93rem;margin:18px 0}td,th{border:1px solid #cbd5e1;padding:9px 12px;vertical-align:top}th{background:#eaf1f8;text-align:left}tr:nth-child(even) td{background:#f8fbfe}pre{background:#192b3e;color:#f3f8ff;padding:18px;border-radius:8px;overflow-x:auto;font-size:.91rem;line-height:1.65}code{font-family:ui-monospace,Consolas,monospace}p code,td code{background:#eef2f7;color:#153d62;padding:2px 4px;border-radius:4px}blockquote{background:#eef5fb;border-left:4px solid #4882b5;padding:8px 18px;margin:20px 0}nav{background:#eef4fa;border-radius:9px;padding:18px 24px;margin:26px 0}nav ol{columns:2;margin-bottom:0}nav a{color:#15578c;text-decoration:none}li{margin:.3em 0}hr{border:0;border-top:1px solid #e2e8f0;margin:34px 0}footer{border-top:1px solid #e2e8f0;color:#64748b;font-size:.85rem;padding-top:16px;margin-top:40px}@media(max-width:650px){main{padding:22px 17px;margin:0;border:0;border-radius:0}h1{font-size:1.55rem}nav ol{columns:1}table{font-size:.82rem}td,th{padding:6px}}@media print{body{background:white}main{border:0;box-shadow:none;margin:0;padding:0}h2,h3{break-after:avoid}pre,table{break-inside:avoid}}</style></head><body><main><nav aria-label="目次"><strong>目次｜講義本文（全15節）</strong><ol><li><a href="#section-1">1. 到達目標と参考書</a></li><li><a href="#section-2">2. そもそもARPはなぜ必要なのか</a></li><li><a href="#section-3">3. ARP RequestとARP Replyの通信手順</a></li><li><a href="#section-4">4. 別ネットワーク宛てのARPはどうなるか</a></li><li><a href="#section-5">5. ARPキャッシュとMACアドレステーブルの違い</a></li><li><a href="#section-6">6. ARP Spoofing（ARP偽装）とは何か</a></li><li><a href="#section-7">7. ARP Spoofingによる中間者攻撃の流れ</a></li><li><a href="#section-8">8. ARP SpoofingとHTTPSの関係</a></li><li><a href="#section-9">9. ARP Spoofingへの防御策</a></li><li><a href="#section-10">10. Gratuitous ARPとは何か</a></li><li><a href="#section-11">11. ARPテーブルと通信ログを読む</a></li><li><a href="#section-12">12. 第10講のMAC Floodingとの比較</a></li><li><a href="#section-13">13. 科目Aの典型論点</a></li><li><a href="#section-14">14. 科目Bの答案作成ポイント</a></li><li><a href="#section-15">15. 重要事項の整理</a></li></ol></nav><h1>第11講｜ARP（Address Resolution Protocol）</h1>
+<p><em>第1〜23講 再執筆シリーズ｜第II部 ネットワーク完全攻略｜チャット版</em></p>
+<p>第10講では、EthernetとMACアドレス、L2スイッチの学習・転送処理を学びました。</p>
+<p>今回は、その知識を使って<strong>「IPアドレスしか分からない相手へ、どうやってEthernetフレームを届けるのか」</strong>を解説します。この問題を解決するのがARPです。</p>
+<p>さらに、ARPの仕組みには、攻撃者が他人の通信を自分の端末へ誘導できるというセキュリティ上の弱点があります。第11講では、正常な通信からARP Spoofing（ARP偽装）、中間者攻撃、対策までを一続きの仕組みとして理解します。</p>
+<h2 id="section-1">1. 到達目標と参考書</h2>
+<h3>1-1. この講義でできるようになること</h3>
+<ol>
+<li>ARPが必要な理由を、IPアドレスとMACアドレスの役割から説明できる。</li>
+<li>ARP RequestとARP Replyの通信手順を説明できる。</li>
+<li>同一ネットワーク宛てと別ネットワーク宛てで、ARPの問い合わせ先がどう変わるか判断できる。</li>
+<li>ARPキャッシュとスイッチのMACアドレステーブルを区別できる。</li>
+<li>ARP Spoofingによる中間者攻撃の成立過程を説明できる。</li>
+<li>ARPテーブルや通信ログから不審な対応関係を見つけ、適切な対策を記述できる。</li>
+</ol>
+<h3>1-2. 参考書の対応箇所</h3>
+<p><strong>『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』</strong></p>
+<ul>
+<li>第3章「ネットワーク基礎技術」</li>
+<li>3-1「TCP/IP」</li>
+<li><strong>pp.171〜172：ARPの役割、同一ネットワークと異なるネットワークでのアドレス解決、IPv6との違い</strong></li>
+</ul>
+<p>参考書のこの箇所を確認しました。参考書では、ARPをIPアドレスからMACアドレスを求めるプロトコルとして説明し、通信相手が別ネットワークに存在するときには、次に送るルータのMACアドレスを調べることを示しています。</p>
+<p>以下では、<strong>ARP Request／Replyの詳細、ARPキャッシュの具体例、ARP Spoofing、Dynamic ARP Inspectionなどは講師による技術補足</strong>として説明します。これらすべてが上記2ページに記載されているという意味ではありません。</p>
+<h3>1-3. 学習優先度</h3>
+<table>
+<thead>
+<tr>
+  <th>区分</th>
+  <th>学習内容</th>
+  <th>目標</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>A：必須</strong></td>
+  <td>ARP Request／Reply、ARPキャッシュ、デフォルトゲートウェイ、ARP Spoofing、MITM、対策</td>
+  <td>通信と攻撃の因果関係を説明する</td>
+</tr>
+<tr>
+  <td><strong>B：理解補助</strong></td>
+  <td>Gratuitous ARP、ARPキャッシュ更新、ARPとスイッチの学習の違い</td>
+  <td>設問やログの条件を正しく読む</td>
+</tr>
+<tr>
+  <td><strong>C：発展</strong></td>
+  <td>ARPパケットの全フィールド、OS固有のキャッシュ更新仕様、製品固有のDAI設定</td>
+  <td>任意学習</td>
+</tr>
+</tbody>
+</table>
+<p>今回の中心はAです。特に、<strong>ARPで問い合わせるIPアドレスは何か、なぜ偽装されたARP情報を信じてしまうのか</strong>を重点的に理解してください。</p>
+<hr />
+<h2 id="section-2">2. そもそもARPはなぜ必要なのか</h2>
+<h3>2-1. IPアドレスが分かるだけではEthernetで送れない</h3>
+<p>次のようなLANを考えます。</p>
+<p><strong>L2スイッチ（VLAN 10）</strong></p>
+<pre><code class="language-text">        ┌───────────────────────┐
+        │ L2スイッチ（VLAN 10） │
+        └───────────┬───────────┘
+              ┌─────┴─────┐
+             PC-A        PC-B
+ IP：192.168.1.10     IP：192.168.1.20
+ MAC：02:00:00:00:00:0A  MAC：02:00:00:00:00:0B
+</code></pre>
+<p>両端末のサブネットマスクは255.255.255.0（/24）とします。</p>
+<p>PC-AがPC-Bへデータを送りたいとします。PC-Aのアプリケーションは、宛先IPアドレス <code>192.168.1.20</code> を使って通信しようとします。</p>
+<p>しかし、Ethernetで実際にフレームを送るには、Ethernetヘッダに<strong>宛先MACアドレス</strong>を設定しなければなりません。</p>
+<p>PC-Aが分かっている情報は次のとおりです。</p>
+<table>
+<thead>
+<tr>
+  <th>情報</th>
+  <th>値</th>
+  <th>状態</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>送信元IP</td>
+  <td><code>192.168.1.10</code></td>
+  <td>分かっている</td>
+</tr>
+<tr>
+  <td>宛先IP</td>
+  <td><code>192.168.1.20</code></td>
+  <td>分かっている</td>
+</tr>
+<tr>
+  <td>送信元MAC</td>
+  <td><code>02:00:00:00:00:0A</code></td>
+  <td>分かっている</td>
+</tr>
+<tr>
+  <td>宛先MAC</td>
+  <td>不明</td>
+  <td><strong>調べる必要がある</strong></td>
+</tr>
+</tbody>
+</table>
+<p>この不足を解決するのがARP（Address Resolution Protocol）です。</p>
+<h3>2-2. ARPが解決する問題</h3>
+<p>ARPは、IPv4アドレスに対応するMACアドレスを、同じリンク上で調べるためのプロトコルです。</p>
+<pre><code class="language-text">知っている情報
+  IPアドレス：192.168.1.20
+
+       ↓ ARPによる問い合わせ
+
+得られる情報
+  MACアドレス：02:00:00:00:00:0B
+</code></pre>
+<p>この処理を<strong>アドレス解決（Address Resolution）</strong>と呼びます。ARPは、IPパケットを送信するために必要なリンク層の宛先情報を得る役割を持っています。</p>
+<p>ここで注意したいのは、ARPがインターネット全体に問い合わせる仕組みではないことです。ARPの問い合わせは、原則として同じブロードキャストドメイン内で行われます。</p>
+<hr />
+<h2 id="section-3">3. ARP RequestとARP Replyの通信手順</h2>
+<p>ここは第11講で最も重要な正常系の処理です。</p>
+<h3>3-1. 最初にARPキャッシュを確認する</h3>
+<p>PC-Aが <code>192.168.1.20</code> へ送信するとき、毎回ARPを送るとは限りません。まず、PC-Aは自分が保持しているARPキャッシュを確認します。</p>
+<p>ARPキャッシュとは、IPアドレスとMACアドレスの対応を一時的に記憶する情報です。例えば、次のような表です。</p>
+<table>
+<thead>
+<tr>
+  <th>IPv4アドレス</th>
+  <th>MACアドレス</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>192.168.1.1</code></td>
+  <td><code>02:00:00:00:00:01</code></td>
+</tr>
+<tr>
+  <td><code>192.168.1.30</code></td>
+  <td><code>02:00:00:00:00:0C</code></td>
+</tr>
+</tbody>
+</table>
+<p>この時点では、PC-Bの <code>192.168.1.20</code> がありません。そこでPC-Aは、ARP Requestを送信します。</p>
+<h3>3-2. ARP Requestを送信する</h3>
+<p>ARP Requestは、簡単に言うと次の問い合わせです。</p>
+<blockquote>
+<p>「192.168.1.20を使っている機器は誰ですか。あなたのMACアドレスを教えてください」</p>
+</blockquote>
+<p>PC-Aは、この問い合わせをEthernetのブロードキャストフレームに格納します。</p>
+<pre><code class="language-text">Ethernetヘッダ
+  送信元MAC：02:00:00:00:00:0A
+  宛先MAC　：FF:FF:FF:FF:FF:FF
+
+ARPの主な内容
+  操作　　　：Request
+  送信元IP　：192.168.1.10
+  送信元MAC：02:00:00:00:00:0A
+  対象IP　　：192.168.1.20
+  対象MAC　：不明
+</code></pre>
+<p>宛先MACアドレスがブロードキャストなのは、PC-AがまだPC-BのMACアドレスを知らないからです。特定のMACアドレスへ送れないため、同じブロードキャストドメイン内の機器へ問い合わせます。</p>
+<h3>3-3. L2スイッチはどう動くか</h3>
+<p>L2スイッチがARP Requestを受信すると、通常、同じVLAN内の他の転送可能なポートへブロードキャストフレームを転送します。</p>
+<p>ここではPC-Bだけでなく、同じVLANの他のPCもARP Requestを受け取ります。ただし、問い合わせ対象のIPアドレスが自分のものでなければ、通常、その問い合わせに対してARP Replyを返しません。</p>
+<h3>3-4. PC-BがARP Replyを返す</h3>
+<p>PC-Bは、自分のIPアドレスが <code>192.168.1.20</code> であることを確認します。そして、PC-AへARP Replyを返します。</p>
+<blockquote>
+<p>「192.168.1.20は私です。MACアドレスは02:00:00:00:00:0Bです」</p>
+</blockquote>
+<p>通常のARP Replyは、問い合わせ元PC-A宛てのユニキャストフレームとして送信されます。</p>
+<pre><code class="language-text">Ethernetヘッダ
+  送信元MAC：02:00:00:00:00:0B
+  宛先MAC　：02:00:00:00:00:0A
+
+ARPの主な内容
+  操作　　　：Reply
+  送信元IP　：192.168.1.20
+  送信元MAC：02:00:00:00:00:0B
+  対象IP　　：192.168.1.10
+  対象MAC　：02:00:00:00:00:0A
+</code></pre>
+<p>PC-Bは、ARP Requestに含まれていたPC-AのMACアドレスを利用できるため、返信先のMACアドレスを知っています。</p>
+<h3>3-5. PC-AがARPキャッシュへ登録する</h3>
+<p>PC-AがARP Replyを受信すると、得られた対応関係をARPキャッシュへ記録します。</p>
+<pre><code class="language-text">192.168.1.20
+      ↓
+02:00:00:00:00:0B
+</code></pre>
+<p>これでPC-Aは、PC-B宛てのEthernetフレームを作成できます。</p>
+<h3>3-6. 一連の通信を時系列で整理する</h3>
+<pre><code class="language-text">PC-A                                  PC-B
+  │ ① ARPキャッシュを確認              │
+  │    対象IPが未登録                  │
+  │                                    │
+  ├── ② ARP Request ────────────────→│
+  │       ブロードキャスト             │
+  │                                    │
+  │                    ③ 自分のIPと一致│
+  │                                    │
+  │←─────────────── ④ ARP Reply ─────┤
+  │                    通常ユニキャスト│
+  │                                    │
+  │ ⑤ ARPキャッシュを更新              │
+  │                                    │
+  ├── ⑥ 本来のデータを送信 ─────────→│
+  │       宛先MACはPC-B                │
+</code></pre>
+<p>同一LAN内のARP解決を単純化した図。ARP Requestは他の同一VLAN端末にも届きます。</p>
+<p><strong>順序は、ARPキャッシュ確認 → ARP Request → ARP Reply → キャッシュ登録 → Ethernetフレーム送信です。</strong></p>
+<p>試験でこの手順を説明するときは、「ARPを使う」とだけ書かず、どの端末が、どのIPアドレスについて問い合わせ、どのMACアドレスを取得するかまで書けるようにしてください。</p>
+<hr />
+<h2 id="section-4">4. 別ネットワーク宛てのARPはどうなるか</h2>
+<p>ここは科目Bの答案で間違えやすい部分です。</p>
+<h3>4-1. 宛先が別ネットワークの場合</h3>
+<p>次の構成を考えます。</p>
+<table>
+<thead>
+<tr>
+  <th>機器</th>
+  <th>IPアドレス</th>
+  <th>MACアドレス</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>PC-A</td>
+  <td><code>192.168.1.10/24</code></td>
+  <td><code>02:00:00:00:00:0A</code></td>
+</tr>
+<tr>
+  <td>ルータのLAN側</td>
+  <td><code>192.168.1.1/24</code></td>
+  <td><code>02:00:00:00:00:01</code></td>
+</tr>
+<tr>
+  <td>Webサーバ</td>
+  <td><code>203.0.113.80</code></td>
+  <td>別リンク上のMAC</td>
+</tr>
+</tbody>
+</table>
+<p>PC-Aのデフォルトゲートウェイは <code>192.168.1.1</code> です。PC-AがWebサーバ <code>203.0.113.80</code> へ通信したいとします。</p>
+<p>ここで問題です。<strong>PC-Aは、203.0.113.80のMACアドレスをARPで問い合わせるのでしょうか。</strong></p>
+<p>答えは、通常は<strong>問い合わせません</strong>。</p>
+<h3>4-2. なぜWebサーバのMACアドレスを調べないのか</h3>
+<p>Webサーバは、PC-Aとは別のIPネットワークに存在します。PC-Aは、そのサーバへ直接Ethernetフレームを届けることができません。</p>
+<p>そこで、PC-Aはルーティングテーブルを参照し、パケットを次に渡す相手を決定します。この例では、次に渡す相手はデフォルトゲートウェイ <code>192.168.1.1</code> です。</p>
+<p>そのため、PC-AがARPで調べる対象は次のIPアドレスです。</p>
+<pre><code class="language-text">192.168.1.1
+</code></pre>
+<p>つまり、<strong>最終宛先のIPアドレスではなく、次にフレームを渡す機器のIPv4アドレスをARPで解決します。</strong></p>
+<h3>4-3. EthernetヘッダとIPヘッダを比較する</h3>
+<p>PC-Aからルータへ送る最初のフレームは、次のようになります。</p>
+<table>
+<thead>
+<tr>
+  <th>項目</th>
+  <th>設定値</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Ethernet送信元MAC</td>
+  <td>PC-AのMAC</td>
+</tr>
+<tr>
+  <td>Ethernet宛先MAC</td>
+  <td>ルータのLAN側MAC</td>
+</tr>
+<tr>
+  <td>IP送信元アドレス</td>
+  <td><code>192.168.1.10</code></td>
+</tr>
+<tr>
+  <td>IP宛先アドレス</td>
+  <td><code>203.0.113.80</code></td>
+</tr>
+</tbody>
+</table>
+<p>ここに第9講とのつながりがあります。Ethernetの宛先MACアドレスは<strong>次の配送先</strong>を示します。IPの宛先アドレスは<strong>最終的な通信相手</strong>を示します。</p>
+<pre><code class="language-text">PC-A（192.168.1.10） → ルータ（192.168.1.1） → Webサーバ（203.0.113.80）
+       最初のEthernetフレームの宛先MAC＝ルータ
+       IPパケットの宛先IP＝Webサーバ（最終宛先）
+</code></pre>
+<p>ルータが別のEthernetリンクへ転送するときには、通常、そのリンクに合わせてEthernetヘッダを作り直します。一方、IP宛先アドレスは、NATなどによる書換えがなければWebサーバのままです。</p>
+<h3>4-4. 試験での正確な説明</h3>
+<p>例えば「PC-Aが外部Webサーバへ通信する際、ARPで解決するIPアドレスを答えよ」と問われたら、答えるべきなのはWebサーバのIPアドレスではありません。</p>
+<p>問題文に示された<strong>デフォルトゲートウェイの具体的なIPアドレス</strong>です。単に「ルータのIPアドレス」と書くより、設問に与えられた <code>192.168.1.1</code> を用いる方が、答案として明確です。</p>
+<hr />
+<h2 id="section-5">5. ARPキャッシュとMACアドレステーブルの違い</h2>
+<p>第10講との関連で必ず区別してほしい二つの表があります。</p>
+<h3>5-1. ARPキャッシュ</h3>
+<p>ARPキャッシュは、主にホストやルータが使用します。管理する対応関係は、次のとおりです。</p>
+<pre><code class="language-text">IPv4アドレス → MACアドレス
+</code></pre>
+<p>例：</p>
+<pre><code class="language-text">192.168.1.20 → 02:00:00:00:00:0B
+</code></pre>
+<p>これは「このIPv4アドレスへフレームを送るには、どのMACアドレスを使うか」という情報です。</p>
+<h3>5-2. MACアドレステーブル</h3>
+<p>L2スイッチが使用するMACアドレステーブルは、別の情報を管理します。</p>
+<pre><code class="language-text">MACアドレス ＋ VLAN → スイッチのポート
+</code></pre>
+<p>例：</p>
+<pre><code class="language-text">02:00:00:00:00:0B ＋ VLAN 10 → ポート2
+</code></pre>
+<p>これは「このMACアドレス宛てのフレームを、どのポートへ転送するか」という情報です。</p>
+<h3>5-3. 二つの仕組みが連携する</h3>
+<p>PC-AがPC-Bへデータを送る場合、次のように処理が進みます。</p>
+<pre><code class="language-text">PC-A：ARPキャッシュを参照
+  192.168.1.20 → 02:00:00:00:00:0B
+  宛先MACアドレスを決定
+          ↓
+PC-A：Ethernetフレームを送信
+  宛先MAC：02:00:00:00:00:0B
+          ↓
+L2スイッチ：MACアドレステーブルを参照
+  02:00:00:00:00:0B → ポート2
+  ポート2へ転送
+          ↓
+PC-Bがフレームを受信
+</code></pre>
+<p>ARPキャッシュが正しくても、スイッチのMACアドレステーブルが不適切なら正常に転送できない場合があります。</p>
+<p>反対に、スイッチのMACアドレステーブルが正しくても、PC-AのARPキャッシュに偽のMACアドレスが登録されていれば、PC-Aは誤ったMACアドレス宛てのフレームを作成します。</p>
+<p>この後者の問題を悪用するのが、ARP Spoofingです。</p>
+<table>
+<thead>
+<tr>
+  <th>比較項目</th>
+  <th>ARPキャッシュ</th>
+  <th>MACアドレステーブル</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>主な保持者</td>
+  <td>PC・サーバ・ルータ</td>
+  <td>L2スイッチ</td>
+</tr>
+<tr>
+  <td>管理内容</td>
+  <td>IPv4 → MAC</td>
+  <td>MAC・VLAN → ポート</td>
+</tr>
+<tr>
+  <td>主な学習方法</td>
+  <td>ARPのやり取りなど</td>
+  <td>受信フレームの送信元MAC</td>
+</tr>
+<tr>
+  <td>関連する攻撃</td>
+  <td>ARP Spoofing</td>
+  <td>MAC Flooding</td>
+</tr>
+<tr>
+  <td>典型的な影響</td>
+  <td>誤ったMAC宛てに送信</td>
+  <td>転送先の誤りやフラッディング</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="section-6">6. ARP Spoofing（ARP偽装）とは何か</h2>
+<p>ここからセキュリティ上の中心論点に入ります。ARP Spoofingは、偽のARP情報を使って、端末のIPアドレスとMACアドレスの対応関係を誤認させる攻撃です。</p>
+<p>ARP Poisoning（ARPキャッシュポイズニング）とも呼ばれます。</p>
+<h3>6-1. ARPにはどのような弱点があるのか</h3>
+<p>ARPは、もともと信頼できるLAN内でアドレス解決することを想定した仕組みです。</p>
+<p>通常のARPには、<strong>受信したARP情報が本当にそのIPアドレスを持つ機器から送られたものか、暗号学的に認証する仕組みがありません。</strong></p>
+<p>例えば、PC-Aが次の情報を受信したとします。</p>
+<pre><code class="language-text">192.168.1.1 のMACアドレスは
+02:00:00:00:00:EE です
+</code></pre>
+<p>本来、<code>192.168.1.1</code> はデフォルトゲートウェイのIPアドレスです。しかし、ARP情報の内容を偽装できる攻撃者が、実際には自分のMACアドレス <code>02:00:00:00:00:EE</code> を通知することがあります。</p>
+<p>PC-Aがその情報を受け入れてARPキャッシュを更新すると、次のようになります。</p>
+<table>
+<thead>
+<tr>
+  <th>IPアドレス</th>
+  <th>本来のMAC</th>
+  <th>偽装後に記録されたMAC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>192.168.1.1</code></td>
+  <td><code>02:00:00:00:00:01</code></td>
+  <td><code>02:00:00:00:00:EE</code></td>
+</tr>
+</tbody>
+</table>
+<p>この状態では、PC-Aがデフォルトゲートウェイへ送るつもりで作成したEthernetフレームが、攻撃者のMACアドレス宛てになります。</p>
+<h3>6-2. なぜ偽装が成立するのか</h3>
+<p>ARPでは、送信者が通知するIPアドレスとMACアドレスの組合せが正しいことを、通常のプロトコルだけでは十分に検証できません。</p>
+<p>そのため、攻撃者が偽のARP Replyなどを送り、被害端末がその情報を受け入れると、ARPキャッシュの内容が汚染されます。</p>
+<p>ただし、すべてのOSがあらゆるARP応答を無条件に受け入れるわけではありません。未要求のARP応答を受け入れるか、既存エントリを上書きするかなどはOSや設定によって異なります。</p>
+<p>したがって、<strong>偽のARP情報を送信しただけで、必ず攻撃が成功するわけではありません。</strong></p>
+<p>SC試験では、問題文に「端末が偽のARP応答を受信してキャッシュを更新した」といった条件があれば、その結果を正確に追跡することが重要です。</p>
+<hr />
+<h2 id="section-7">7. ARP Spoofingによる中間者攻撃の流れ</h2>
+<p>具体的な攻撃を追跡してみましょう。</p>
+<h3>7-1. ネットワーク構成</h3>
+<table>
+<thead>
+<tr>
+  <th>機器</th>
+  <th>IPアドレス</th>
+  <th>MACアドレス</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>PC-A（被害端末）</td>
+  <td><code>192.168.1.10</code></td>
+  <td><code>02:00:00:00:00:0A</code></td>
+</tr>
+<tr>
+  <td>ルータ</td>
+  <td><code>192.168.1.1</code></td>
+  <td><code>02:00:00:00:00:01</code></td>
+</tr>
+<tr>
+  <td>攻撃者PC</td>
+  <td><code>192.168.1.50</code></td>
+  <td><code>02:00:00:00:00:EE</code></td>
+</tr>
+</tbody>
+</table>
+<p>3台は同じVLAN内に存在するとします。PC-Aは、インターネットへ通信するとき、デフォルトゲートウェイ <code>192.168.1.1</code> を利用します。</p>
+<h3>7-2. 正常時</h3>
+<p>正常時のPC-AのARPキャッシュは次のとおりです。</p>
+<pre><code class="language-text">192.168.1.1 → 02:00:00:00:00:01
+</code></pre>
+<p>そのため、外部へ送信するフレームは、ルータのMACアドレス宛てになります。</p>
+<pre><code class="language-text">PC-A → ルータ → インターネット
+</code></pre>
+<h3>7-3. 攻撃者が偽のARP情報を送る</h3>
+<p>攻撃者は、PC-Aに対して次のような偽情報を通知します。</p>
+<pre><code class="language-text">192.168.1.1 のMACアドレスは
+02:00:00:00:00:EE である
+</code></pre>
+<p>ここで偽装しているのは、<strong>ルータのIPアドレスに対応するMACアドレス</strong>です。</p>
+<p>攻撃者自身のIPアドレス <code>192.168.1.50</code> を知らせたいわけではありません。PC-Aに「ルータのMACアドレスは攻撃者のMACアドレスだ」と思わせることが目的です。</p>
+<h3>7-4. PC-AのARPキャッシュが汚染される</h3>
+<p>PC-Aが偽情報を受け入れると、次のように変わります。</p>
+<pre><code class="language-text">攻撃前：
+192.168.1.1 → 02:00:00:00:00:01
+
+攻撃後：
+192.168.1.1 → 02:00:00:00:00:EE
+</code></pre>
+<p>これにより、PC-Aがルータへ送るつもりのフレームは、攻撃者のMACアドレスを宛先として作成されます。</p>
+<h3>7-5. 攻撃者が通信経路上に入る</h3>
+<p>攻撃者が受信したパケットを正規のルータへ転送するように動作していれば、次の通信経路が成立する場合があります。</p>
+<pre><code class="language-text">PC-A（被害端末） → 攻撃者（通信を中継） → ルータ（正規のGW）
+</code></pre>
+<p>往復通信を中継するには、戻り方向の経路も攻撃者へ誘導するなど、追加の条件が必要です。</p>
+<p>攻撃者がPC-Aからルータへの通信だけを誘導した場合、少なくともその方向の通信を受信する可能性があります。</p>
+<p>双方向の通信を継続的に中継するには、ルータ側のARP情報も偽装する、あるいは別の方法で戻り方向の通信を確保する必要があります。</p>
+<h3>7-6. 攻撃者は何ができるのか</h3>
+<p>通信が攻撃者を経由する状態になれば、条件に応じて次のような行為が可能になります。</p>
+<table>
+<thead>
+<tr>
+  <th>行為</th>
+  <th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>盗聴</td>
+  <td>通過するパケットを観測する</td>
+</tr>
+<tr>
+  <td>改ざん</td>
+  <td>保護されていない通信の内容を変更する</td>
+</tr>
+<tr>
+  <td>妨害</td>
+  <td>パケットを転送せず破棄する</td>
+</tr>
+<tr>
+  <td>誘導</td>
+  <td>通信内容や宛先への到達を操作する</td>
+</tr>
+</tbody>
+</table>
+<p>ただし、<strong>ARP Spoofingに成功したことと、HTTPS通信の内容を復号できることは別です。</strong> 次の節で、この点を詳しく扱います。</p>
+<hr />
+<h2 id="section-8">8. ARP SpoofingとHTTPSの関係</h2>
+<h3>8-1. 通信経路を乗っ取っても、暗号化が消えるわけではない</h3>
+<p>例えば、PC-AがHTTPSでWebサイトにアクセスしているとします。</p>
+<p>ARP Spoofingによって攻撃者が通信経路上に入ったとしても、正常に確立されたTLS通信は暗号化されています。</p>
+<p>そのため、攻撃者は通信パケットを取得できても、適切に保護されたTLSのアプリケーションデータを、通常はそのまま平文で読むことはできません。</p>
+<p>ここでは、二つのセキュリティ対策が異なる層で働いています。</p>
+<table>
+<thead>
+<tr>
+  <th>対象</th>
+  <th>仕組み</th>
+  <th>役割</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>LAN内の転送</td>
+  <td>ARP</td>
+  <td>IPv4アドレスからMACアドレスを解決する</td>
+</tr>
+<tr>
+  <td>Web通信の保護</td>
+  <td>TLS</td>
+  <td>通信内容の暗号化、通信相手の認証、完全性の保護</td>
+</tr>
+</tbody>
+</table>
+<p>ARPの弱点を利用してL2の通信経路を操作できても、TLSの暗号化や証明書検証を自動的に突破できるわけではありません。</p>
+<h3>8-2. TLS証明書検証の重要性</h3>
+<p>攻撃者が偽のWebサーバを提示した場合でも、クライアントがサーバ証明書を適切に検証していれば、不正な証明書によるなりすましを検出できます。</p>
+<p>逆に、利用者が証明書警告を無視したり、端末が不正な認証局を信頼していたりすると、別の問題が発生する可能性があります。</p>
+<p>つまり、ARP Spoofingへの防御とTLSによる保護は、互いに代替するものではありません。</p>
+<p><strong>L2の通信経路を守る対策と、アプリケーション通信を暗号化・認証する対策を組み合わせる</strong>ことが重要です。</p>
+<h3>8-3. 科目Bでの書き分け</h3>
+<p>例えば、設問で「ARP SpoofingによってHTTPS通信の内容を盗聴できるか」と問われた場合、単に「できる」「できない」と断定するのは不十分です。</p>
+<p>答案では次のように条件を分けます。</p>
+<blockquote>
+<p>ARP Spoofingによって通信経路上のパケットを取得できる場合があるが、TLSが正常に確立されていれば、暗号化されたアプリケーションデータをそのまま平文で読み取ることはできない。</p>
+</blockquote>
+<p>このように、<strong>パケットを取得できることと、内容を解読できることを区別する</strong>のがポイントです。</p>
+<hr />
+<h2 id="section-9">9. ARP Spoofingへの防御策</h2>
+<p>攻撃の原因は、ARPで通知されるIPアドレスとMACアドレスの対応関係を十分に認証できないことでした。</p>
+<p>したがって、防御策は「不正なARP情報を受け入れない」「不正な端末を接続させない」「攻撃の影響を検知する」という方向になります。</p>
+<h3>9-1. Dynamic ARP Inspection（DAI）</h3>
+<p>DAIは、スイッチがARPパケットを検査し、不正なIPアドレスとMACアドレスの組合せを含むARPパケットを破棄するための機能です。</p>
+<p>例えば、ネットワークで正規の対応関係が次のように分かっているとします。</p>
+<pre><code class="language-text">192.168.1.1 → 02:00:00:00:00:01
+</code></pre>
+<p>攻撃者が次の情報を含むARPパケットを送信した場合、</p>
+<pre><code class="language-text">192.168.1.1 → 02:00:00:00:00:EE
+</code></pre>
+<p>スイッチが正規の対応関係と照合できれば、不正なARPパケットを破棄できます。</p>
+<p>DAIでは、DHCP Snoopingによって作成したIPアドレスとMACアドレスなどの対応情報を利用する構成が代表的です。</p>
+<p>ただし、固定IPアドレスの機器については、別途、適切な検証情報を登録する必要がある場合があります。</p>
+<p><strong>DAIを有効にするだけで、あらゆるARP偽装が無条件に防止されるわけではありません。</strong> 検証情報の正確性と信頼するポートの設定が重要です。</p>
+<h3>9-2. 静的ARPエントリ</h3>
+<p>重要な通信相手について、IPアドレスとMACアドレスの対応関係を固定する方法です。</p>
+<p>例えば、PC-Aに次の対応を固定します。</p>
+<pre><code class="language-text">192.168.1.1 → 02:00:00:00:00:01
+</code></pre>
+<p>適切に固定されていれば、偽のARP情報によってこの対応関係が変更されるリスクを減らせます。</p>
+<p>ただし、機器の交換などでMACアドレスが変わった場合、管理者が設定を更新する必要があります。そのため、大規模なネットワークでは運用負担が大きくなることがあります。</p>
+<h3>9-3. IEEE 802.1X認証</h3>
+<p>802.1Xは、ネットワークへの接続時に認証を行う仕組みです。不正な端末が社内LANへ自由に接続することを防ぐために役立ちます。</p>
+<p>ただし、802.1Xで認証された端末が侵害され、ARP Spoofingを行う場合も考えられます。</p>
+<p>したがって、802.1Xは接続制御として有効ですが、ARPパケットの正当性を直接検証するDAIとは役割が異なります。</p>
+<h3>9-4. VLANによる通信範囲の分離</h3>
+<p>ARP Requestのブロードキャストは、通常、同じVLAN内に届きます。そのため、利用者や端末の用途に応じてVLANを分離すれば、ARPを利用した攻撃の到達範囲を制限できます。</p>
+<p>ただし、同じVLAN内に攻撃者が存在する場合は、VLAN分離だけではARP Spoofingを防げません。</p>
+<h3>9-5. ARP監視・異常検知</h3>
+<p>ARPテーブルの変化や、ネットワーク内のARP通信を監視することも有効です。</p>
+<p>例えば、デフォルトゲートウェイのIPアドレスに対応するMACアドレスが突然変わった場合、確認が必要です。</p>
+<p>ただし、ルータの交換や冗長化構成の切替えでもMACアドレスが変化する場合があります。したがって、MACアドレスが変化したという事実だけで、直ちに攻撃と断定してはいけません。</p>
+<h3>9-6. 対策を比較する</h3>
+<table>
+<thead>
+<tr>
+  <th>対策</th>
+  <th>主な目的</th>
+  <th>注意点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>DAI</strong></td>
+  <td>不正なARP情報を検査・破棄</td>
+  <td>正しい対応情報が必要</td>
+</tr>
+<tr>
+  <td>静的ARP</td>
+  <td>重要なIPとMACの対応を固定</td>
+  <td>変更管理の負担</td>
+</tr>
+<tr>
+  <td>802.1X</td>
+  <td>不正端末のネットワーク接続を制限</td>
+  <td>認証済み端末の攻撃は別途対策</td>
+</tr>
+<tr>
+  <td>VLAN分離</td>
+  <td>攻撃の到達範囲を制限</td>
+  <td>同一VLAN内の攻撃は防げない</td>
+</tr>
+<tr>
+  <td>ARP監視</td>
+  <td>異常な対応関係の変化を検知</td>
+  <td>正常な変更との区別が必要</td>
+</tr>
+</tbody>
+</table>
+<p>科目Bで「ARP Spoofingへの直接的な防御策」を問われた場合は、問題文の環境に応じて、<strong>DAIによるARPパケットの検証や、静的ARPエントリによる対応関係の固定</strong>を検討してください。</p>
+<hr />
+<h2 id="section-10">10. Gratuitous ARPとは何か</h2>
+<p><strong>B：理解補助</strong></p>
+<p>Gratuitous ARPは、自分自身のIPv4アドレスに関するARP情報を、同じネットワーク内へ通知したり、アドレス重複を確認したりするために利用されるARPです。</p>
+<p>通常のARP Requestは、他の機器のMACアドレスを調べるために送信します。一方、Gratuitous ARPでは、自分自身のIPアドレスを対象とするARP情報を送信します。</p>
+<h3>10-1. どのような場面で使われるか</h3>
+<p>例えば、次のような場面があります。</p>
+<ul>
+<li>IPアドレスの重複を検出する。</li>
+<li>IPアドレスとMACアドレスの対応関係を周囲に通知する。</li>
+<li>冗長化された機器が切り替わったとき、新しい転送先の情報を周囲へ知らせる。</li>
+</ul>
+<p>Gratuitous ARPは正常なネットワーク運用でも使用されます。したがって、Gratuitous ARPを検出しただけで攻撃と判断してはいけません。</p>
+<h3>10-2. ARP Spoofingとの関係</h3>
+<p>ARP Spoofingでは、攻撃者がARP情報を偽装して送信することがあります。</p>
+<p>しかし、<strong>Gratuitous ARPそのものが攻撃なのではありません。</strong></p>
+<p>正常なARP通知と、攻撃者による偽のARP通知を区別するには、IPアドレスとMACアドレスの正当な対応関係、ネットワーク構成、発生時刻などを確認する必要があります。</p>
+<hr />
+<h2 id="section-11">11. ARPテーブルと通信ログを読む</h2>
+<p>ここでは、実際の試験問題を意識して、ログから攻撃の可能性を判断します。</p>
+<h3>11-1. 正常時のARPテーブル</h3>
+<p>PC-AのARPキャッシュに次の情報があるとします。</p>
+<pre><code class="language-text">IP Address       MAC Address
+192.168.1.1      02:00:00:00:00:01
+192.168.1.20     02:00:00:00:00:0B
+</code></pre>
+<p><code>192.168.1.1</code> は正規のデフォルトゲートウェイです。この状態では、PC-Aは外部ネットワーク宛てのフレームを、正規のルータのMACアドレスへ送信します。</p>
+<h3>11-2. 異常発生時</h3>
+<p>しばらくして、次のように変化しました。</p>
+<pre><code class="language-text">IP Address       MAC Address
+192.168.1.1      02:00:00:00:00:EE
+192.168.1.20     02:00:00:00:00:0B
+</code></pre>
+<p>デフォルトゲートウェイのIPアドレスに対応するMACアドレスが、<code>02:00:00:00:00:01</code> から <code>02:00:00:00:00:EE</code> へ変わっています。</p>
+<p>同時刻に、次のようなARPパケットが観測されたとします。</p>
+<pre><code class="language-text">10:15:01 ARP Reply
+Sender IP  : 192.168.1.1
+Sender MAC : 02:00:00:00:00:EE
+
+10:15:03 ARP Reply
+Sender IP  : 192.168.1.1
+Sender MAC : 02:00:00:00:00:EE
+</code></pre>
+<h3>11-3. 何が疑われるか</h3>
+<p>このログからは、次の事実を確認できます。</p>
+<ol>
+<li>デフォルトゲートウェイのIPアドレスに対するMACアドレスの対応が変化した。</li>
+<li>変更後のMACアドレスを通知するARP Replyが観測された。</li>
+<li>PC-Aがその対応関係をARPキャッシュに保持している。</li>
+</ol>
+<p>この状況では、ARP Spoofingを疑うことができます。ただし、正規のルータ交換や冗長化の切替えなどによってMACアドレスが変わった可能性もあります。</p>
+<h3>11-4. 追加調査のポイント</h3>
+<p>実際に攻撃が発生したか確認するには、次の情報が役立ちます。</p>
+<table>
+<thead>
+<tr>
+  <th>確認項目</th>
+  <th>調査目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>正規ルータのMACアドレス</td>
+  <td>偽装の有無を確認する</td>
+</tr>
+<tr>
+  <td><code>02:00:00:00:00:EE</code> の接続ポート</td>
+  <td>不審な機器の接続場所を調べる</td>
+</tr>
+<tr>
+  <td>ARP Replyの送信元</td>
+  <td>誰が偽の対応関係を通知したか調べる</td>
+</tr>
+<tr>
+  <td>ルータの交換・切替え履歴</td>
+  <td>正常な変更の可能性を確認する</td>
+</tr>
+<tr>
+  <td>パケットキャプチャ</td>
+  <td>実際の通信経路を確認する</td>
+</tr>
+<tr>
+  <td>DAIの違反ログ</td>
+  <td>不正なARPパケットの検出状況を確認する</td>
+</tr>
+</tbody>
+</table>
+<p>特に、<strong>ARPキャッシュに不正なMACアドレスが登録されていることと、攻撃者が実際に通信内容を取得したことは別の事実</strong>です。</p>
+<p>調査や答案では、観測された事実と、そこから推測される攻撃を分けて説明してください。</p>
+<hr />
+<h2 id="section-12">12. 第10講のMAC Floodingとの比較</h2>
+<p>第10講で学んだMAC Floodingと、今回のARP Spoofingは混同しやすい攻撃です。</p>
+<p>どちらもL2ネットワークに関係し、通信を不正に取得する機会を生み出す可能性があります。しかし、攻撃対象となる情報が異なります。</p>
+<table>
+<thead>
+<tr>
+  <th>比較</th>
+  <th>MAC Flooding</th>
+  <th>ARP Spoofing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>攻撃対象</td>
+  <td>L2スイッチのMACアドレス学習</td>
+  <td>端末などのARPキャッシュ</td>
+</tr>
+<tr>
+  <td>悪用する仕組み</td>
+  <td>送信元MACアドレスの学習</td>
+  <td>IPとMACの対応関係の通知</td>
+</tr>
+<tr>
+  <td>主な攻撃方法</td>
+  <td>大量の異なる送信元MACを使う</td>
+  <td>偽のARP情報を通知する</td>
+</tr>
+<tr>
+  <td>典型的な影響</td>
+  <td>学習資源の逼迫、未知ユニキャストの増加など</td>
+  <td>誤ったMAC宛てへの送信、通信経路の誘導</td>
+</tr>
+<tr>
+  <td>直接的な対策例</td>
+  <td>Port Security</td>
+  <td>DAI、静的ARP</td>
+</tr>
+</tbody>
+</table>
+<p>例えば、問題文に次の記述があるとします。</p>
+<blockquote>
+<p>「一つのスイッチポートで、短時間に数千個のMACアドレスが学習された」</p>
+</blockquote>
+<p>この場合はMAC Floodingを疑います。</p>
+<p>一方、次の記述があるとします。</p>
+<blockquote>
+<p>「デフォルトゲートウェイのIPアドレスに対応するMACアドレスが、攻撃者のMACアドレスに変更された」</p>
+</blockquote>
+<p>この場合はARP Spoofingを疑います。</p>
+<p><strong>MAC FloodingはMACアドレス学習の悪用、ARP SpoofingはIPとMACの対応関係の偽装</strong>と整理してください。</p>
+<hr />
+<h2 id="section-13">13. 科目Aの典型論点</h2>
+<h3>13-1. ARPの役割</h3>
+<p>ARPは、IPv4アドレスに対応するMACアドレスを解決するプロトコルです。DNSのようにホスト名からIPアドレスを調べるものではありません。</p>
+<h3>13-2. ARP Requestの送信方法</h3>
+<p>通常のARP Requestは、宛先MACアドレス <code>FF:FF:FF:FF:FF:FF</code> のブロードキャストフレームで送信します。</p>
+<h3>13-3. ARP Replyの送信方法</h3>
+<p>通常のARP Replyは、問い合わせ元へのユニキャストで返されます。</p>
+<h3>13-4. 別ネットワークへの通信</h3>
+<p>宛先が別ネットワークの場合、ARPで解決するのは、通常、次にフレームを渡すデフォルトゲートウェイのIPアドレスです。</p>
+<h3>13-5. ARPキャッシュとMACアドレステーブル</h3>
+<p>ARPキャッシュはIPv4アドレスとMACアドレスの対応を管理します。スイッチのMACアドレステーブルは、MACアドレスとポートの対応を管理します。</p>
+<h3>13-6. ARP Spoofing</h3>
+<p>偽のARP情報によってIPアドレスとMACアドレスの対応関係を誤認させ、通信を攻撃者へ誘導する攻撃です。</p>
+<h3>13-7. IPv6との違い</h3>
+<p>ARPはIPv4で使用されます。IPv6では、ARPの代わりにICMPv6を利用した近隣探索（Neighbor Discovery）が使われます。</p>
+<hr />
+<h2 id="section-14">14. 科目Bの答案作成ポイント</h2>
+<p>科目Bでは、「ARPを悪用した攻撃」とだけ答えるのではなく、<strong>どの対応関係が、どのように偽装され、どの通信に影響したのか</strong>を説明する必要があります。</p>
+<h3>14-1. 設問例①：ARPの処理手順</h3>
+<p><strong>設問</strong></p>
+<p>PC-Aが同じLAN内のPC-Bへ初めてIPv4パケットを送信する。PC-AのARPキャッシュにはPC-Bの情報がない。送信までの処理を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<blockquote>
+<p>「PC-AはPC-BのIPアドレスを対象とするARP Requestをブロードキャストし、PC-BからのARP ReplyでMACアドレスを取得して、そのMACアドレス宛てにEthernetフレームを送信する。」</p>
+</blockquote>
+<p><strong>解説</strong></p>
+<p>重要なのは、次の四つを含めることです。</p>
+<ul>
+<li>問い合わせ対象はPC-BのIPアドレス。</li>
+<li>ARP Requestはブロードキャスト。</li>
+<li>PC-BからARP Replyが返る。</li>
+<li>取得したMACアドレスを使ってフレームを送信する。</li>
+</ul>
+<h3>14-2. 設問例②：別ネットワークへのARP</h3>
+<p><strong>設問</strong></p>
+<p>PC-AのIPアドレスは <code>192.168.1.10/24</code>、デフォルトゲートウェイは <code>192.168.1.1</code> である。PC-Aが <code>203.0.113.80</code> に通信するとき、ARPで解決するIPアドレスを答えよ。</p>
+<p><strong>答案例</strong></p>
+<p><code>192.168.1.1</code></p>
+<p><strong>解説</strong></p>
+<p>別ネットワーク宛てのパケットは、まずデフォルトゲートウェイへ渡します。したがって、ARPで解決する対象はデフォルトゲートウェイのIPアドレスです。</p>
+<h3>14-3. 設問例③：ARP Spoofingの目的</h3>
+<p><strong>設問</strong></p>
+<p>攻撃者が、デフォルトゲートウェイのIPアドレスと攻撃者のMACアドレスを対応付けた偽のARP情報をPC-Aへ送る目的を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<blockquote>
+<p>「PC-AのARPキャッシュに、デフォルトゲートウェイのMACアドレスとして攻撃者のMACアドレスを登録させ、ルータ宛ての通信を攻撃者へ誘導するため。」</p>
+</blockquote>
+<p><strong>解説</strong></p>
+<p>単に「盗聴するため」と書くより、ARPキャッシュの変更とフレームの転送先を明示する方が正確です。</p>
+<h3>14-4. 設問例④：ARP Spoofingへの対策</h3>
+<p><strong>設問</strong></p>
+<p>スイッチ側でARP Spoofingを防止するための対策を一つ挙げ、その仕組みを説明せよ。</p>
+<p><strong>答案例</strong></p>
+<blockquote>
+<p>「Dynamic ARP Inspectionを導入し、ARPパケットに含まれるIPアドレスとMACアドレスの対応を正規の情報と照合して、不正なARPパケットを破棄する。」</p>
+</blockquote>
+<p><strong>解説</strong></p>
+<p>対策名だけでなく、<strong>何を検査し、何を防止するのか</strong>まで説明します。</p>
+<h3>14-5. 設問例⑤：HTTPSへの影響</h3>
+<p><strong>設問</strong></p>
+<p>ARP Spoofingによって攻撃者がHTTPS通信の経路上に入った場合でも、通信内容を直ちに平文で読み取れるとは限らない理由を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<blockquote>
+<p>「HTTPSではTLSによって通信内容が暗号化されており、通信経路上でパケットを取得しても、正常に保護されたアプリケーションデータをそのまま復号できないため。」</p>
+</blockquote>
+<p><strong>解説</strong></p>
+<p>ARPによる経路制御とTLSによる暗号化は異なる仕組みです。</p>
+<hr />
+<h2 id="section-15">15. 重要事項の整理</h2>
+<p>今回の講義で最も重要なのは、次の六つです。</p>
+<p><strong>第一に、ARPはIPv4アドレスからMACアドレスを解決する仕組みです。</strong> Ethernetフレームを作成するために必要な情報を取得します。</p>
+<p><strong>第二に、ARP Requestは通常ブロードキャスト、ARP Replyは通常ユニキャストです。</strong> ARPキャッシュに必要な情報がないとき、問い合わせと応答によってMACアドレスを取得します。</p>
+<p><strong>第三に、別ネットワーク宛てでは、通常、デフォルトゲートウェイのMACアドレスをARPで解決します。</strong> 最終宛先IPアドレスとEthernetの宛先MACアドレスは一致する対象を示すとは限りません。</p>
+<p><strong>第四に、ARPキャッシュとスイッチのMACアドレステーブルは別物です。</strong> 前者はIPとMAC、後者はMACとポートの対応を管理します。</p>
+<p><strong>第五に、ARP Spoofingは偽のARP情報によって通信経路を誘導する攻撃です。</strong> デフォルトゲートウェイのIPアドレスに攻撃者のMACアドレスを対応付けさせることが典型例です。</p>
+<p><strong>第六に、ARP SpoofingとTLSの暗号化は異なる層の問題です。</strong> 経路上でパケットを取得できても、HTTPS通信の内容を直ちに平文で読めるわけではありません。</p>
+<h3>C：発展として切り分けた内容</h3>
+<p>今回は、ARPパケットの全フィールドとビット長、OSごとのARPキャッシュ更新条件、DAIのメーカー固有設定、IPv6近隣探索の詳細については深掘りしません。</p>
+<p>これらは必要な講義で扱い、今回は<strong>ARPの通信手順、偽装の成立過程、攻撃と防御の対応関係</strong>を優先します。</p>
+<footer>第11講｜チャット講義本文・第1〜15節。理解度チェック（第16節）は収録していません。図はテキスト図として再表現。</footer></main></body></html>
