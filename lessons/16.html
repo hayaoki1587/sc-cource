@@ -1,0 +1,831 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第16講｜TCP｜SC合格講座</title><style>
+:root{color-scheme:light;--ink:#1c3045;--muted:#53697b;--accent:#176c78;--line:#dbe5eb;--bg:#f5f8fa}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;background:var(--bg);color:var(--ink);line-height:1.85}
+.layout{display:grid;grid-template-columns:255px minmax(0,850px);gap:34px;max-width:1200px;margin:auto;padding:30px 22px}
+nav{position:sticky;top:18px;align-self:start;max-height:calc(100vh - 36px);overflow:auto;background:white;border:1px solid var(--line);border-radius:14px;padding:20px}nav strong{display:block;margin-bottom:12px}nav a{display:block;font-size:13px;line-height:1.55;padding:7px 2px;color:var(--muted);text-decoration:none;border-bottom:1px solid #f0f3f5}nav a:hover{color:var(--accent)}
+main{background:white;border:1px solid var(--line);border-radius:16px;padding:42px 48px;box-shadow:0 6px 30px #263b4b0a}h1{font-size:2.1rem;line-height:1.35;color:#113e57;margin:0 0 16px}h2{font-size:1.55rem;line-height:1.45;border-bottom:2px solid #9ac8ce;padding-bottom:10px;margin-top:58px;scroll-margin-top:24px}h3{font-size:1.15rem;color:#14606d;margin-top:28px}p{margin:12px 0}strong{font-weight:750}ul,ol{padding-left:1.6em}li{margin:5px 0}table{border-collapse:collapse;width:100%;margin:18px 0 26px;font-size:.92rem}th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}th{background:#eaf3f5}tr:nth-child(even) td{background:#fafcfd}pre{background:#12283b;color:#edf6fb;padding:18px 20px;border-radius:10px;overflow:auto;line-height:1.65;font-size:.9rem}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}p code,li code,td code{background:#edf3f6;padding:2px 5px;border-radius:4px;font-size:.92em}blockquote{border-left:4px solid #80b7c1;padding:8px 16px;background:#f4f9fa;margin:16px 0}.meta{color:var(--muted);font-size:.9rem}.back{display:inline-block;margin-top:40px;color:var(--accent)}
+@media(max-width:880px){.layout{display:block;padding:10px}nav{position:static;max-height:none;margin-bottom:12px}nav a{display:inline-block;padding:5px 8px;border:none}main{padding:24px 18px}h1{font-size:1.7rem}h2{font-size:1.3rem}table{display:block;overflow-x:auto}pre{font-size:.8rem}}
+@media print{body{background:white}.layout{display:block;padding:0}nav{display:none}main{border:0;box-shadow:none;padding:0}h2{break-after:avoid}pre,table{break-inside:avoid}}
+</style></head><body><div class="layout"><nav><strong>第16講｜目次</strong><a href="#section-01">1. 到達目標・参考書・学習優先度</a>
+<a href="#section-02">2. TCPは何をするプロトコルなのか</a>
+<a href="#section-03">3. TCPの通信を識別する情報</a>
+<a href="#section-04">4. TCPヘッダの主要フィールド</a>
+<a href="#section-05">5. TCPの制御フラグ</a>
+<a href="#section-06">6. 3ウェイハンドシェイク</a>
+<a href="#section-07">7. シーケンス番号と確認応答番号</a>
+<a href="#section-08">8. TCPの再送制御</a>
+<a href="#section-09">9. フロー制御と輻輳制御</a>
+<a href="#section-10">10. TCPコネクションの終了</a>
+<a href="#section-11">11. TCPの主要な状態</a>
+<a href="#section-12">12. SYN Flood攻撃</a>
+<a href="#section-13">13. TCPのログとパケットを読む</a>
+<a href="#section-14">14. TCPを利用したその他の攻撃</a>
+<a href="#section-15">15. 科目Aの典型論点</a>
+<a href="#section-16">16. 科目Bの答案作成ポイント</a>
+<a href="#section-17">17. 重要事項の整理</a></nav><main><h1>第16講｜TCP</h1>
+<p><strong>情報処理安全確保支援士（SC）合格講座｜第1〜23講・詳細再執筆</strong></p>
+<p>第15講では、IP通信のエラー通知や経路診断に使用するICMPを学びました。今回扱う<strong>TCP（Transmission Control Protocol）</strong>は、Web、メール、SSHなど、多くのアプリケーション通信を支えるトランスポート層のプロトコルです。</p>
+<p>SC試験では、TCPの仕組みを理解するだけでなく、パケットのフラグやシーケンス番号から通信状態を判断し、SYN Floodなどの攻撃がなぜ成立するのかを説明できることが重要です。</p>
+<p>第16講は、既存の進捗表で<strong>13／15点・要復習</strong>となっています。今回は特に、3ウェイハンドシェイク、ACK番号、再送制御、コネクション状態を重点的に解説します。</p>
+<h2 id="section-01">1. 到達目標・参考書・学習優先度</h2>
+<h3>到達目標</h3>
+<p>今回の講義を終えると、次のことができるようになります。</p>
+<ol>
+<li>TCPとUDPの役割の違いを説明できる。</li>
+<li>SYN、ACK、FIN、RSTなどのフラグを読み取れる。</li>
+<li>3ウェイハンドシェイクの各段階と状態遷移を説明できる。</li>
+<li>シーケンス番号と確認応答番号を計算できる。</li>
+<li>再送制御、フロー制御、輻輳制御を区別できる。</li>
+<li>FINとRSTによる終了の違いを説明できる。</li>
+<li>SYN Floodの仕組み、影響、対策を説明できる。</li>
+<li>TCPのパケットログから通信障害や不審な挙動を分析できる。</li>
+</ol>
+<h3>参考書の対応箇所</h3>
+<p>基本参考書：『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』</p>
+<p><strong>第3章「ネットワーク基礎技術」3-1「TCP/IP」、TCPのヘッダ・管理・コネクションの説明（pp.178〜183付近）</strong>。</p>
+<p>参考書のTCPヘッダ、コントロールフラグ、ウィンドウサイズ、MSS・SACK、3ウェイハンドシェイク、コネクション解放、再送制御、シーケンス番号と確認応答番号の記述に対応します。特にpp.181〜183にはコネクション確立・解放と信頼性の説明があります。</p>
+<p>SYN Flood、SYN Cookie、パケットログの具体的な分析、TCP状態とファイアウォールの関係は、講師による試験対策上の補足です。</p>
+<h3>A・B・Cの学習優先度</h3>
+<table>
+<thead>
+<tr>
+<th>優先度</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A：必須</strong></td>
+<td>TCPの信頼性、3ウェイハンドシェイク、SYN・ACK・FIN・RST、シーケンス番号とACK番号、再送、SYN Flood、ログ・科目B答案</td>
+</tr>
+<tr>
+<td><strong>B：理解補助</strong></td>
+<td>ウィンドウ制御、輻輳制御、MSS、SACK、TIME_WAIT</td>
+</tr>
+<tr>
+<td><strong>C：発展</strong></td>
+<td>輻輳制御アルゴリズムの実装、TCPオプションの細部、OS固有のタイムアウト設定</td>
+</tr>
+</tbody>
+</table>
+<h2 id="section-02">2. TCPは何をするプロトコルなのか</h2>
+<h3>2-1. IPだけでは信頼性を保証できない</h3>
+<p>第12講で学んだIPは、宛先IPアドレスに基づいてパケットを転送します。しかし、IP自体は、送信したパケットが必ず相手に届くことや、送信順序どおりに届くことを保証しません。</p>
+<p>例えば、送信元が三つのIPパケットを送ったとします。</p>
+<pre><code class="language-text">送信順序
+① → ② → ③
+
+受信結果
+② → ①
+（③は途中で消失）
+</code></pre>
+<p>このような状況は、ネットワークの混雑や経路の違いなどによって起こり得ます。TCPは、このような不確実なIPネットワーク上で、アプリケーションに<strong>順序どおりの信頼性のあるバイトストリーム</strong>を提供します。</p>
+<h3>2-2. TCPの主な機能</h3>
+<table>
+<thead>
+<tr>
+<th>機能</th>
+<th>目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>コネクション管理</td>
+<td>通信開始・終了を管理する</td>
+</tr>
+<tr>
+<td>シーケンス番号</td>
+<td>データの位置・順序を識別する</td>
+</tr>
+<tr>
+<td>確認応答（ACK）</td>
+<td>受信済みのデータを知らせる</td>
+</tr>
+<tr>
+<td>再送制御</td>
+<td>消失したデータを再送する</td>
+</tr>
+<tr>
+<td>フロー制御</td>
+<td>受信側の処理能力を超えないようにする</td>
+</tr>
+<tr>
+<td>輻輳制御</td>
+<td>ネットワークの混雑を考慮して送信量を調整する</td>
+</tr>
+<tr>
+<td>チェックサム</td>
+<td>転送中のデータ破損などを検出する</td>
+</tr>
+</tbody>
+</table>
+<p>TCPは信頼性を提供しますが、<strong>暗号化や通信相手の本人確認を自動的に提供するわけではありません</strong>。例えばHTTPSでは、TCPによる転送の上でTLSを使用し、暗号化やサーバ認証などを実現します。</p>
+<h3>2-3. TCPとUDPの違い</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>TCP</th>
+<th>UDP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>通信方式</td>
+<td>コネクション型</td>
+<td>コネクションレス型</td>
+</tr>
+<tr>
+<td>コネクション確立</td>
+<td>あり</td>
+<td>なし</td>
+</tr>
+<tr>
+<td>順序制御</td>
+<td>あり</td>
+<td>UDP自体にはなし</td>
+</tr>
+<tr>
+<td>消失時の再送</td>
+<td>TCPが実施</td>
+<td>UDP自体にはなし</td>
+</tr>
+<tr>
+<td>フロー制御</td>
+<td>あり</td>
+<td>UDP自体にはなし</td>
+</tr>
+<tr>
+<td>主な利用例</td>
+<td>HTTPS、SSH、SMTPなど</td>
+<td>DNS、音声・映像通信など</td>
+</tr>
+</tbody>
+</table>
+<p>UDPを使うアプリケーションが、独自に再送や順序制御を実装することは可能です。したがって、「UDPを使う通信は絶対に再送しない」という理解は不正確です。</p>
+<h2 id="section-03">3. TCPの通信を識別する情報</h2>
+<h3>3-1. ポート番号の役割</h3>
+<p>IPアドレスは通信先のホストなどを識別するために使用します。一方、ポート番号は、そのホスト上のどのサービス・通信端点へデータを渡すかを識別するために使います。</p>
+<pre><code class="language-text">クライアント
+192.168.1.10:52000
+
+Webサーバ
+203.0.113.10:443
+</code></pre>
+<p>クライアントの送信元ポートは52000、サーバの宛先ポートは443です。</p>
+<h3>3-2. TCPコネクションの識別</h3>
+<p>TCPコネクションは、一般に次の四つの値の組合せで識別できます。</p>
+<ul>
+<li>送信元IPアドレス</li>
+<li>送信元ポート番号</li>
+<li>宛先IPアドレス</li>
+<li>宛先ポート番号</li>
+</ul>
+<p>これを<strong>4タプル</strong>と呼びます。同じサーバの443番ポートに複数のクライアントが同時接続できます。</p>
+<pre><code class="language-text">192.168.1.10:52000 → 203.0.113.10:443
+192.168.1.11:53000 → 203.0.113.10:443
+192.168.1.12:54000 → 203.0.113.10:443
+</code></pre>
+<p>それぞれ4タプルが異なるため、別々のTCPコネクションとして管理できます。</p>
+<h3>3-3. コネクションの相手は必ず最終的なサーバか</h3>
+<p>必ずしもそうではありません。明示的なHTTPプロキシを使用する場合、クライアントがTCPコネクションを確立する相手はプロキシサーバです。プロキシは必要に応じて、接続先のサーバとの間に別のTCPコネクションを確立します。</p>
+<pre><code class="language-text">クライアント
+    |
+    | TCPコネクション①
+    v
+プロキシサーバ
+    |
+    | TCPコネクション②
+    v
+Webサーバ
+</code></pre>
+<p>この場合、クライアントからWebサーバまで一本のTCPコネクションがそのまま延びているわけではありません。ファイアウォールやプロキシのログを読むときに重要です。</p>
+<h2 id="section-04">4. TCPヘッダの主要フィールド</h2>
+<p>TCPセグメントには、TCPヘッダとデータが含まれます。</p>
+<h3>4-1. TCPヘッダの構造</h3>
+<pre><code class="language-text">┌────────────────┬────────────────┐
+│ 送信元ポート番号 │ 宛先ポート番号   │
+├────────────────┴────────────────┤
+│ シーケンス番号                    │
+├─────────────────────────────────┤
+│ 確認応答番号                      │
+├────────────────┬────────────────┤
+│ ヘッダ長・Flags │ ウィンドウサイズ │
+├────────────────┼────────────────┤
+│ チェックサム    │ 緊急ポインタ     │
+├────────────────┴────────────────┤
+│ オプション（存在する場合）         │
+├─────────────────────────────────┤
+│ TCPデータ（ペイロード）            │
+└─────────────────────────────────┘
+</code></pre>
+<p>模式図です。実際の各フィールドのビット幅や並びを厳密に縮尺表示したものではありません。オプションを含まないTCPヘッダの長さは20バイトです。</p>
+<h3>4-2. 試験で特に重要なフィールド</h3>
+<table>
+<thead>
+<tr>
+<th>フィールド</th>
+<th>意味</th>
+<th>試験での確認ポイント</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source Port</td>
+<td>送信元ポート</td>
+<td>通信元の識別</td>
+</tr>
+<tr>
+<td>Destination Port</td>
+<td>宛先ポート</td>
+<td>サービスの識別</td>
+</tr>
+<tr>
+<td>Sequence Number</td>
+<td>シーケンス番号</td>
+<td>データの位置</td>
+</tr>
+<tr>
+<td>Acknowledgment Number</td>
+<td>確認応答番号</td>
+<td>次に受信したい番号</td>
+</tr>
+<tr>
+<td>Flags</td>
+<td>制御フラグ</td>
+<td>接続確立・終了・異常終了</td>
+</tr>
+<tr>
+<td>Window</td>
+<td>受信ウィンドウ</td>
+<td>受信側が受け取れるデータ量</td>
+</tr>
+</tbody>
+</table>
+<p>特に、<strong>Sequence Number、Acknowledgment Number、Flags</strong>は重点的に理解してください。</p>
+<h2 id="section-05">5. TCPの制御フラグ</h2>
+<table>
+<thead>
+<tr>
+<th>フラグ</th>
+<th>主な意味</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SYN</td>
+<td>コネクション確立時にシーケンス番号を同期する</td>
+</tr>
+<tr>
+<td>ACK</td>
+<td>確認応答番号が有効であることを示す</td>
+</tr>
+<tr>
+<td>FIN</td>
+<td>送信方向のデータ送信を終了する</td>
+</tr>
+<tr>
+<td>RST</td>
+<td>コネクションのリセットを示す</td>
+</tr>
+<tr>
+<td>PSH</td>
+<td>受信データをアプリケーションへ速やかに渡すよう促す</td>
+</tr>
+<tr>
+<td>URG</td>
+<td>緊急ポインタが有効であることを示す</td>
+</tr>
+</tbody>
+</table>
+<h3>5-1. SYN</h3>
+<p>SYNは、TCPコネクションを確立するときに使用します。通常のクライアントからサーバへの接続開始では、最初にSYNを送信します。</p>
+<h3>5-2. ACK</h3>
+<p>ACKは、受信したデータなどに対する確認応答を示します。ただし、ACKフラグが立っているパケットが、必ずしもデータを含まないとは限りません。データと確認応答を同じTCPセグメントに含めることもあります。</p>
+<h3>5-3. FIN</h3>
+<p>FINは、その方向のデータ送信を終了するために使用します。TCPは双方向通信なので、一方がFINを送っても、相手方向のデータ送信が直ちに終了するとは限りません。</p>
+<h3>5-4. RST</h3>
+<p>RSTは、コネクションのリセットに使用します。接続先のTCPポートでサービスが待ち受けていない場合、RSTが返されることがあります。また、既存のコネクションを異常終了させる場合にも使用されます。<strong>FINは通常の送信終了、RSTはリセット</strong>という違いを押さえてください。</p>
+<h2 id="section-06">6. 3ウェイハンドシェイク</h2>
+<p><strong>A：最重要</strong></p>
+<p>TCPはコネクション型のプロトコルです。通常、データ通信を開始する前に、3ウェイハンドシェイクでコネクションを確立します。</p>
+<h3>6-1. なぜ3回のやり取りが必要なのか</h3>
+<p>TCPでは、送信側と受信側がそれぞれシーケンス番号を使用します。そのため、通信を始める際には、互いの初期シーケンス番号を通知し、相手からの通知を受け取ったことを確認します。</p>
+<p>クライアントの初期シーケンス番号を1000、サーバの初期シーケンス番号を5000とします。</p>
+<pre><code class="language-text">クライアント                         サーバ
+
+① SYN  ──────────────────────────→
+   SEQ=1000
+
+       ←────────────────────────── ② SYN+ACK
+                           SEQ=5000, ACK=1001
+
+③ ACK  ──────────────────────────→
+   SEQ=1001, ACK=5001
+
+          TCPコネクション確立
+</code></pre>
+<h3>6-2. 第1段階：SYN</h3>
+<p>クライアントはサーバへSYNを送信します。</p>
+<pre><code class="language-text">Client → Server
+Flags : SYN
+SEQ   : 1000
+</code></pre>
+<p>クライアントの初期シーケンス番号がサーバへ通知され、クライアントは通常 <code>SYN-SENT</code> 状態になります。</p>
+<h3>6-3. 第2段階：SYN+ACK</h3>
+<p>サーバは受信したSYNに対してSYN+ACKを返します。</p>
+<pre><code class="language-text">Server → Client
+Flags : SYN, ACK
+SEQ   : 5000
+ACK   : 1001
+</code></pre>
+<p>ACK番号が1001なのは、<strong>SYNがシーケンス番号を1つ消費する</strong>ためです。サーバはクライアントの次の番号1001を期待します。またサーバは自分の初期シーケンス番号5000をSYNで通知し、通常 <code>SYN-RECEIVED</code> 状態になります。</p>
+<h3>6-4. 第3段階：ACK</h3>
+<p>クライアントはサーバのSYNに対してACKを返します。</p>
+<pre><code class="language-text">Client → Server
+Flags : ACK
+SEQ   : 1001
+ACK   : 5001
+</code></pre>
+<p>サーバのSYNも番号を1つ消費するため、ACK番号は5001です。このACKによって通常、サーバ側でもコネクションが確立します。</p>
+<h3>6-5. なぜSYNだけで接続確立としないのか</h3>
+<p>SYNを受信しただけでは、相手がサーバの応答を受信できるか分かりません。サーバはSYN+ACKを返し、クライアントから最終ACKを受け取ることで、クライアントがサーバの初期シーケンス番号を受け取ったことを確認できます。</p>
+<p>この仕組みはTCPの接続管理に必要ですが、<strong>相手が正当な利用者であることを認証する仕組みではありません</strong>。SYN Floodなどの攻撃を考える上で重要です。</p>
+<h2 id="section-07">7. シーケンス番号と確認応答番号</h2>
+<p><strong>A：最重要・計算問題</strong></p>
+<h3>7-1. シーケンス番号はパケットの通し番号ではない</h3>
+<p>TCPはバイトストリーム型のプロトコルです。シーケンス番号は基本的に<strong>TCPデータのバイト位置</strong>を示します。</p>
+<pre><code class="language-text">SEQ = 1001
+データ長 = 500バイト
+
+データの番号：1001〜1500
+次に送るデータの先頭番号：1501
+</code></pre>
+<h3>7-2. ACK番号は「次に期待する番号」</h3>
+<pre><code class="language-text">受信：SEQ=1001, LEN=500
+返信：ACK=1501
+</code></pre>
+<p>1001〜1500までのデータを受信したので、次は1501から送ってほしいという意味です。<strong>ACK=1501は「1501番まで受信済み」という意味ではありません。</strong></p>
+<h3>7-3. ACK番号の計算</h3>
+<table>
+<thead>
+<tr>
+<th>送信SEQ</th>
+<th style="text-align:right">データ長</th>
+<th style="text-align:right">正常受信後のACK</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1001</td>
+<td style="text-align:right">100バイト</td>
+<td style="text-align:right">1101</td>
+</tr>
+<tr>
+<td>1101</td>
+<td style="text-align:right">200バイト</td>
+<td style="text-align:right">1301</td>
+</tr>
+<tr>
+<td>1301</td>
+<td style="text-align:right">500バイト</td>
+<td style="text-align:right">1801</td>
+</tr>
+</tbody>
+</table>
+<p>一般に、連続したデータを正常に受信した場合、<strong>ACK = SEQ + データ長</strong>となります。ただしSYNやFINが含まれる場合は、それぞれ番号を1つ消費します。</p>
+<h3>7-4. SYN・FIN・ACKとシーケンス番号</h3>
+<table>
+<thead>
+<tr>
+<th>要素</th>
+<th>シーケンス番号の消費</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>データ100バイト</td>
+<td>100</td>
+</tr>
+<tr>
+<td>SYN</td>
+<td>1</td>
+</tr>
+<tr>
+<td>FIN</td>
+<td>1</td>
+</tr>
+<tr>
+<td>データを含まない通常のACK</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<h3>7-5. データが途中で欠落した場合</h3>
+<pre><code class="language-text">① SEQ=1001, LEN=500    受信
+② SEQ=1501, LEN=500    消失
+③ SEQ=2001, LEN=500    受信
+</code></pre>
+<p>受信側は1001〜1500まで連続して受信していますが、1501〜2000が欠落しています。そのため③を受信しても通常の累積ACKは <strong>ACK=1501</strong> のままです。後続の③が到着したからといってACKが2501へ進むわけではありません。</p>
+<h3>7-6. 累積ACK</h3>
+<p>TCPの基本的な確認応答は累積ACKです。例えば <code>ACK=2501</code> は、通常2500番までのバイトを連続して受信したことを示します。途中に欠落がある場合、その欠落部分を越えて累積ACKを進めることはできません。これがTCPの欠落検出・再送の基盤です。</p>
+<h2 id="section-08">8. TCPの再送制御</h2>
+<h3>8-1. なぜ再送が必要なのか</h3>
+<p>IPネットワークではパケットが消失する可能性があります。TCPは、送信したデータに対するACKが適切に返らない場合などにデータを再送します。代表的な仕組みは<strong>再送タイムアウト</strong>と<strong>重複ACKなどを利用した早期再送</strong>です。</p>
+<h3>8-2. 再送タイムアウト（RTO）</h3>
+<pre><code class="language-text">送信側                       受信側
+データ① ──────────────────→ 受信
+       ←────────────────── ACK①
+データ② ──────X              消失
+        （ACKを待つ）
+        （タイムアウト）
+データ② ──────────────────→ 受信
+       ←────────────────── ACK②
+</code></pre>
+<p>一定時間が経過しても必要なACKが得られない場合、再送を行います。RTOは常に一定値ではなく、往復時間などに応じて調整されます。</p>
+<h3>8-3. 重複ACKとFast Retransmit</h3>
+<p>受信側が1501番からのデータを待っているのに、それより後のデータが届き続けた場合、同じACK番号が繰り返されることがあります。</p>
+<pre><code class="language-text">ACK=1501
+ACK=1501
+ACK=1501
+</code></pre>
+<p>送信側は重複ACKを手掛かりに、タイムアウトを待たず欠落データを再送する場合があります。これをFast Retransmit（高速再送）と呼びます。一般的な説明では3個の重複ACKが契機となる方式が知られていますが、実際の再送判断は実装や機能によって異なります。</p>
+<h3>8-4. SACK</h3>
+<p>SACK（Selective Acknowledgment）は、受信側が累積ACKより先に受信済みのデータ範囲を送信側へ知らせる仕組みです。</p>
+<pre><code class="language-text">1501〜2000：未受信
+2001〜2500：受信済み
+</code></pre>
+<p>累積ACKだけでは「1501から必要」という情報が中心ですが、SACKを使えば2001〜2500が受信済みであることも知らせられ、不要な再送を避けやすくなります。</p>
+<h3>8-5. 再送は必ず攻撃の兆候なのか</h3>
+<p>いいえ。TCPの再送は、ネットワーク混雑、パケット損失、通信品質の問題などによって正常な通信でも発生します。ログに <code>TCP Retransmission</code> と表示されただけで攻撃と判断せず、再送の頻度、通信、負荷、他のログを組み合わせて調査します。</p>
+<h2 id="section-09">9. フロー制御と輻輳制御</h2>
+<p><strong>A：区別／B：動作の詳細</strong></p>
+<h3>9-1. フロー制御</h3>
+<p>フロー制御は、<strong>受信側が処理できる量を超えて送信しないようにする仕組み</strong>です。例えば受信側のバッファに空きが4000バイトしかない場合、受信側はその受信可能量をウィンドウサイズとして通知できます。</p>
+<pre><code class="language-text">受信側の空きバッファ：4000バイト
+Advertised Window = 4000
+</code></pre>
+<p>送信側は受信側が通知するウィンドウを考慮して、未確認データの送信量を制御します。</p>
+<h3>9-2. 輻輳制御</h3>
+<p>輻輳制御は、<strong>ネットワークが混雑しすぎないように送信量を調整する仕組み</strong>です。送信側と受信側の性能に問題がなくても、途中のネットワークが混雑していればパケットが消失することがあります。TCPはACKの受信状況や損失などを手掛かりに送信量を調整します。</p>
+<h3>9-3. 両者の違い</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>フロー制御</th>
+<th>輻輳制御</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主な対象</td>
+<td>受信側の処理能力・バッファ</td>
+<td>ネットワークの混雑</td>
+</tr>
+<tr>
+<td>代表的な情報</td>
+<td>受信ウィンドウ（rwnd）</td>
+<td>輻輳ウィンドウ（cwnd）</td>
+</tr>
+<tr>
+<td>目的</td>
+<td>受信側を圧迫しない</td>
+<td>ネットワークを過負荷にしない</td>
+</tr>
+</tbody>
+</table>
+<p>実際の送信量は、受信ウィンドウと輻輳ウィンドウの双方などによって制限されます。</p>
+<h3>9-4. Zero Window</h3>
+<p>受信側のバッファに空きがなくなると、受信ウィンドウが0になる場合があります。</p>
+<pre><code class="language-text">Window = 0
+</code></pre>
+<p>この場合、送信側は通常のデータ送信を停止し、ウィンドウが再び利用可能になるのを待ちます。受信アプリケーションの処理遅延などでも発生し、必ずしも攻撃ではありません。</p>
+<h2 id="section-10">10. TCPコネクションの終了</h2>
+<h3>10-1. FINによる正常終了</h3>
+<p>TCPは双方向通信です。一方がデータ送信を終了しても、もう一方はまだデータを送信できる場合があります。典型的な正常終了では次のような4つのセグメントを使用します。</p>
+<pre><code class="language-text">クライアント                 サーバ
+FIN ──────────────────────→
+    ←───────────────────── ACK
+    ←───────────────────── FIN
+ACK ──────────────────────→
+</code></pre>
+<p>ただし実際にはACKとFINが同じセグメントにまとめられる場合もあるため、常に4パケットになるわけではありません。</p>
+<h3>10-2. FINとACKの番号</h3>
+<pre><code class="language-text">FIN
+SEQ=3001
+
+応答：ACK=3002
+</code></pre>
+<p>FINはシーケンス番号を1つ消費するため、サーバは通常ACK=3002を返します。SYNと同じくFINも1つ消費する点に注意してください。</p>
+<h3>10-3. Half-Close</h3>
+<p>一方がFINを送信しても逆方向のデータ送信が続く状態をHalf-Closeと呼びます。クライアントが「こちらから送るデータは終わった」と通知しても、サーバは処理結果を送信し続けることができます。<strong>FINを受信した瞬間に、両方向の通信が必ず終了するわけではありません</strong>。</p>
+<h3>10-4. RSTによるリセット</h3>
+<p>RSTは通常のFINによる終了とは異なり、TCPコネクションをリセットするために使用します。通信相手が想定しないセグメントを受信した場合や、サービスが存在しないポートへの接続要求を受けた場合などにRSTが使われることがあります。ログにRSTがあれば、どちらの機器が送信したのか、どの状態で発生したのかを確認します。</p>
+<h3>10-5. TIME_WAIT</h3>
+<p>通常のTCP終了では、最後のACKを送信した側がTIME_WAIT状態になる場合があります。遅れて到着する古いセグメントが新しいコネクションに悪影響を与えることを抑えたり、最後のACKが失われた場合の再送に対応したりする役割があります。TIME_WAITが存在すること自体は必ずしも異常ではありません。</p>
+<h2 id="section-11">11. TCPの主要な状態</h2>
+<p><strong>A：接続状態の判断／B：終了時の詳細</strong></p>
+<table>
+<thead>
+<tr>
+<th>状態</th>
+<th>意味</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LISTEN</td>
+<td>接続要求を待っている</td>
+</tr>
+<tr>
+<td>SYN-SENT</td>
+<td>SYNを送信し、応答を待っている</td>
+</tr>
+<tr>
+<td>SYN-RECEIVED</td>
+<td>SYNを受信し、SYN+ACKを送って最終ACKを待っている</td>
+</tr>
+<tr>
+<td>ESTABLISHED</td>
+<td>コネクションが確立している</td>
+</tr>
+<tr>
+<td>FIN-WAIT-1</td>
+<td>FINを送信し、その確認などを待っている</td>
+</tr>
+<tr>
+<td>FIN-WAIT-2</td>
+<td>自分のFINへのACKを受信し、相手のFINを待っている</td>
+</tr>
+<tr>
+<td>CLOSE-WAIT</td>
+<td>相手のFINを受信し、自分側の終了を待っている</td>
+</tr>
+<tr>
+<td>LAST-ACK</td>
+<td>自分のFINへのACKを待っている</td>
+</tr>
+<tr>
+<td>TIME-WAIT</td>
+<td>終了後、一定時間待機している</td>
+</tr>
+</tbody>
+</table>
+<h3>11-1. SYN-RECEIVEDが大量に存在する場合</h3>
+<p>サーバにSYN-RECEIVED状態の接続が大量にある場合、接続確立が途中で止まっている可能性があります。クライアントから最終ACKが返らない、ネットワーク障害でACKが失われる、送信元IPアドレスを偽装したSYN Floodなどが考えられます。<strong>SYN-RECEIVEDが多いだけでSYN Floodと断定することはできません</strong>。</p>
+<h3>11-2. CLOSE-WAITが大量に存在する場合</h3>
+<p>CLOSE-WAITは相手からFINを受信した後、自分側の終了を待っている状態です。大量に残り続ける場合、アプリケーションがソケットを適切にクローズしていない可能性があります。ネットワーク機器だけでなくアプリケーション側の処理を調査します。</p>
+<h2 id="section-12">12. SYN Flood攻撃</h2>
+<p><strong>A：最重要・攻撃の仕組みと対策</strong></p>
+<h3>12-1. SYN Floodとは</h3>
+<p>SYN FloodはTCPの3ウェイハンドシェイクを悪用するDoS攻撃です。攻撃者は大量のSYNを送信し、サーバに接続確立途中の状態を多数作らせようとします。</p>
+<h3>12-2. 攻撃の流れ</h3>
+<p>正常な接続：</p>
+<pre><code class="language-text">クライアント                 サーバ
+SYN ──────────────────────→
+    ←───────────────────── SYN+ACK
+ACK ──────────────────────→
+コネクション確立
+</code></pre>
+<p>SYN Floodでは、最終ACKを返さない、または返せない状況を大量に作ります。</p>
+<pre><code class="language-text">攻撃者                       サーバ
+SYN ───────────────────────→
+    ←────────────────────── SYN+ACK
+      （最終ACKなし）
+SYN ───────────────────────→
+    ←────────────────────── SYN+ACK
+      （最終ACKなし）
+SYN ───────────────────────→
+    ←────────────────────── SYN+ACK
+      （最終ACKなし）
+</code></pre>
+<p>サーバ側には接続確立途中の情報が蓄積する可能性があります。</p>
+<h3>12-3. なぜサーバに負荷がかかるのか</h3>
+<p>一般的なTCPサーバでは、SYNを受信すると接続確立のために必要な情報を管理します。未完了接続が大量に発生すると、接続管理用の資源や処理能力が消費され、正規利用者からの新しい接続要求を処理しにくくなる可能性があります。</p>
+<h3>12-4. 送信元IPアドレスの偽装</h3>
+<p>攻撃者がSYNの送信元IPアドレスを偽装すると、サーバのSYN+ACKは偽装された送信元へ送られます。攻撃者自身が受信できなければ通常の最終ACKを返せず、接続確立途中の状態を作ることができます。ただし、SYN Floodは送信元IPアドレスの偽装を必須とする攻撃ではありません。</p>
+<h3>12-5. SYN Cookie</h3>
+<p><strong>SYN Cookie</strong>は、サーバがSYNを受信した際、通常の接続管理情報を直ちに大量に保持する代わりに、必要な情報を符号化した初期シーケンス番号を利用する仕組みです。クライアントから最終ACKが返ってきたときにACK番号などを検証して接続を成立させます。</p>
+<pre><code class="language-text">通常の処理：
+SYN受信 → 接続確立途中の情報を管理 → 最終ACKを待つ
+
+SYN Cookie：
+SYN受信 → 検証用情報を初期SEQに符号化 → 最終ACKを検証
+</code></pre>
+<p>これにより未完了接続に関する状態情報の保持を抑え、SYN Floodへの耐性を高められます。ただしSYN CookieはすべてのDoS攻撃を防ぐ万能な対策ではなく、回線帯域自体が埋まる場合などには別の対策も必要です。</p>
+<h3>12-6. その他の対策</h3>
+<ul>
+<li>SYN Cookieの利用</li>
+<li>SYN Proxyなどによる接続確立の代理処理</li>
+<li>不審なSYNのレート制限</li>
+<li>DoS対策機器・サービスの利用</li>
+<li>送信元IPアドレスの偽装対策</li>
+<li>サーバの接続管理資源や設定の適切な調整</li>
+</ul>
+<p><strong>攻撃によって何が消費されるのかを理解し、それに対応する防御策を選ぶこと</strong>が重要です。</p>
+<h2 id="section-13">13. TCPのログとパケットを読む</h2>
+<h3>13-1. 正常な3ウェイハンドシェイク</h3>
+<pre><code class="language-text">No.  Source          Destination     Flags     Seq   Ack
+1    192.168.1.10    203.0.113.10    [SYN]     1000  -
+2    203.0.113.10    192.168.1.10    [SYN,ACK]  5000  1001
+3    192.168.1.10    203.0.113.10    [ACK]      1001  5001
+</code></pre>
+<p>正常な3ウェイハンドシェイクです。SYNにSYN+ACKが返され、SYN+ACKのACK番号がクライアントの初期SEQ+1、最終ACKのACK番号がサーバの初期SEQ+1であることを確認します。</p>
+<h3>13-2. SYNを送信したが応答がない</h3>
+<pre><code class="language-text">10:00:01 Client → Server [SYN]
+10:00:02 Client → Server [SYN] Retransmission
+10:00:04 Client → Server [SYN] Retransmission
+</code></pre>
+<p>SYNを送信しても期待する応答を受信できず再送しています。宛先へ届いていない、ファイアウォールがSYNを破棄している、サーバからのSYN+ACKが途中で失われている、サーバが接続要求を処理できない、といった原因が考えられます。このログだけでは断定できず、送信元と宛先の双方でパケットを確認して絞り込みます。</p>
+<h3>13-3. SYNに対してRSTが返る</h3>
+<pre><code class="language-text">Client → Server [SYN]  Dst Port: 443
+Server → Client [RST,ACK]
+</code></pre>
+<p>サーバが接続を拒否した可能性があります。TCP 443番ポートでサービスが待ち受けていない場合などです。ただしファイアウォールなどがRSTを生成する構成もあるため、送信元を確認する必要があります。</p>
+<h3>13-4. SYN Floodを疑うログ</h3>
+<pre><code class="language-text">10:00:01  198.51.100.11 → 203.0.113.10 [SYN]
+10:00:01  198.51.100.12 → 203.0.113.10 [SYN]
+10:00:01  198.51.100.13 → 203.0.113.10 [SYN]
+10:00:01  198.51.100.14 → 203.0.113.10 [SYN]
+
+サーバ状態：
+SYN-RECEIVED が短時間で急増
+</code></pre>
+<p>SYN Floodの可能性がありますが、正当な利用者の大量アクセスでもSYNは増えます。最終ACKの割合、接続確立率、送信元の分布、サーバ負荷などを確認します。</p>
+<h3>13-5. ACK番号から欠落を見つける</h3>
+<pre><code class="language-text">Client → Server  SEQ=1001 LEN=500
+Server → Client  ACK=1501
+
+Client → Server  SEQ=1501 LEN=500
+                （途中で消失）
+
+Client → Server  SEQ=2001 LEN=500
+Server → Client  ACK=1501
+</code></pre>
+<p>最後のACKが1501のままなのは1501からのデータが欠落しているためです。2001からのデータが到着していても1501〜2000が欠落している限り累積ACKは先へ進めません。<strong>ACK番号が進まない理由をシーケンス番号とデータ長から説明する</strong>ことが重要です。</p>
+<h3>13-6. ファイアウォールのステートフル検査</h3>
+<p>ステートフルファイアウォールは通信状態を管理し、その状態に基づいてパケットを許可・拒否できます。</p>
+<pre><code class="language-text">内部PC → 外部サーバ：SYN
+外部サーバ → 内部PC：SYN+ACK
+内部PC → 外部サーバ：ACK
+</code></pre>
+<p>内部から開始した正規通信の戻りパケットを許可し、状態に合わない不審なパケットを拒否できます。ただし実際の受理条件は機器の設定や実装によって異なります。</p>
+<h2 id="section-14">14. TCPを利用したその他の攻撃</h2>
+<h3>14-1. TCPセッションハイジャック</h3>
+<p>TCPセッションハイジャックは既存のTCP通信に不正に介入する攻撃です。攻撃者が通信経路上にいる場合などには、TCPのシーケンス番号や通信内容を観測し、不正なデータを挿入しようとすることがあります。ただしTCPのシーケンス番号は通信相手の本人性を暗号学的に保証するものではなく、重要な通信ではTLSなどによる暗号化・認証が必要です。</p>
+<h3>14-2. RSTを利用した通信妨害</h3>
+<p>攻撃者が既存のTCPコネクションに対して有効なRSTを送信できると、通信を強制的に終了させられる場合があります。ただし任意のRSTを送信すれば必ず切断できるわけではありません。TCPはコネクションの識別情報やシーケンス番号などを検証します。</p>
+<h3>14-3. SYN Floodとセッションハイジャックの違い</h3>
+<table>
+<thead>
+<tr>
+<th>攻撃</th>
+<th>主な狙い</th>
+<th>悪用する仕組み</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SYN Flood</td>
+<td>新規接続の妨害</td>
+<td>3ウェイハンドシェイク途中の状態</td>
+</tr>
+<tr>
+<td>セッションハイジャック</td>
+<td>既存通信への不正介入</td>
+<td>TCPコネクションの識別・シーケンス管理</td>
+</tr>
+<tr>
+<td>RSTによる妨害</td>
+<td>既存通信の切断</td>
+<td>TCPのリセット機能</td>
+</tr>
+</tbody>
+</table>
+<p>どの通信段階を狙っているかを区別してください。</p>
+<h2 id="section-15">15. 科目Aの典型論点</h2>
+<table>
+<thead>
+<tr>
+<th>論点</th>
+<th>必ず押さえること</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TCP</td>
+<td>コネクション型、信頼性のあるバイトストリーム</td>
+</tr>
+<tr>
+<td>SYN</td>
+<td>接続確立、シーケンス番号の同期</td>
+</tr>
+<tr>
+<td>ACK</td>
+<td>確認応答番号が有効</td>
+</tr>
+<tr>
+<td>FIN</td>
+<td>送信方向の終了</td>
+</tr>
+<tr>
+<td>RST</td>
+<td>コネクションのリセット</td>
+</tr>
+<tr>
+<td>3ウェイハンドシェイク</td>
+<td>SYN → SYN+ACK → ACK</td>
+</tr>
+<tr>
+<td>SYNの番号消費</td>
+<td>1</td>
+</tr>
+<tr>
+<td>FINの番号消費</td>
+<td>1</td>
+</tr>
+<tr>
+<td>データの番号消費</td>
+<td>データのバイト数</td>
+</tr>
+<tr>
+<td>ACK番号</td>
+<td>次に期待するシーケンス番号</td>
+</tr>
+<tr>
+<td>再送制御</td>
+<td>消失データを再送する</td>
+</tr>
+<tr>
+<td>フロー制御</td>
+<td>受信側の処理能力に合わせる</td>
+</tr>
+<tr>
+<td>輻輳制御</td>
+<td>ネットワークの混雑に合わせる</td>
+</tr>
+<tr>
+<td>SYN Flood</td>
+<td>未完了の接続を大量に発生させる</td>
+</tr>
+<tr>
+<td>SYN Cookie</td>
+<td>未完了接続の状態保持を抑える</td>
+</tr>
+<tr>
+<td>SYN-RECEIVED</td>
+<td>接続確立途中</td>
+</tr>
+<tr>
+<td>ESTABLISHED</td>
+<td>接続確立済み</td>
+</tr>
+</tbody>
+</table>
+<h2 id="section-16">16. 科目Bの答案作成ポイント</h2>
+<h3>16-1. 設問例①：ACK番号の計算</h3>
+<p><strong>設問</strong>：クライアントが <code>SEQ=3001</code>、データ長800バイトのTCPセグメントを送信した。サーバが欠落なく受信した場合、返すACK番号を求めよ。</p>
+<p><strong>答案例</strong>：<code>3801</code></p>
+<p><strong>解説</strong>：3001から800バイトのデータを受信したため、次に期待する番号は3801です。</p>
+<h3>16-2. 設問例②：SYN Floodの仕組み</h3>
+<p><strong>設問</strong>：SYN Flood攻撃によってサーバが正規利用者からの新規接続を受け付けにくくなる理由を説明せよ。</p>
+<p><strong>答案例</strong>：「大量のSYNによって接続確立途中の状態が多数作られ、接続管理用の資源や処理能力が消費されるため。」</p>
+<p><strong>解説</strong>：単に「大量のパケットが送られるため」では不十分です。TCPのどの処理が負荷を受けるのかを示してください。</p>
+<h3>16-3. 設問例③：SYN Cookie</h3>
+<p><strong>設問</strong>：SYN CookieがSYN Floodへの対策になる理由を説明せよ。</p>
+<p><strong>答案例</strong>：「SYN受信時に未完了接続の状態情報を大量に保持せず、初期シーケンス番号に符号化した情報を最終ACKで検証することで、接続管理資源の消費を抑えられるため。」</p>
+<h3>16-4. 設問例④：SYN再送の原因</h3>
+<p><strong>設問</strong>：クライアントがSYNを繰り返し送信しているが、SYN+ACKを受信できない。考えられる原因を二つ挙げよ。</p>
+<p><strong>答案例</strong>：「送信したSYNがファイアウォールで破棄されていること、またはサーバからのSYN+ACKが戻り経路で破棄されていること。」</p>
+<p><strong>解説</strong>：送信方向だけでなく戻り方向にも着目することが重要です。</p>
+<h3>16-5. 設問例⑤：フロー制御と輻輳制御</h3>
+<p><strong>設問</strong>：TCPのフロー制御と輻輳制御の違いを説明せよ。</p>
+<p><strong>答案例</strong>：「フロー制御は受信側の処理能力を超えないように送信量を調整し、輻輳制御はネットワークの混雑を抑えるために送信量を調整する。」</p>
+<h3>16-6. 記述答案の組み立て方</h3>
+<p>TCP関連の科目B問題では、次の順序で考えると答案が安定します。</p>
+<ol>
+<li><strong>通信の段階を特定する。</strong> 接続確立中、データ転送中、終了処理中のどこか。</li>
+<li><strong>パケットの根拠を示す。</strong> SYN、ACK、SEQ、ACK番号、RSTなどの情報を確認する。</li>
+<li><strong>原因と影響を結び付ける。</strong> 何が失われ、何が待機し、何が消費されるのか。</li>
+<li><strong>対応する対策を述べる。</strong> 例えばSYN FloodならSYN Cookieやレート制限など。</li>
+</ol>
+<p>「TCP通信に問題があるため」といった抽象的な説明ではなく、具体的な通信状態と根拠を示してください。</p>
+<h2 id="section-17">17. 重要事項の整理</h2>
+<p><strong>第一に、TCPはコネクション型のトランスポート層プロトコルです。</strong> 順序制御、確認応答、再送などによって信頼性のあるバイトストリームを提供します。</p>
+<p><strong>第二に、3ウェイハンドシェイクはSYN → SYN+ACK → ACKです。</strong> 両方向の初期シーケンス番号を通知・確認します。</p>
+<p><strong>第三に、TCPのシーケンス番号はバイト単位です。</strong> SYNとFINはそれぞれ番号を1つ消費しますが、データを含まない通常のACKは番号を消費しません。</p>
+<p><strong>第四に、ACK番号は次に期待する番号です。</strong> データの欠落がある場合、後続データが到着しても累積ACKが進まないことがあります。</p>
+<p><strong>第五に、フロー制御と輻輳制御は目的が異なります。</strong> 前者は受信側の能力、後者はネットワークの混雑を考慮します。</p>
+<p><strong>第六に、FINとRSTを区別します。</strong> FINは送信方向の通常終了、RSTはコネクションのリセットに使用します。</p>
+<p><strong>第七に、SYN Floodは接続確立途中の状態を悪用するDoS攻撃です。</strong> SYN Cookieなどが対策になります。</p>
+<h3>発展学習として分離した内容</h3>
+<ul>
+<li>TCPの全状態遷移とタイマの厳密な実装</li>
+<li>Reno、CUBIC、BBRなどの輻輳制御アルゴリズムの詳細</li>
+<li>TCP Timestamp、Window Scaleなどのオプションのビット単位の解析</li>
+<li>OS固有のTCPパラメータ調整</li>
+<li>TCP Fast Openなどの追加機能</li>
+</ul>
+<p>まずは、<strong>3ウェイハンドシェイク、SEQ・ACK計算、再送、SYN Floodの原因と対策</strong>を確実に理解してください。</p>
+<a class="back" href="#section-01">↑ 講義の先頭へ</a></main></div></body></html>
