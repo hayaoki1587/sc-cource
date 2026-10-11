@@ -1,0 +1,915 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第12講｜IPv4｜講義本文（第1〜16節）</title><style>
+:root{color-scheme:light}*{box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#1e293b;background:#f1f5f9;line-height:1.92;margin:0}main{max-width:980px;margin:36px auto;padding:42px 58px;background:white;border:1px solid #dce4ed;border-radius:15px;box-shadow:0 12px 40px #0f172a0a}h1{font-size:2.1rem;color:#12375a;border-bottom:4px solid #2563eb;padding-bottom:15px;line-height:1.4}h2{font-size:1.5rem;color:#174a79;margin:60px 0 20px;padding:12px 15px;border-left:6px solid #2563eb;background:#eff6ff;scroll-margin-top:16px}h3{font-size:1.13rem;color:#1e40af;margin:28px 0 12px}p{margin:12px 0}strong{color:#0f3c68}table{border-collapse:collapse;width:100%;margin:18px 0 24px;font-size:.92rem}th,td{border:1px solid #cbd5e1;padding:10px 12px;text-align:left;vertical-align:top}th{background:#eaf1f9;color:#153e62}tr:nth-child(even){background:#f8fafc}pre{overflow-x:auto;background:#132337;color:#e6f1ff;border-radius:9px;padding:18px 20px;line-height:1.55;font-size:.9rem}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#eef2f7;padding:2px 5px;border-radius:4px;font-size:.9em}pre code{background:none;color:inherit;padding:0}blockquote{margin:18px 0;border-left:4px solid #64748b;background:#f8fafc;padding:10px 20px}ul,ol{padding-left:1.65rem}li{padding:3px 0}hr{border:0;border-top:1px solid #dbe3ee;margin:34px 0}.intro{color:#64748b;font-size:.93rem}.toc{background:#f8fafc;border:1px solid #dce5f0;border-radius:12px;padding:20px 28px;margin:25px 0}.toc h2{background:none;border:0;padding:0;margin:0 0 10px;font-size:1.2rem}.toc ol{columns:2;column-gap:30px;margin:0}.toc li{break-inside:avoid;font-size:.9rem}.toc a{color:#185b9c;text-decoration:none}.toc a:hover{text-decoration:underline}.footnote{margin-top:55px;padding:18px;background:#f8fafc;border-radius:10px;color:#475569;font-size:.85rem}@media(max-width:720px){main{margin:0;padding:24px 18px;border:0;border-radius:0}h1{font-size:1.6rem}h2{font-size:1.24rem}.toc ol{columns:1}table{display:block;overflow-x:auto}pre{font-size:.78rem}}@media print{body{background:white}main{margin:0;padding:0;border:0;box-shadow:none}h2{break-after:avoid}pre,table{break-inside:avoid}}
+</style></head><body><main><div class="intro">情報処理安全確保支援士（SC）合格講座 ｜ 第12講 再執筆版 ｜ 講義本文のみ</div><nav class="toc" aria-label="目次"><h2>目次</h2><ol><li><a href="#sec-1">1. 到達目標と参考書</a></li><li><a href="#sec-2">2. IPv4とは何か</a></li><li><a href="#sec-3">3. IPv4アドレスの構造</a></li><li><a href="#sec-4">4. サブネットマスクとCIDR</a></li><li><a href="#sec-5">5. ネットワークアドレスとブロードキャストアドレス</a></li><li><a href="#sec-6">6. 同じネットワークかどうかをどう判断するか</a></li><li><a href="#sec-7">7. グローバルIPアドレスとプライベートIPアドレス</a></li><li><a href="#sec-8">8. 特殊なIPv4アドレス</a></li><li><a href="#sec-9">9. IPv4のユニキャスト・ブロードキャスト・マルチキャスト</a></li><li><a href="#sec-10">10. ルーティングとデフォルトゲートウェイ</a></li><li><a href="#sec-11">11. IPv4ヘッダの主要フィールド</a></li><li><a href="#sec-12">12. MTUとIPフラグメント</a></li><li><a href="#sec-13">13. IPv4とセキュリティ</a></li><li><a href="#sec-14">14. ログとパケットを読む</a></li><li><a href="#sec-15">15. 科目A・科目Bの答案作成ポイント</a></li><li><a href="#sec-16">16. 重要事項の整理</a></li></ol></nav><h1>第12講｜IPv4</h1>
+<p><strong>第1〜23講 再執筆シリーズ｜第II部 ネットワーク完全攻略｜チャット版</strong></p>
+<p>第11講では、ARPを使ってIPv4アドレスからMACアドレスを解決する仕組みを学びました。</p>
+<p>今回の第12講では、その<strong>IPv4アドレス自体の意味と、IPパケットがネットワークを越えて配送される仕組み</strong>を学びます。</p>
+<p>特に重要なのは、IPアドレスの構造、ネットワークアドレスとブロードキャストアドレス、プライベートIPアドレス、ルーティング、TTL、IPv4ヘッダの読み方です。</p>
+<p>以前の第12講では、IPv4の基本計算は理解できていました。一方、別ネットワークへ送る際のARPの問い合わせ先と、EtherType・IPのProtocol番号・TCPポート番号の役割の区別が復習対象になっていました。今回はその点も具体的に確認します。</p>
+<h2 id="sec-1">1. 到達目標と参考書</h2>
+<h3>1-1. 到達目標</h3>
+<p>この講義を終えたとき、次のことを説明できるようになることを目指します。</p>
+<ol>
+<li>IPv4アドレスが32ビットで構成されることを説明できる。</li>
+<li>IPアドレスとサブネットマスクから、ネットワークアドレスとブロードキャストアドレスを求められる。</li>
+<li>グローバルIPアドレス、プライベートIPアドレス、リンクローカルアドレスを区別できる。</li>
+<li>同一ネットワーク宛てと別ネットワーク宛ての通信経路を判断できる。</li>
+<li>IPv4ヘッダのTTL、Protocol、送信元・宛先IPアドレスの役割を説明できる。</li>
+<li>ルーティング、ARP、Ethernetの役割の違いを説明できる。</li>
+<li>パケットやログから通信障害・不審な通信の原因を推測し、科目Bで簡潔に説明できる。</li>
+</ol>
+<h3>1-2. 参考書の対応箇所</h3>
+<p><strong>『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』</strong></p>
+<p>実際に確認した範囲は、以下のとおりです。</p>
+<table>
+<thead>
+<tr>
+  <th>章・節</th>
+  <th>ページ</th>
+  <th>主な内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>第3章「ネットワーク基礎技術」3-1-2「IP」</td>
+  <td>pp.161〜163</td>
+  <td>IPの役割、IPv4ヘッダ、TTL、Protocolなど</td>
+</tr>
+<tr>
+  <td>同節</td>
+  <td>pp.164〜168</td>
+  <td>IPv4アドレス、ネットワーク部とホスト部、サブネットマスク、CIDR</td>
+</tr>
+<tr>
+  <td>同節</td>
+  <td>pp.168〜170</td>
+  <td>ブロードキャスト、マルチキャスト、ルーティング、デフォルトゲートウェイ</td>
+</tr>
+<tr>
+  <td>同節</td>
+  <td>pp.170〜172</td>
+  <td>プライベートIPアドレス、ARP、NATなど</td>
+</tr>
+</tbody>
+</table>
+<p>上記は参考書の実際の掲載範囲です。</p>
+<p>今回はこれらを基礎に、具体的なIPアドレスの計算、通信経路の追跡、ログの解釈、アドレス偽装やIPフラグメントに関するセキュリティ上の論点を、講師独自の補足として解説します。</p>
+<h3>1-3. 学習優先度</h3>
+<table>
+<thead>
+<tr>
+  <th>区分</th>
+  <th>内容</th>
+  <th>学習目標</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>A：必須</strong></td>
+  <td>IPv4アドレス、ネットワーク部・ホスト部、サブネットマスク、ブロードキャスト、プライベートIP、ルーティング、TTL、Protocol、ARPとの連携</td>
+  <td>IP通信と通信経路を正しく説明する</td>
+</tr>
+<tr>
+  <td><strong>B：理解補助</strong></td>
+  <td>IPv4ヘッダの構造、フラグメント、MTU、リンクローカルアドレス、IP Spoofing</td>
+  <td>障害・攻撃・ログの理解を深める</td>
+</tr>
+<tr>
+  <td><strong>C：発展</strong></td>
+  <td>ヘッダ全フィールドのビット単位の詳細、複雑なフラグメント計算、OS固有のIP処理</td>
+  <td>任意学習</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="sec-2">2. IPv4とは何か</h2>
+<h3>2-1. IPの役割</h3>
+<p>IPは、Internet Protocolの略です。</p>
+<p>IPは、ネットワーク層で動作するプロトコルで、送信元から宛先までパケットを配送するための仕組みを提供します。</p>
+<p>第10講で学んだEthernetは、基本的に同じリンク上でフレームを配送するための仕組みでした。</p>
+<p>一方、IPは、複数のネットワークをまたいで通信するために利用されます。</p>
+<p>例えば、次のような構成です。</p>
+<pre><code class="language-text">PC-A（192.168.1.10） → ルータ（ネットワーク間を中継） → サーバ（203.0.113.80）
+                 IPパケットを宛先ネットワークへ配送
+</code></pre>
+<p>PC-Aとサーバは別のネットワークに存在します。</p>
+<p>この場合、L2スイッチのMACアドレス学習だけでは、サーバまでの配送経路を決められません。</p>
+<p>ルータが宛先IPアドレスを確認し、次にどのネットワークへ転送するか判断します。</p>
+<h3>2-2. IPv4の三つの主要な役割</h3>
+<p>参考書では、IPの役割として次の三つが説明されています。</p>
+<ol>
+<li><strong>IPアドレスによる識別</strong>：送信元と宛先をIPアドレスで識別する。</li>
+<li><strong>経路制御（ルーティング）</strong>：宛先IPアドレスを基に、次に転送する先を判断する。</li>
+<li><strong>パケットの分割と再構築</strong>：通信経路のMTUなどに応じて、必要な場合にパケットを分割して配送する。</li>
+</ol>
+<p>なお、IPv4は<strong>ベストエフォート型</strong>の通信です。</p>
+<p>これは、IP自体がパケットの到達や順序を保証するわけではないという意味です。</p>
+<p>通信の信頼性が必要な場合には、TCPなどの上位プロトコルが再送制御などを行います。</p>
+<hr />
+<h2 id="sec-3">3. IPv4アドレスの構造</h2>
+<h3>3-1. IPv4アドレスは32ビット</h3>
+<p>IPv4アドレスは、32ビットで構成されます。</p>
+<p>通常は8ビットずつ四つに分け、10進数で表記します。</p>
+<p>例えば次のアドレスです。</p>
+<pre><code class="language-text">192.168.1.10
+</code></pre>
+<p>各部分をオクテットと呼びます。</p>
+<p><strong>IPv4アドレスの32ビット構造</strong></p>
+<table>
+<thead>
+<tr>
+  <th>10進数</th>
+  <th>192</th>
+  <th>168</th>
+  <th>1</th>
+  <th>10</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>2進数</td>
+  <td><code>11000000</code></td>
+  <td><code>10101000</code></td>
+  <td><code>00000001</code></td>
+  <td><code>00001010</code></td>
+</tr>
+<tr>
+  <td>長さ</td>
+  <td>8ビット</td>
+  <td>8ビット</td>
+  <td>8ビット</td>
+  <td>8ビット</td>
+</tr>
+</tbody>
+</table>
+<p>8ビット × 4組 = 32ビット。各オクテットの値は0〜255です。</p>
+<p>8ビットで表現できる値は、0〜255です。</p>
+<p>したがって、<code>192.168.1.300</code> のような表記は、IPv4アドレスとして不正です。</p>
+<h3>3-2. IPアドレスにはネットワーク部とホスト部がある</h3>
+<p>IPアドレスは、単に32ビットの数値というだけではありません。</p>
+<p>ネットワークを識別する部分と、そのネットワーク内のインタフェースを識別する部分に分けて扱います。</p>
+<ul>
+<li><strong>ネットワーク部</strong>：どのIPネットワークに属するかを示す。</li>
+<li><strong>ホスト部</strong>：そのネットワーク内のアドレスを区別する。</li>
+</ul>
+<p>ただし、IPアドレスの数字を見ただけでは、どこまでがネットワーク部かを常に判断できるわけではありません。</p>
+<p>そこで必要になるのが、サブネットマスクやプレフィックス長です。</p>
+<hr />
+<h2 id="sec-4">4. サブネットマスクとCIDR</h2>
+<h3>4-1. サブネットマスクとは</h3>
+<p>サブネットマスクは、IPv4アドレスのネットワーク部とホスト部を区別するための情報です。</p>
+<p>例えば、次の組合せを考えます。</p>
+<pre><code class="language-text">IPアドレス      192.168.1.10
+サブネットマスク 255.255.255.0
+</code></pre>
+<p><code>255.255.255.0</code> を2進数で表すと、次のようになります。</p>
+<pre><code class="language-text">11111111.11111111.11111111.00000000
+</code></pre>
+<p>先頭24ビットが1、残り8ビットが0です。</p>
+<p>サブネットマスクの1の部分がネットワーク部、0の部分がホスト部を示します。</p>
+<h3>4-2. CIDR表記</h3>
+<p>ネットワーク部のビット数をスラッシュの後ろに書く方法をCIDR表記と呼びます。</p>
+<p>先ほどの例なら、次のように表記します。</p>
+<pre><code class="language-text">192.168.1.10/24
+</code></pre>
+<p>これは、先頭24ビットがネットワーク部であることを示します。</p>
+<table>
+<thead>
+<tr>
+  <th>CIDR</th>
+  <th>サブネットマスク</th>
+  <th>ホスト部</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>/8</code></td>
+  <td><code>255.0.0.0</code></td>
+  <td>24ビット</td>
+</tr>
+<tr>
+  <td><code>/16</code></td>
+  <td><code>255.255.0.0</code></td>
+  <td>16ビット</td>
+</tr>
+<tr>
+  <td><code>/24</code></td>
+  <td><code>255.255.255.0</code></td>
+  <td>8ビット</td>
+</tr>
+<tr>
+  <td><code>/25</code></td>
+  <td><code>255.255.255.128</code></td>
+  <td>7ビット</td>
+</tr>
+<tr>
+  <td><code>/26</code></td>
+  <td><code>255.255.255.192</code></td>
+  <td>6ビット</td>
+</tr>
+</tbody>
+</table>
+<p>このうち、<code>/25</code> や <code>/26</code> の具体的な範囲計算は第13講「サブネットとCIDR」でさらに詳しく扱います。</p>
+<p>今回の第12講では、まず <code>/24</code> の意味を確実に理解してください。</p>
+<hr />
+<h2 id="sec-5">5. ネットワークアドレスとブロードキャストアドレス</h2>
+<h3>5-1. ネットワークアドレスとは</h3>
+<p>ネットワークアドレスは、ネットワーク全体を表すアドレスです。</p>
+<p>例えば、次のIPアドレスを考えます。</p>
+<pre><code class="language-text">192.168.1.10/24
+</code></pre>
+<p><code>/24</code> なので、先頭24ビットがネットワーク部です。</p>
+<p>残りの8ビットをすべて0にしたものが、ネットワークアドレスです。</p>
+<pre><code class="language-text">192.168.1.0
+</code></pre>
+<p>これは、このIPネットワーク全体を示します。</p>
+<h3>5-2. ブロードキャストアドレスとは</h3>
+<p>IPv4の一般的なブロードキャスト対応サブネットでは、ホスト部をすべて1にしたアドレスが、そのサブネットのブロードキャストアドレスになります。</p>
+<p>先ほどの <code>/24</code> では、次のようになります。</p>
+<pre><code class="language-text">192.168.1.255
+</code></pre>
+<p>これは、当該サブネット内の機器へブロードキャスト通信するための宛先アドレスです。</p>
+<h3>5-3. 利用可能なホストアドレス</h3>
+<p><code>192.168.1.0/24</code> の場合、次のようになります。</p>
+<table>
+<thead>
+<tr>
+  <th>区分</th>
+  <th>アドレス</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>ネットワークアドレス</td>
+  <td><code>192.168.1.0</code></td>
+</tr>
+<tr>
+  <td>ホストに割当可能</td>
+  <td><code>192.168.1.1〜192.168.1.254</code></td>
+</tr>
+<tr>
+  <td>ブロードキャストアドレス</td>
+  <td><code>192.168.1.255</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>/24</code> では、ホスト部が8ビットあります。</p>
+<p>したがって、アドレス総数は次のとおりです。</p>
+<p><strong>2⁸ = 256</strong></p>
+<p>通常のIPv4サブネットでは、ネットワークアドレスとブロードキャストアドレスをホストに割り当てないため、利用可能なホストアドレス数は次のようになります。</p>
+<p><strong>256 − 2 = 254</strong></p>
+<h3>5-4. ホスト数の計算式</h3>
+<p>一般的なIPv4サブネットでは、次の式を使います。</p>
+<p><strong>利用可能なホスト数 = 2^(32 − プレフィックス長) − 2</strong></p>
+<p>例えば <code>/26</code> なら、ホスト部は6ビットです。</p>
+<p><strong>2⁶ − 2 = 62</strong></p>
+<p>ただし、<code>/31</code> のポイントツーポイントリンクや <code>/32</code> の単一アドレス指定には例外があるため、この式をあらゆるプレフィックス長に機械的に当てはめてはいけません。</p>
+<p>SC試験では、問題文のネットワーク構成を確認したうえで計算してください。</p>
+<hr />
+<h2 id="sec-6">6. 同じネットワークかどうかをどう判断するか</h2>
+<h3>6-1. IPアドレスの見た目だけで判断しない</h3>
+<p>次の2台のPCを考えます。</p>
+<pre><code class="language-text">PC-A：192.168.1.10/24
+PC-B：192.168.1.20/24
+</code></pre>
+<p>PC-Aのネットワークアドレスは <code>192.168.1.0</code> です。</p>
+<p>PC-Bのネットワークアドレスも <code>192.168.1.0</code> です。</p>
+<p>したがって、両者は同じIPサブネットに属しています。</p>
+<p>ただし、実際に直接通信できるかどうかは、同じL2ネットワークに接続されているか、VLANやアクセス制御がどう設定されているかにも依存します。</p>
+<h3>6-2. 別ネットワークの例</h3>
+<p>次の構成ではどうでしょうか。</p>
+<pre><code class="language-text">PC-A：192.168.1.10/24
+PC-C：192.168.2.20/24
+</code></pre>
+<p>PC-Aのネットワークアドレスは <code>192.168.1.0</code>。</p>
+<p>PC-Cのネットワークアドレスは <code>192.168.2.0</code>。</p>
+<p>ネットワークアドレスが異なります。</p>
+<p>したがって、通常はルータなどによるルーティングが必要です。</p>
+<h3>6-3. なぜこの判断が重要なのか</h3>
+<p>この判断によって、<strong>ARPでMACアドレスを問い合わせる対象が変わる</strong>からです。</p>
+<p>同一ネットワークなら、通常、宛先端末のIPv4アドレスをARPで解決します。</p>
+<p>別ネットワークなら、通常、次にパケットを渡すルータのIPv4アドレスをARPで解決します。</p>
+<p>第11講で学んだARPは、この判断と直接結び付いています。</p>
+<hr />
+<h2 id="sec-7">7. グローバルIPアドレスとプライベートIPアドレス</h2>
+<h3>7-1. なぜプライベートIPアドレスが必要なのか</h3>
+<p>IPv4アドレスは32ビットです。</p>
+<p>アドレス総数は次のとおりです。</p>
+<p><strong>2³² = 4,294,967,296</strong></p>
+<p>約43億個です。</p>
+<p>しかし、すべての値が一般的な端末のグローバルユニキャストアドレスとして使用できるわけではありません。</p>
+<p>また、インターネットに接続する機器が増えると、利用できるIPv4アドレスが不足します。</p>
+<p>そこで、組織や家庭内のネットワークで繰り返し使用できるプライベートIPアドレスが定められています。</p>
+<h3>7-2. プライベートIPv4アドレスの範囲</h3>
+<p>次の三つは必ず覚えてください。</p>
+<table>
+<thead>
+<tr>
+  <th>アドレス範囲</th>
+  <th>CIDR表記</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>10.0.0.0〜10.255.255.255</code></td>
+  <td><code>10.0.0.0/8</code></td>
+</tr>
+<tr>
+  <td><code>172.16.0.0〜172.31.255.255</code></td>
+  <td><code>172.16.0.0/12</code></td>
+</tr>
+<tr>
+  <td><code>192.168.0.0〜192.168.255.255</code></td>
+  <td><code>192.168.0.0/16</code></td>
+</tr>
+</tbody>
+</table>
+<p>ここで特に注意したいのは、<code>172.16.0.0/12</code> です。</p>
+<p><code>172.0.0.0〜172.255.255.255</code> のすべてがプライベートアドレスではありません。</p>
+<p>例えば、<code>172.20.1.10</code> はプライベートアドレスですが、<code>172.40.1.10</code> はこのプライベート範囲に含まれません。</p>
+<h3>7-3. プライベートIPアドレスはインターネットで使えるのか</h3>
+<p>プライベートIPアドレスは、通常、公開インターネット上でそのまま宛先としてルーティングされません。</p>
+<p>家庭内LANのPCが <code>192.168.1.10</code> を使用していても、通常はルータのNATやNAPTなどを利用することでインターネット上のサーバと通信できます。</p>
+<p>ただし、NATそのものの詳しい仕組みは、後続の講義で扱います。</p>
+<p>ここでは、<strong>プライベートIPアドレスは組織内部などで使うアドレスであり、インターネットとの通信には適切な経路・アドレス変換などが必要になる</strong>と理解してください。</p>
+<h3>7-4. NATはセキュリティ対策そのものなのか</h3>
+<p>NATによって内部アドレスが外部へ直接見えにくくなることはあります。</p>
+<p>しかし、NATは本来、アドレスを変換する仕組みです。</p>
+<p>NATが存在するだけで、不正通信をすべて遮断できるわけではありません。</p>
+<p>通信の許可・拒否を制御するには、ファイアウォールやACLなどの適切な設定が必要です。</p>
+<p>科目Bでは、NATとアクセス制御を混同しないことが重要です。</p>
+<hr />
+<h2 id="sec-8">8. 特殊なIPv4アドレス</h2>
+<p>IPv4には、プライベートアドレス以外にも特別な用途を持つアドレスがあります。</p>
+<h3>8-1. ループバックアドレス</h3>
+<p>代表的なのは次のアドレスです。</p>
+<pre><code class="language-text">127.0.0.1
+</code></pre>
+<p>これは自分自身を表すループバックアドレスとして使われます。</p>
+<p>ループバック用には <code>127.0.0.0/8</code> が予約されています。</p>
+<p>例えば、PCで <code>127.0.0.1</code> 宛てに通信する場合、その通信は通常、外部ネットワークへ送信されず、自分自身のネットワーク処理で扱われます。</p>
+<h3>8-2. リンクローカルアドレス</h3>
+<p>IPv4のリンクローカルアドレスには、次の範囲が使用されます。</p>
+<pre><code class="language-text">169.254.0.0/16
+</code></pre>
+<p>例えば、DHCPによるアドレス取得に失敗した端末が、環境やOSの設定によって <code>169.254.x.x</code> のアドレスを自動設定する場合があります。</p>
+<p>このようなアドレスは、同一リンク内での通信を想定しています。</p>
+<p>通常、ルータを越えた通信には使用しません。</p>
+<p>ここで、次のような障害事例を考えます。</p>
+<pre><code class="language-text">正常時：
+IPアドレス：192.168.1.10
+GW　　　 ：192.168.1.1
+
+障害時：
+IPアドレス：169.254.25.30
+GW　　　 ：なし
+</code></pre>
+<p>この情報から、DHCPで適切なIPv4アドレスを取得できていない可能性を考えられます。</p>
+<p>ただし、<code>169.254.x.x</code> が設定されたという事実だけでは、DHCPサーバの故障と断定できません。</p>
+<p>DHCPサーバまでの経路、VLAN、DHCPリレー、クライアント側の設定など、複数の原因が考えられるからです。</p>
+<h3>8-3. その他の代表的なアドレス</h3>
+<table>
+<thead>
+<tr>
+  <th>アドレス・範囲</th>
+  <th>主な用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>0.0.0.0</code></td>
+  <td>未指定アドレスなど</td>
+</tr>
+<tr>
+  <td><code>0.0.0.0/0</code></td>
+  <td>デフォルトルート</td>
+</tr>
+<tr>
+  <td><code>127.0.0.0/8</code></td>
+  <td>ループバック</td>
+</tr>
+<tr>
+  <td><code>169.254.0.0/16</code></td>
+  <td>IPv4リンクローカル</td>
+</tr>
+<tr>
+  <td><code>224.0.0.0/4</code></td>
+  <td>IPv4マルチキャスト</td>
+</tr>
+<tr>
+  <td><code>255.255.255.255</code></td>
+  <td>限定ブロードキャスト</td>
+</tr>
+</tbody>
+</table>
+<p>なお、<code>192.0.2.0/24</code>、<code>198.51.100.0/24</code>、<code>203.0.113.0/24</code> は、技術文書の例示用に予約されたアドレス範囲です。</p>
+<p>この講義でWebサーバの例に <code>203.0.113.80</code> を使っているのは、そのためです。</p>
+<hr />
+<h2 id="sec-9">9. IPv4のユニキャスト・ブロードキャスト・マルチキャスト</h2>
+<p>第10講では、Ethernetの宛先MACアドレスによる通信形態を学びました。</p>
+<p>IPv4にも、通信相手の範囲による区分があります。</p>
+<h3>9-1. ユニキャスト</h3>
+<p>ユニキャストは、特定の一つの宛先へ送る通信です。</p>
+<p>例えば、PCがWebサーバへHTTPリクエストを送信する場合などです。</p>
+<h3>9-2. ブロードキャスト</h3>
+<p>ブロードキャストは、同一ネットワーク内の複数の機器を対象にする通信です。</p>
+<p>例えば、<code>192.168.1.0/24</code> におけるサブネットのブロードキャストアドレスは、通常 <code>192.168.1.255</code> です。</p>
+<p>また、<code>255.255.255.255</code> は限定ブロードキャストアドレスです。</p>
+<p>通常、ルータはこのような限定ブロードキャストを別ネットワークへ転送しません。</p>
+<h3>9-3. マルチキャスト</h3>
+<p>マルチキャストは、特定のグループを対象とする通信です。</p>
+<p>IPv4のマルチキャストアドレス範囲は次のとおりです。</p>
+<pre><code class="language-text">224.0.0.0/4
+</code></pre>
+<p>これは <code>224.0.0.0〜239.255.255.255</code> の範囲です。</p>
+<p>例えば、OSPFで利用されるマルチキャストアドレスなどがあります。</p>
+<h3>9-4. IPのブロードキャストとEthernetのブロードキャスト</h3>
+<p>IPアドレスとMACアドレスは異なる階層で使用されます。</p>
+<p>IPv4ブロードキャストをEthernetで送信するときには、通常、Ethernetの宛先MACアドレスにもブロードキャストアドレスが使用されます。</p>
+<pre><code class="language-text">IPv4宛先：192.168.1.255
+Ethernet宛先：FF:FF:FF:FF:FF:FF
+</code></pre>
+<p>ただし、IPブロードキャストアドレスとEthernetブロードキャストアドレスは同じものではありません。</p>
+<p>それぞれネットワーク層とデータリンク層で使用されるアドレスです。</p>
+<hr />
+<h2 id="sec-10">10. ルーティングとデフォルトゲートウェイ</h2>
+<h3>10-1. ルータは何を見て転送先を判断するか</h3>
+<p>ルータは、受信したIPパケットの宛先IPアドレスを確認し、ルーティングテーブルを参照して転送先を判断します。</p>
+<p>例えば、次のようなルーティングテーブルを考えます。</p>
+<pre><code class="language-text">宛先ネットワーク       次の転送先
+192.168.1.0/24       直接接続
+192.168.2.0/24       192.168.1.254
+0.0.0.0/0            192.168.1.1
+</code></pre>
+<p>この場合、宛先が <code>192.168.2.20</code> であれば、<code>192.168.2.0/24</code> の経路に一致します。</p>
+<p>宛先が <code>203.0.113.80</code> で、より具体的な経路がなければ、<code>0.0.0.0/0</code> のデフォルトルートが使用されます。</p>
+<h3>10-2. デフォルトルートとは</h3>
+<p>デフォルトルートは、より具体的な経路が見つからない場合に使用する経路です。</p>
+<p>次の表記が使われます。</p>
+<pre><code class="language-text">0.0.0.0/0
+</code></pre>
+<p>プレフィックス長が0であるため、すべてのIPv4アドレスに一致します。</p>
+<p>ただし、ルーティングテーブルに別の、より具体的な経路が存在すれば、通常はそちらが優先されます。</p>
+<p>これを<strong>最長プレフィックス一致（Longest Prefix Match）</strong>と呼びます。</p>
+<p>例えば、宛先 <code>192.168.2.20</code> に対して次の二つの経路がある場合、</p>
+<pre><code class="language-text">192.168.2.0/24
+0.0.0.0/0
+</code></pre>
+<p><code>192.168.2.0/24</code> の方がプレフィックス長が長いため、そちらが選択されます。</p>
+<p>この仕組みは第13講で詳しく扱います。</p>
+<h3>10-3. ARPとの連携</h3>
+<p>ルーティングで次の転送先を決めても、Ethernetで送るにはMACアドレスが必要です。</p>
+<p>そのため、IPv4通信では次のような順序になります。</p>
+<pre><code class="language-text">① 宛先IPアドレスを確認
+   203.0.113.80
+         ↓
+② ルーティングテーブルを参照
+   次の転送先は192.168.1.1
+         ↓
+③ ARPキャッシュを確認し、必要ならARPで解決
+   192.168.1.1 → ルータのMACアドレス
+         ↓
+④ Ethernetフレームを作成
+   宛先MAC：ルータのMACアドレス
+   宛先IP ：203.0.113.80
+         ↓
+⑤ フレームを送信
+</code></pre>
+<p>重要なのは、ルーティングとARPの役割が異なることです。</p>
+<ul>
+<li>ルーティングは、IPパケットを次にどこへ送るか決めます。</li>
+<li>ARPは、次の配送先のIPv4アドレスに対応するMACアドレスを取得します。</li>
+<li>Ethernetは、得られたMACアドレスを使ってフレームを配送します。</li>
+</ul>
+<hr />
+<h2 id="sec-11">11. IPv4ヘッダの主要フィールド</h2>
+<p>IPv4パケットには、IPヘッダが付いています。</p>
+<p>IPヘッダには、ルータや受信端末がパケットを処理するための情報が含まれます。</p>
+<h3>11-1. IPv4ヘッダの全体像</h3>
+<p><strong>IPv4ヘッダ（主なフィールドを簡略化）</strong></p>
+<pre><code class="language-text">┌─────────┬───────┬────────────┬──────────────┐
+│ Version │ IHL   │ DSCP/ECN   │ Total Length │
+├─────────┴───────┴────────────┼──────────────┤
+│ Identification               │ Flags / Fragment Offset │
+├─────────┬─────────┬──────────┴──────────────┤
+│ TTL     │Protocol │ Header Checksum          │
+├─────────┴─────────┴─────────────────────────┤
+│ Source IP Address                           │
+├─────────────────────────────────────────────┤
+│ Destination IP Address                      │
+├─────────────────────────────────────────────┤
+│ Options（任意）                             │
+└─────────────────────────────────────────────┘
+</code></pre>
+<p>オプションがない場合、IPv4ヘッダは20バイトです。図はフィールドの理解を目的としたものです。</p>
+<p>この中で、SC試験対策として特に重要なのは、次のフィールドです。</p>
+<table>
+<thead>
+<tr>
+  <th>フィールド</th>
+  <th>主な役割</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Version</td>
+  <td>IPのバージョンを示す</td>
+</tr>
+<tr>
+  <td>IHL</td>
+  <td>IPv4ヘッダ長を示す</td>
+</tr>
+<tr>
+  <td>Total Length</td>
+  <td>IPパケット全体の長さを示す</td>
+</tr>
+<tr>
+  <td>Identification・Flags・Fragment Offset</td>
+  <td>フラグメント処理に使用する</td>
+</tr>
+<tr>
+  <td><strong>TTL</strong></td>
+  <td>ルータを通過できる回数を制限する</td>
+</tr>
+<tr>
+  <td><strong>Protocol</strong></td>
+  <td>IPペイロードの上位プロトコルを識別する</td>
+</tr>
+<tr>
+  <td>Header Checksum</td>
+  <td>IPv4ヘッダの伝送誤りを検出する</td>
+</tr>
+<tr>
+  <td><strong>Source IP Address</strong></td>
+  <td>送信元IPアドレス</td>
+</tr>
+<tr>
+  <td><strong>Destination IP Address</strong></td>
+  <td>宛先IPアドレス</td>
+</tr>
+</tbody>
+</table>
+<h3>11-2. TTLとは</h3>
+<p>TTLは、Time To Liveの略です。</p>
+<p>IPv4ヘッダのTTLは、ルータを通過するたびに減少します。</p>
+<p>TTLが0になるようなパケットは破棄されます。</p>
+<p>これにより、ルーティングの異常などでパケットがネットワーク内を無限に周回することを防ぎます。</p>
+<p>例えば、次のような通信を考えます。</p>
+<pre><code class="language-text">送信時TTL：64
+
+ルータ1通過後：63
+ルータ2通過後：62
+ルータ3通過後：61
+</code></pre>
+<p>ルータは、通常、転送時にTTLを1減らします。</p>
+<p>TTLが尽きた場合、パケットを破棄し、状況に応じてICMP Time Exceededメッセージを送信します。</p>
+<p>この仕組みは、tracerouteなどの経路調査でも利用されます。</p>
+<h3>11-3. Protocolフィールドとは</h3>
+<p>IPv4ヘッダのProtocolフィールドは、IPペイロードに含まれる上位プロトコルを識別します。</p>
+<p>代表的な値は次のとおりです。</p>
+<table>
+<thead>
+<tr>
+  <th>Protocol番号</th>
+  <th>プロトコル</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>1</code></td>
+  <td>ICMP</td>
+</tr>
+<tr>
+  <td><code>6</code></td>
+  <td>TCP</td>
+</tr>
+<tr>
+  <td><code>17</code></td>
+  <td>UDP</td>
+</tr>
+<tr>
+  <td><code>50</code></td>
+  <td>ESP</td>
+</tr>
+<tr>
+  <td><code>51</code></td>
+  <td>AH</td>
+</tr>
+</tbody>
+</table>
+<p>例えば、Protocol番号が <code>6</code> なら、通常、そのIPパケットのペイロードはTCPです。</p>
+<p>Protocol番号が <code>17</code> なら、通常、UDPです。</p>
+<h3>11-4. EtherType・Protocol・ポート番号の違い</h3>
+<p>ここは以前の第12講の復習対象です。</p>
+<p>次の三つは、いずれも「どの種類のデータか」を識別するために使われますが、役割が異なります。</p>
+<table>
+<thead>
+<tr>
+  <th>フィールド</th>
+  <th>所属するヘッダ</th>
+  <th>識別するもの</th>
+  <th>例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>EtherType</strong></td>
+  <td>Ethernet</td>
+  <td>Ethernetペイロードのプロトコル</td>
+  <td><code>0x0800</code>＝IPv4</td>
+</tr>
+<tr>
+  <td><strong>Protocol</strong></td>
+  <td>IPv4</td>
+  <td>IPペイロードのプロトコル</td>
+  <td><code>6</code>＝TCP</td>
+</tr>
+<tr>
+  <td><strong>宛先ポート番号</strong></td>
+  <td>TCP・UDP</td>
+  <td>宛先のサービスや受信口</td>
+  <td><code>443</code>＝HTTPSで一般的に使用</td>
+</tr>
+</tbody>
+</table>
+<p>例えば、HTTPS通信をTCPで行う場合、次のような組合せになります。</p>
+<pre><code class="language-text">Ethernet
+  EtherType：0x0800（IPv4）
+    ↓
+IPv4
+  Protocol：6（TCP）
+    ↓
+TCP
+  Destination Port：443
+    ↓
+TLSで保護されたHTTPS通信
+</code></pre>
+<p>つまり、EtherTypeだけではTCPかUDPかを識別しません。</p>
+<p>IPv4のProtocolフィールドだけでは、HTTPSかSSHかを直接識別しません。</p>
+<p>また、宛先ポート番号が443であることだけで、その通信が正当なHTTPS通信だと保証されるわけでもありません。</p>
+<h3>11-5. ヘッダチェックサム</h3>
+<p>IPv4には、ヘッダの誤りを検出するためのチェックサムがあります。</p>
+<p>ただし、チェックサムは暗号学的な改ざん防止機能ではありません。</p>
+<p>攻撃者がパケットを作り直してチェックサムを再計算できる場合、チェックサムだけで不正な変更を検出できるとは限りません。</p>
+<p>第10講で学んだEthernetのFCSと同様に、<strong>誤り検出と暗号学的な完全性保護は別物</strong>です。</p>
+<hr />
+<h2 id="sec-12">12. MTUとIPフラグメント</h2>
+<p><strong>B：理解補助</strong></p>
+<h3>12-1. MTUとは</h3>
+<p>MTU（Maximum Transmission Unit）は、リンクなどで一度に転送できるパケットの最大サイズを示します。</p>
+<p>例えば、一般的なEthernetでは、IPパケットに対するMTUが1500バイトに設定されていることがあります。</p>
+<p>ここで、IPv4パケットのサイズがMTUを超えていたらどうなるでしょうか。</p>
+<h3>12-2. フラグメントとは</h3>
+<p>IPv4では、条件によって、IPパケットを複数の断片に分割して転送できます。</p>
+<p>この断片をフラグメントと呼びます。</p>
+<p>例えば、次のようなイメージです。</p>
+<pre><code class="language-text">元のIPv4パケット
+┌──────────────────────────┐
+│         大きなデータ       │
+└──────────────────────────┘
+              ↓
+         フラグメント化
+              ↓
+┌───────────┐ ┌───────────┐
+│断片1      │ │断片2      │
+└───────────┘ └───────────┘
+</code></pre>
+<p>分割されたパケットは、最終的な宛先ホストで再構築されます。</p>
+<p>ルータが途中で必ず再構築するわけではありません。</p>
+<h3>12-3. DFフラグ</h3>
+<p>IPv4ヘッダには、分割を禁止するためのDF（Don't Fragment）フラグがあります。</p>
+<p>DFが設定されているパケットが、次のリンクのMTUより大きい場合、ルータはそのパケットを分割できません。</p>
+<p>そのため、パケットを破棄し、通常はICMPのFragmentation Neededを通知します。</p>
+<p>この通知は、Path MTU Discovery（経路MTU探索）で利用されます。</p>
+<h3>12-4. セキュリティとの関係</h3>
+<p>IPフラグメントは正常な通信でも利用されますが、ファイアウォールや侵入検知システムにとって、検査が複雑になる場合があります。</p>
+<p>例えば、TCPヘッダの一部が後続フラグメントに存在する場合、最初の断片だけを確認しても、通信の全情報を判断できないことがあります。</p>
+<p>そのため、セキュリティ機器では、フラグメントの再構築や整合性検査などが必要になる場合があります。</p>
+<p>ただし、すべてのフラグメントを攻撃と判断してはいけません。</p>
+<p>正常なフラグメントと不正なフラグメントを区別することが重要です。</p>
+<hr />
+<h2 id="sec-13">13. IPv4とセキュリティ</h2>
+<h3>13-1. IP Spoofingとは</h3>
+<p>IP Spoofingは、IPパケットの送信元IPアドレスを偽装する行為です。</p>
+<p>例えば、攻撃者が次のようなパケットを送信するとします。</p>
+<pre><code class="language-text">実際の送信者：攻撃者PC
+
+IPヘッダ
+  送信元IP：192.168.1.10（偽装）
+  宛先IP　：192.168.1.20
+</code></pre>
+<p>受信側が送信元IPアドレスだけを信用している場合、正規端末からの通信と誤認する可能性があります。</p>
+<p>ただし、IP Spoofingを行えば、必ず双方向通信が成立するわけではありません。</p>
+<p>返信パケットは、通常、偽装された送信元IPアドレス宛てに送られるからです。</p>
+<h3>13-2. なぜ送信元IPアドレスだけでは認証できないのか</h3>
+<p>IPヘッダの送信元IPアドレスは、通信の送信元を示す情報です。</p>
+<p>しかし、それだけで送信者本人の真正性を保証するものではありません。</p>
+<p>したがって、次のような設定は危険です。</p>
+<blockquote>
+<p>「送信元IPアドレスが192.168.1.10なら、必ず正規の管理端末である」</p>
+</blockquote>
+<p>IPアドレスはアクセス制御の条件として利用できますが、送信者の本人確認が必要な場面では、認証などを組み合わせる必要があります。</p>
+<h3>13-3. IP Spoofingへの対策</h3>
+<p>代表的な対策として、入口・出口で送信元IPアドレスを検証する方法があります。</p>
+<p>例えば、外部インターネット側から届いたパケットなのに、送信元IPアドレスが社内のプライベートIPアドレスになっている場合、不審な通信として扱うことが考えられます。</p>
+<p>このような不正な送信元アドレスを持つパケットを制限する仕組みを、イングレスフィルタリングやエグレスフィルタリングなどと呼びます。</p>
+<p>ただし、正当な通信の経路やアドレス設計によって、適切な検査条件は異なります。</p>
+<p>また、送信元IPアドレスの検証だけで、アプリケーションのなりすましをすべて防止できるわけではありません。</p>
+<h3>13-4. ARP Spoofingとの違い</h3>
+<table>
+<thead>
+<tr>
+  <th>比較</th>
+  <th>ARP Spoofing</th>
+  <th>IP Spoofing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>偽装する情報</td>
+  <td>IPとMACの対応関係</td>
+  <td>IPヘッダの送信元IPアドレス</td>
+</tr>
+<tr>
+  <td>主な狙い</td>
+  <td>通信経路の誘導など</td>
+  <td>送信元の偽装など</td>
+</tr>
+<tr>
+  <td>主な対策例</td>
+  <td>DAI、静的ARP</td>
+  <td>送信元IPアドレスの検証</td>
+</tr>
+<tr>
+  <td>注意点</td>
+  <td>同一L2ネットワークの条件が重要</td>
+  <td>返信経路や認証の条件が重要</td>
+</tr>
+</tbody>
+</table>
+<p>両者は名前が似ていますが、攻撃の対象が異なります。</p>
+<hr />
+<h2 id="sec-14">14. ログとパケットを読む</h2>
+<p>ここでは、IPv4通信のトラブルシューティングを考えます。</p>
+<h3>14-1. 例①：同一ネットワークへ通信できない</h3>
+<p>PC-Aに次の設定があります。</p>
+<pre><code class="language-text">IP Address : 192.168.1.10
+Subnet Mask: 255.255.255.0
+Gateway    : 192.168.1.1
+</code></pre>
+<p>PC-Bは次の設定です。</p>
+<pre><code class="language-text">IP Address : 192.168.1.20
+Subnet Mask: 255.255.255.0
+</code></pre>
+<p>両者は同じIPサブネットです。</p>
+<p>PC-AがPC-Bへ通信できない場合、次のような原因を調べます。</p>
+<ul>
+<li>PC-Bの電源やネットワーク接続の状態</li>
+<li>VLAN設定</li>
+<li>ARPによるMACアドレス解決</li>
+<li>PC-Bのファイアウォール</li>
+<li>IPアドレス重複</li>
+</ul>
+<p>同じサブネットだからといって、必ず通信できるわけではありません。</p>
+<h3>14-2. 例②：外部ネットワークへ通信できない</h3>
+<p>PC-Aが次の状態だったとします。</p>
+<pre><code class="language-text">IP Address : 192.168.1.10
+Subnet Mask: 255.255.255.0
+Gateway    : 未設定
+</code></pre>
+<p>同じネットワークのPC-Bへは通信できます。</p>
+<p>しかし、外部のWebサーバへ通信できません。</p>
+<p>この場合、デフォルトゲートウェイが設定されていないため、外部ネットワークへの経路が存在しない可能性があります。</p>
+<p>ただし、別途、具体的な静的ルートが設定されていれば通信できる場合もあるため、ルーティングテーブル全体を確認します。</p>
+<h3>14-3. 例③：パケットのProtocol番号</h3>
+<p>次のパケット情報を考えます。</p>
+<pre><code class="language-text">EtherType       : 0x0800
+Source IP       : 192.168.1.10
+Destination IP  : 203.0.113.80
+Protocol        : 6
+Destination Port: 443
+TTL             : 62
+</code></pre>
+<p>この情報から何が分かるでしょうか。</p>
+<p>まず、EtherType <code>0x0800</code> から、EthernetのペイロードがIPv4であると分かります。</p>
+<p>次に、IPv4のProtocol番号 <code>6</code> から、上位プロトコルがTCPであると分かります。</p>
+<p>さらに、宛先ポート番号 <code>443</code> から、一般的にはHTTPSなどで使用されるポートへの通信であると分かります。</p>
+<p>ただし、この情報だけでTLSが正常に確立されたことや、通信内容が安全であることまでは確認できません。</p>
+<p>TTLが62であることも分かりますが、送信時のTTLが不明なら、通過したルータの数を正確に断定することはできません。</p>
+<h3>14-4. 例④：TTL切れ</h3>
+<p>次のようなログがあったとします。</p>
+<pre><code class="language-text">12:10:01  ICMP Time Exceeded
+12:10:02  ICMP Time Exceeded
+12:10:03  ICMP Time Exceeded
+</code></pre>
+<p>この場合、ルーティングループや経路調査ツールの実行など、複数の可能性があります。</p>
+<p>ICMP Time Exceededが発生しただけで、直ちに攻撃や障害と断定するのは不適切です。</p>
+<p>通信の送信元、宛先、発生頻度、ルーティングテーブルの状態などを確認する必要があります。</p>
+<hr />
+<h2 id="sec-15">15. 科目A・科目Bの答案作成ポイント</h2>
+<h3>15-1. 科目Aの典型論点</h3>
+<table>
+<thead>
+<tr>
+  <th>論点</th>
+  <th>正しく判断するポイント</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>IPv4アドレスの長さ</td>
+  <td>32ビット</td>
+</tr>
+<tr>
+  <td><code>/24</code> の意味</td>
+  <td>先頭24ビットがネットワーク部</td>
+</tr>
+<tr>
+  <td><code>/24</code> の通常のホスト数</td>
+  <td>254個</td>
+</tr>
+<tr>
+  <td>ネットワークアドレス</td>
+  <td>ホスト部がすべて0</td>
+</tr>
+<tr>
+  <td>ブロードキャストアドレス</td>
+  <td>通常のサブネットではホスト部がすべて1</td>
+</tr>
+<tr>
+  <td>プライベートIP</td>
+  <td><code>10/8</code>、<code>172.16/12</code>、<code>192.168/16</code></td>
+</tr>
+<tr>
+  <td>リンクローカル</td>
+  <td><code>169.254/16</code></td>
+</tr>
+<tr>
+  <td>TTL</td>
+  <td>ルータを通過する際に減少</td>
+</tr>
+<tr>
+  <td>Protocol番号6</td>
+  <td>TCP</td>
+</tr>
+<tr>
+  <td>Protocol番号17</td>
+  <td>UDP</td>
+</tr>
+<tr>
+  <td>EtherType <code>0x0800</code></td>
+  <td>IPv4</td>
+</tr>
+</tbody>
+</table>
+<h3>15-2. 科目Bの設問例①：ネットワークアドレス</h3>
+<p><strong>設問</strong></p>
+<p>IPアドレスが <code>192.168.10.25/24</code> の端末が属するネットワークアドレスを答えよ。</p>
+<p><strong>答案例</strong></p>
+<p><code>192.168.10.0</code></p>
+<p><strong>解説</strong></p>
+<p><code>/24</code> なので、最後の8ビットがホスト部です。</p>
+<p>その部分をすべて0にすると、ネットワークアドレスを求められます。</p>
+<h3>15-3. 科目Bの設問例②：外部通信の経路</h3>
+<p><strong>設問</strong></p>
+<p>PC-AのIPアドレスは <code>192.168.1.10/24</code>、デフォルトゲートウェイは <code>192.168.1.1</code> である。PC-Aが <code>203.0.113.80</code> へ通信する場合、Ethernetフレームの宛先MACアドレスをどのように決定するか。</p>
+<p><strong>答案例</strong></p>
+<p>「宛先が別ネットワークであるため、デフォルトゲートウェイ <code>192.168.1.1</code> のMACアドレスをARPで解決し、そのMACアドレスをEthernetフレームの宛先に設定する。」</p>
+<p><strong>解説</strong></p>
+<p>最終宛先のIPアドレスと、次の配送先のMACアドレスを区別します。</p>
+<h3>15-4. 科目Bの設問例③：TTL</h3>
+<p><strong>設問</strong></p>
+<p>IPv4ヘッダのTTLが必要な理由を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<p>「ルータを通過するたびにTTLを減らし、値が尽きたパケットを破棄することで、ルーティングループなどによるパケットの無限転送を防ぐため。」</p>
+<p><strong>解説</strong></p>
+<p>「パケットの寿命を管理する」だけでは、何を防ぐための仕組みかが不明確です。</p>
+<p>原因と効果を説明してください。</p>
+<h3>15-5. 科目Bの設問例④：IP Spoofing</h3>
+<p><strong>設問</strong></p>
+<p>送信元IPアドレスを偽装したパケットが、組織のネットワークから外部へ送信されることを抑制する対策を答えよ。</p>
+<p><strong>答案例</strong></p>
+<p>「境界ルータなどで送信元IPアドレスを検査し、内部ネットワークから送信される正当なアドレス範囲に属さないパケットを破棄する。」</p>
+<p><strong>解説</strong></p>
+<p>単に「ファイアウォールを導入する」と答えるより、どのフィールドを検査し、どのようなパケットを破棄するのかを明示する方が正確です。</p>
+<hr />
+<h2 id="sec-16">16. 重要事項の整理</h2>
+<p>今回、特に覚えてほしいのは次の六つです。</p>
+<p><strong>第一に、IPv4アドレスは32ビットです。</strong> ネットワーク部とホスト部の境界は、サブネットマスクやCIDR表記によって判断します。</p>
+<p><strong>第二に、ネットワークアドレスとブロードキャストアドレスを区別します。</strong> 一般的な <code>/24</code> では、ネットワークアドレスは末尾0、ブロードキャストアドレスは末尾255、割当可能なホストアドレスは254個です。</p>
+<p><strong>第三に、プライベートIPアドレスの三つの範囲を覚えます。</strong> 特に <code>172.16.0.0/12</code> の範囲を間違えないようにしてください。</p>
+<p><strong>第四に、ルーティングは宛先IPアドレスを基に次の転送先を決める仕組みです。</strong> 別ネットワークへ送るときには、通常、次の転送先となるルータのMACアドレスをARPで解決します。</p>
+<p><strong>第五に、IPv4ヘッダのTTLとProtocolを理解します。</strong> TTLは無限転送の防止、Protocolは上位プロトコルの識別に使われます。</p>
+<p><strong>第六に、EtherType、IPv4のProtocol、TCP・UDPのポート番号を区別します。</strong> それぞれ識別する対象が異なります。</p>
+<h3>C：発展として切り分けた内容</h3>
+<p>今回、次の内容は深掘りしません。</p>
+<ul>
+<li>IPv4ヘッダ全フィールドのビット単位の解析</li>
+<li>複雑なIPフラグメントのオフセット計算</li>
+<li>ルータの内部転送方式</li>
+<li>OSごとのルーティング処理の実装</li>
+<li>ネットワーク機器固有の詳細設定コマンド</li>
+</ul>
+<p>これらは必要に応じて後続講義や補講で扱います。</p>
+<p>第12講では、まず<strong>IPv4アドレスの意味、通信経路の判断、ヘッダ情報の読み方</strong>を確実に理解してください。</p>
+<div class="footnote">本HTMLには第1〜16節の講義本文を収録しています。第17節「理解度チェック」はご指定により収録していません。既存の採点履歴・進捗表は変更していません。</div></main></body></html>
