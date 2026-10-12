@@ -1,4 +1,4 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第13講｜サブネットとCIDR｜講義本文（全16節）</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f1f5f9;color:#203044;font:16px/1.92 -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}main{max-width:1000px;margin:36px auto;padding:42px 58px;background:white;border:1px solid #dce4ed;border-radius:16px;box-shadow:0 12px 40px #0f172a0a}h1{font-size:2.1rem;color:#12375a;border-bottom:4px solid #2563eb;padding-bottom:16px}h2{font-size:1.5rem;color:#174a79;margin:58px 0 22px;padding:12px 15px;border-left:6px solid #2563eb;background:#eff6ff;scroll-margin-top:16px}h3{font-size:1.16rem;color:#1e40af;margin:30px 0 13px}h4{font-size:1.05rem;color:#31587b;margin:22px 0 10px}p{margin:12px 0}strong{color:#103b68}table{border-collapse:collapse;width:100%;margin:20px 0 26px;font-size:.92rem}th,td{border:1px solid #cbd5e1;padding:10px 12px;text-align:left;vertical-align:top}th{background:#eaf1f9;color:#153e62}tr:nth-child(even){background:#f8fafc}pre{overflow-x:auto;background:#132337;color:#e6f1ff;border-radius:9px;padding:18px 20px;line-height:1.6;font-size:.9rem}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#eef2f7;padding:2px 5px;border-radius:4px;font-size:.9em}pre code{background:none;color:inherit;padding:0}ul,ol{padding-left:1.65rem}li{padding:3px 0}hr{border:0;border-top:1px solid #dbe3ee;margin:35px 0}.intro{color:#64748b;font-size:.93rem}.toc{background:#f8fafc;border:1px solid #dce5f0;border-radius:12px;padding:20px 28px;margin:25px 0}.toc h2{background:none;border:0;padding:0;margin:0 0 10px;font-size:1.2rem}.toc ol{columns:2;column-gap:30px;margin:0}.toc li{break-inside:avoid;font-size:.9rem}.toc a{color:#185b9c;text-decoration:none}.toc a:hover{text-decoration:underline}.footnote{margin-top:55px;padding:18px;background:#f8fafc;border-radius:10px;color:#475569;font-size:.85rem}.calculator{border:1px solid #a8c5e3;border-radius:12px;background:#f5f9ff;padding:22px;margin:22px 0}.calc-inputs{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}.calc-inputs label{display:flex;flex-direction:column;gap:6px;font-weight:600}.calc-inputs input,.calc-inputs select{padding:9px;border:1px solid #a7b8cc;border-radius:7px;font-size:1rem;background:white}.calculator table{background:white}.calculator small{color:#52667e}@media(max-width:720px){main{margin:0;padding:24px 18px;border:0;border-radius:0}h1{font-size:1.6rem}h2{font-size:1.24rem}.toc ol{columns:1}table{display:block;overflow-x:auto}pre{font-size:.78rem}}@media print{body{background:white}main{margin:0;padding:0;border:0;box-shadow:none}h2{break-after:avoid}pre,table{break-inside:avoid}}</style><link rel="stylesheet" href="../assets/unified.css?v=20261012-3"><link rel="stylesheet" href="../assets/lesson16.css?v=2"></head><body><nav class="sc-global-nav" aria-label="講義ナビゲーション"><a href="../index.html?v=20261012-3">講義一覧</a><span>第13講 / 23講</span><span><a href="12.html?v=20261012-3">← 前へ</a> <a href="14.html?v=20261012-3">次へ →</a></span></nav><main><div class="intro">情報処理安全確保支援士（SC）合格講座｜第13講・再執筆版｜理解度チェックなし</div><nav class="toc" aria-label="目次"><h2>目次</h2><ol><li><a href="#section-1">1. 到達目標と参考書</a></li><li><a href="#section-2">2. なぜサブネット分割が必要なのか</a></li><li><a href="#section-3">3. サブネットマスクとCIDRを理解する</a></li><li><a href="#section-4">4. ブロックサイズでサブネットを素早く計算する</a></li><li><a href="#section-5">5. IPアドレスからネットワーク範囲を求める</a></li><li><a href="#section-6">6. <code>/25</code>・<code>/27</code>・<code>/28</code> の計算を比較する</a></li><li><a href="#section-7">7. 2進数による計算と論理積（AND）</a></li><li><a href="#section-8">8. 同一サブネットかどうかを判断する</a></li><li><a href="#section-9">9. 最長プレフィックス一致（Longest Prefix Match）</a></li><li><a href="#section-10">10. CIDRによる経路集約</a></li><li><a href="#section-11">11. サブネットとネットワークセキュリティ</a></li><li><a href="#section-12">12. CIDRの設定ミスが引き起こす脆弱性</a></li><li><a href="#section-13">13. ログ・設定からネットワーク範囲を読み取る</a></li><li><a href="#section-14">14. よくある誤解と注意点</a></li><li><a href="#section-15">15. 科目A・科目Bの答案作成ポイント</a></li><li><a href="#section-16">16. 重要事項の整理</a></li></ol></nav><h1>第13講｜サブネットとCIDR</h1>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第13講｜サブネットとCIDR｜講義本文（全16節）</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f1f5f9;color:#203044;font:16px/1.92 -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}main{max-width:1000px;margin:36px auto;padding:42px 58px;background:white;border:1px solid #dce4ed;border-radius:16px;box-shadow:0 12px 40px #0f172a0a}h1{font-size:2.1rem;color:#12375a;border-bottom:4px solid #2563eb;padding-bottom:16px}h2{font-size:1.5rem;color:#174a79;margin:58px 0 22px;padding:12px 15px;border-left:6px solid #2563eb;background:#eff6ff;scroll-margin-top:16px}h3{font-size:1.16rem;color:#1e40af;margin:30px 0 13px}h4{font-size:1.05rem;color:#31587b;margin:22px 0 10px}p{margin:12px 0}strong{color:#103b68}table{border-collapse:collapse;width:100%;margin:20px 0 26px;font-size:.92rem}th,td{border:1px solid #cbd5e1;padding:10px 12px;text-align:left;vertical-align:top}th{background:#eaf1f9;color:#153e62}tr:nth-child(even){background:#f8fafc}pre{overflow-x:auto;background:#132337;color:#e6f1ff;border-radius:9px;padding:18px 20px;line-height:1.6;font-size:.9rem}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#eef2f7;padding:2px 5px;border-radius:4px;font-size:.9em}pre code{background:none;color:inherit;padding:0}ul,ol{padding-left:1.65rem}li{padding:3px 0}hr{border:0;border-top:1px solid #dbe3ee;margin:35px 0}.intro{color:#64748b;font-size:.93rem}.toc{background:#f8fafc;border:1px solid #dce5f0;border-radius:12px;padding:20px 28px;margin:25px 0}.toc h2{background:none;border:0;padding:0;margin:0 0 10px;font-size:1.2rem}.toc ol{columns:2;column-gap:30px;margin:0}.toc li{break-inside:avoid;font-size:.9rem}.toc a{color:#185b9c;text-decoration:none}.toc a:hover{text-decoration:underline}.footnote{margin-top:55px;padding:18px;background:#f8fafc;border-radius:10px;color:#475569;font-size:.85rem}.calculator{border:1px solid #a8c5e3;border-radius:12px;background:#f5f9ff;padding:22px;margin:22px 0}.calc-inputs{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}.calc-inputs label{display:flex;flex-direction:column;gap:6px;font-weight:600}.calc-inputs input,.calc-inputs select{padding:9px;border:1px solid #a7b8cc;border-radius:7px;font-size:1rem;background:white}.calculator table{background:white}.calculator small{color:#52667e}@media(max-width:720px){main{margin:0;padding:24px 18px;border:0;border-radius:0}h1{font-size:1.6rem}h2{font-size:1.24rem}.toc ol{columns:1}table{display:block;overflow-x:auto}pre{font-size:.78rem}}@media print{body{background:white}main{margin:0;padding:0;border:0;box-shadow:none}h2{break-after:avoid}pre,table{break-inside:avoid}}</style><link rel="stylesheet" href="../assets/unified.css?v=20261012-3"><link rel="stylesheet" href="../assets/lesson16.css?v=2"><link rel="stylesheet" href="../assets/lesson16.css?v=3"></head><body><nav class="sc-global-nav" aria-label="講義ナビゲーション"><a href="../index.html?v=20261012-3">講義一覧</a><span>第13講 / 23講</span><span><a href="12.html?v=20261012-3">← 前へ</a> <a href="14.html?v=20261012-3">次へ →</a></span></nav><main><div class="intro">情報処理安全確保支援士（SC）合格講座｜第13講・再執筆版｜理解度チェックなし</div><nav class="toc" aria-label="目次"><h2>目次</h2><ol><li><a href="#section-1">1. 到達目標と参考書</a></li><li><a href="#section-2">2. なぜサブネット分割が必要なのか</a></li><li><a href="#section-3">3. サブネットマスクとCIDRを理解する</a></li><li><a href="#section-4">4. ブロックサイズでサブネットを素早く計算する</a></li><li><a href="#section-5">5. IPアドレスからネットワーク範囲を求める</a></li><li><a href="#section-6">6. <code>/25</code>・<code>/27</code>・<code>/28</code> の計算を比較する</a></li><li><a href="#section-7">7. 2進数による計算と論理積（AND）</a></li><li><a href="#section-8">8. 同一サブネットかどうかを判断する</a></li><li><a href="#section-9">9. 最長プレフィックス一致（Longest Prefix Match）</a></li><li><a href="#section-10">10. CIDRによる経路集約</a></li><li><a href="#section-11">11. サブネットとネットワークセキュリティ</a></li><li><a href="#section-12">12. CIDRの設定ミスが引き起こす脆弱性</a></li><li><a href="#section-13">13. ログ・設定からネットワーク範囲を読み取る</a></li><li><a href="#section-14">14. よくある誤解と注意点</a></li><li><a href="#section-15">15. 科目A・科目Bの答案作成ポイント</a></li><li><a href="#section-16">16. 重要事項の整理</a></li></ol></nav><h1>第13講｜サブネットとCIDR</h1>
 <p><strong>第1〜23講・詳細再執筆シリーズ｜第II部 ネットワーク完全攻略</strong></p>
 <p>第12講では、IPv4アドレスの構造、サブネットマスク、ルーティングの基本を学びました。</p>
 <p>今回はそれらを発展させて、<strong>IPアドレスを適切な大きさのネットワークに分割し、通信可能な範囲やルーティング先を正しく判断する方法</strong>を学びます。</p>
@@ -998,3 +998,157 @@ Action    : ALLOW
 <h3>13-2. ACLの設定例</h3>
 <p>次のACLを考えます。</p>
 <pre><code class="language-text">permit tcp 10.10.30.0/27 10.10.20.10/32 eq 22
+deny   ip  any any
+</code></pre>
+<p>このルールは概念的に、次の意味を持ちます。</p>
+<ol>
+<li>送信元が <code>10.10.30.0/27</code> に属する。</li>
+<li>宛先が <code>10.10.20.10</code> である。</li>
+<li>TCPの宛先ポートが22である。</li>
+<li>これらの条件に一致する通信を許可する。</li>
+<li>それ以外の通信を拒否する。</li>
+</ol>
+<p>なお、実際のACL構文や評価順序は製品によって異なります。</p>
+<p>この例は、CIDRによる送信元・宛先の条件を読むための概念的な表記です。</p>
+<h3>13-3. 設問で確認すべきこと</h3>
+<p>科目Bでファイアウォールのルールが与えられたら、次の順序で確認します。</p>
+<ol>
+<li>送信元IPアドレスが、送信元CIDRの範囲に含まれるか。</li>
+<li>宛先IPアドレスが、宛先CIDRの範囲に含まれるか。</li>
+<li>プロトコルやポート番号が一致するか。</li>
+<li>ルールの評価順序や、他の許可・拒否ルールに問題がないか。</li>
+<li>その結果、どの通信が許可・拒否されるか。</li>
+</ol>
+<p>CIDR計算が正しくても、ルール全体の読み方を誤ると、答案を間違えてしまいます。</p>
+<hr />
+<h2 id="section-14">14. よくある誤解と注意点</h2>
+<h3>14-1. 「IPアドレスの先頭が同じなら同一サブネット」</h3>
+<p>誤りです。</p>
+<p>同じ <code>192.168.1.x</code> でも、<code>/25</code> や <code>/26</code> で分割されていれば別サブネットになる場合があります。</p>
+<p><strong>プレフィックス長を含めて判断する必要があります。</strong></p>
+<h3>14-2. 「プレフィックス長が大きいほどネットワークは広い」</h3>
+<p>逆です。</p>
+<p>例えば、</p>
+<pre><code class="language-text">192.168.1.0/24 → 256アドレス
+192.168.1.0/25 → 128アドレス
+192.168.1.0/26 →  64アドレス
+</code></pre>
+<p>となります。</p>
+<p>プレフィックス長が大きいほど、指定されるネットワーク範囲は狭くなります。</p>
+<h3>14-3. 「ホスト数は常に2の累乗から2を引く」</h3>
+<p>一般的なIPv4サブネットでは正しい計算方法です。</p>
+<p>しかし、<code>/31</code> のポイントツーポイントリンクや <code>/32</code> の単一アドレス指定などには例外があります。</p>
+<p>試験では、通常のLAN用サブネットかどうかを確認してください。</p>
+<h3>14-4. 「別サブネットなら必ず通信できない」</h3>
+<p>誤りです。</p>
+<p>ルータやL3スイッチで適切にルーティングされていれば、別サブネット間でも通信できます。</p>
+<p>逆に、同一サブネットでも、VLANの分離やアクセス制御によって通信できない場合があります。</p>
+<h3>14-5. 「最長プレフィックス一致は数字の大きい経路を選ぶ」</h3>
+<p>誤りです。</p>
+<p>最長プレフィックス一致では、<strong>宛先IPアドレスに一致する経路のうち、プレフィックス長が最も長い経路</strong>を選びます。</p>
+<p>ネットワークアドレスの数値の大小で選ぶわけではありません。</p>
+<h3>14-6. 「ファイアウォールのCIDRを広くすれば安全」</h3>
+<p>誤りです。</p>
+<p>許可ルールで広いCIDRを指定すると、本来許可すべきでないIPアドレスまで許可してしまう可能性があります。</p>
+<p>必要最小限の範囲に制限することが重要です。</p>
+<hr />
+<h2 id="section-15">15. 科目A・科目Bの答案作成ポイント</h2>
+<h3>15-1. 科目Aの典型論点</h3>
+<p>科目Aでは、次のような知識が必要です。</p>
+<table>
+<thead>
+<tr>
+  <th>論点</th>
+  <th>覚えること</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>CIDR</td>
+  <td>プレフィックス長でネットワーク部を表す</td>
+</tr>
+<tr>
+  <td><code>/25</code></td>
+  <td>255.255.255.128</td>
+</tr>
+<tr>
+  <td><code>/26</code></td>
+  <td>255.255.255.192</td>
+</tr>
+<tr>
+  <td><code>/27</code></td>
+  <td>255.255.255.224</td>
+</tr>
+<tr>
+  <td><code>/28</code></td>
+  <td>255.255.255.240</td>
+</tr>
+<tr>
+  <td>ネットワークアドレス</td>
+  <td>ホスト部をすべて0にする</td>
+</tr>
+<tr>
+  <td>ブロードキャストアドレス</td>
+  <td>通常のIPv4サブネットではホスト部をすべて1にする</td>
+</tr>
+<tr>
+  <td>最長プレフィックス一致</td>
+  <td>一致する経路のうちプレフィックス長が最長</td>
+</tr>
+<tr>
+  <td>経路集約</td>
+  <td>複数のネットワークをまとめて表現する</td>
+</tr>
+</tbody>
+</table>
+<h3>15-2. 科目Bの設問例①：サブネット計算</h3>
+<p><strong>設問</strong></p>
+<p><code>192.168.100.70/27</code> のネットワークアドレスとブロードキャストアドレスを求めよ。</p>
+<p><strong>答案例</strong></p>
+<p>ネットワークアドレス：<code>192.168.100.64</code></p>
+<p>ブロードキャストアドレス：<code>192.168.100.95</code></p>
+<p><strong>解説</strong></p>
+<p><code>/27</code> のブロックサイズは32です。</p>
+<p>70は64〜95の範囲に含まれます。</p>
+<h3>15-3. 科目Bの設問例②：同一サブネット判定</h3>
+<p><strong>設問</strong></p>
+<p>PC-Aが <code>192.168.1.30/26</code>、PC-Bが <code>192.168.1.70/26</code> である。両者が異なるIPサブネットに属する理由を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<p>「PC-Aのネットワークアドレスは <code>192.168.1.0</code>、PC-Bのネットワークアドレスは <code>192.168.1.64</code> であり、一致しないため。」</p>
+<p><strong>解説</strong></p>
+<p>単に「IPアドレスが違うため」では不十分です。</p>
+<p><strong>ネットワークアドレスが異なること</strong>を示してください。</p>
+<h3>15-4. 科目Bの設問例③：最長プレフィックス一致</h3>
+<p><strong>設問</strong></p>
+<p>ルーティングテーブルに <code>10.0.0.0/8</code>、<code>10.20.0.0/16</code>、<code>10.20.30.0/24</code> の経路がある。宛先 <code>10.20.30.50</code> に対して <code>10.20.30.0/24</code> が選択される理由を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<p>「宛先IPアドレスに一致する経路のうち、<code>10.20.30.0/24</code> のプレフィックス長が最も長いため。」</p>
+<p><strong>解説</strong></p>
+<p>以前の第13講の採点履歴でも、<strong>「範囲が最も絞られている」より「一致する経路のうちプレフィックス長が最長」</strong>と表現すると、より厳密な答案になる点を確認しています。</p>
+<h3>15-5. 科目Bの設問例④：ファイアウォール設定ミス</h3>
+<p><strong>設問</strong></p>
+<p>本来 <code>10.10.30.0/27</code> だけを許可すべきところ、誤って <code>10.10.30.0/24</code> を許可した。セキュリティ上の問題を説明せよ。</p>
+<p><strong>答案例</strong></p>
+<p>「許可する送信元IPアドレスの範囲が本来より広くなり、管理対象外の端末からも接続できる可能性がある。」</p>
+<p><strong>解説</strong></p>
+<p>原因であるCIDRの設定ミスと、その結果として発生する不適切な通信許可を結び付けて説明します。</p>
+<hr />
+<h2 id="section-16">16. 重要事項の整理</h2>
+<p>今回の講義で、特に重要な事項を整理します。</p>
+<p><strong>第一に、サブネット分割はIPアドレス空間を適切な大きさに分割する仕組みです。</strong> ネットワークの管理や通信制御を行いやすくします。</p>
+<p><strong>第二に、CIDRのプレフィックス長はネットワーク部のビット数です。</strong> <code>/26</code> ならネットワーク部26ビット、ホスト部6ビットです。</p>
+<p><strong>第三に、ブロックサイズを使えばサブネットを素早く計算できます。</strong> <code>/25</code> は128、<code>/26</code> は64、<code>/27</code> は32、<code>/28</code> は16刻みです。</p>
+<p><strong>第四に、同一サブネットかどうかはネットワークアドレスで判断します。</strong> IPアドレスの見た目だけでは判断できません。</p>
+<p><strong>第五に、ルーティングでは最長プレフィックス一致を使用します。</strong> 宛先に一致する経路のうち、プレフィックス長が最も長い経路を選びます。</p>
+<p><strong>第六に、CIDRはファイアウォールやACLの通信許可範囲にも使用されます。</strong> プレフィックス長を誤ると、必要以上に広い範囲を許可してしまう可能性があります。</p>
+<h3>発展学習として分離した内容</h3>
+<p>次の内容は、今回は任意学習とします。</p>
+<ul>
+<li>大規模ネットワークでのVLSMアドレス設計</li>
+<li>BGPでの経路集約・経路広告の詳細</li>
+<li>複雑なルーティングメトリックの比較</li>
+<li><code>/31</code> や <code>/32</code> の特殊な運用設計</li>
+<li>製品固有のACL設定コマンド</li>
+</ul>
+<p>試験対策としては、まず<strong>サブネット計算を正確かつ素早く行い、通信経路とアクセス制御に結び付けて説明できること</strong>を優先してください。</p>
+<div class="footnote">第1〜16節の講義本文を収録。第17節「理解度チェック」は含めていません。第6節の計算機はHTMLでも利用できます。既存の進捗表・採点履歴は変更していません。</div></main><script>(()=>{const ip=document.getElementById('calc-ip'),sel=document.getElementById('calc-prefix'),out=document.getElementById('calc-output');function format(v){return [24,16,8,0].map(k=>Math.floor(v/2**k)%256).join('.')}function update(){const a=ip.value.trim().split('.');if(a.length!==4||a.some(x=>!/^(0|[1-9][0-9]{0,2})$/.test(x)||Number(x)>255)){out.textContent='有効なIPv4アドレスを入力してください。';return}const p=Number(sel.value.slice(1)),size=2**(32-p),n=a.map(Number).reduce((v,x)=>v*256+x,0),base=Math.floor(n/size)*size;out.innerHTML='<table><tbody>'+[['サブネットマスク',format(2**32-size)],['ネットワークアドレス',format(base)],['ブロードキャスト',format(base+size-1)],['ホスト範囲',format(base+1)+'〜'+format(base+size-2)],['ホスト数',String(size-2)]].map(([a,b])=>'<tr><th>'+a+'</th><td>'+b+'</td></tr>').join('')+'</tbody></table>'}ip.addEventListener('input',update);sel.addEventListener('change',update);update()})();</script><script src="../assets/lesson16.js?v=3"></script></body></html>
