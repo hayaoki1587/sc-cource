@@ -1,0 +1,27 @@
+/* Lesson 16-inspired unified shell v2 */
+:root{--sc-ink:#1c3045;--sc-muted:#53697b;--sc-accent:#176c78;--sc-line:#dbe5eb;--sc-bg:#f5f8fa}
+html{scroll-padding-top:80px}body{background:var(--sc-bg)!important;color:var(--sc-ink)!important;font-size:16px!important;line-height:1.85!important}
+.sc-shell{display:grid!important;grid-template-columns:255px minmax(0,850px)!important;gap:34px!important;max-width:1200px!important;margin:auto!important;padding:30px 22px!important;align-items:start!important}
+.sc-content{min-width:0!important;max-width:850px!important}
+.sc-content>header{background:white!important;color:var(--sc-ink)!important;padding:32px 42px 12px!important;border:1px solid var(--sc-line)!important;border-bottom:0!important;border-radius:16px 16px 0 0!important;margin:0!important;box-shadow:none!important}
+.sc-content>header h1,.sc-content>header p,.sc-content>header div{color:var(--sc-ink)!important}
+.sc-content>header h1{font-size:2.1rem!important;color:#113e57!important}
+.sc-content main,.sc-content article,.sc-content>.wrap,.sc-content>.layout,.sc-content>.container,.sc-content>.wrapper{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;min-width:0!important}
+.sc-content{background:#fff!important;border:1px solid var(--sc-line)!important;border-radius:16px!important;padding:42px 48px!important;box-shadow:0 6px 30px #263b4b0a!important}
+.sc-content>header{padding:0 0 12px!important;border:0!important;border-radius:0!important}
+.sc-content section{max-width:100%!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.sc-content section+section{margin-top:20px!important}
+.sc-content h1{font-size:2.1rem!important;color:#113e57!important;line-height:1.35!important}
+.sc-content h2{font-size:1.55rem!important;color:#145466!important;margin:54px 0 18px!important;border:0!important;border-bottom:2px solid #9ac8ce!important;padding:0 0 10px!important;background:transparent!important}
+.sc-content h3{font-size:1.15rem!important;color:#14606d!important;margin:28px 0 12px!important;border:0!important;background:transparent!important;padding:0!important}
+.sc-content p{margin:12px 0!important}.sc-content table{width:100%!important}
+.sc-content aside,.sc-content .note,.sc-content .panel,.sc-content .diagram{max-width:100%}
+.sc-sidebar{position:sticky!important;top:70px!important;align-self:start!important;max-height:calc(100vh - 90px)!important;overflow:auto!important;background:white!important;border:1px solid var(--sc-line)!important;border-radius:14px!important;padding:16px!important;box-shadow:0 4px 20px #263b4b08!important}
+.sc-sidebar summary{font-weight:750!important;color:#143e57!important;cursor:pointer!important;padding:4px 2px 12px!important;list-style:none!important}
+.sc-sidebar summary::-webkit-details-marker{display:none}.sc-sidebar summary:after{content:" −";float:right}.sc-sidebar:not([open]) summary:after{content:" ＋"}
+.sc-sidebar a{display:block!important;color:var(--sc-muted)!important;font-size:13px!important;line-height:1.55!important;text-decoration:none!important;padding:7px 2px!important;border-bottom:1px solid #f0f3f5!important}
+.sc-sidebar a:hover{color:var(--sc-accent)!important}
+.sc-old-toc{display:none!important}
+.sc-global-nav{position:sticky!important;top:0!important}
+@media(max-width:880px){.sc-shell{display:block!important;padding:10px!important}.sc-sidebar{position:relative!important;top:auto!important;max-height:none!important;margin-bottom:12px!important}.sc-sidebar[open] .sc-sidebar-links{max-height:45vh;overflow:auto}.sc-content{max-width:none!important;padding:24px 18px!important}.sc-content h1{font-size:1.7rem!important}.sc-content h2{font-size:1.3rem!important}}
+@media print{.sc-sidebar,.sc-global-nav{display:none!important}.sc-shell{display:block!important;padding:0!important}.sc-content{box-shadow:none!important;border:0!important}}
