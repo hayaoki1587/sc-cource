@@ -6,7 +6,46 @@ nav{position:sticky;top:18px;align-self:start;max-height:calc(100vh - 36px);over
 main{background:white;border:1px solid var(--line);border-radius:16px;padding:42px 48px;box-shadow:0 6px 30px #263b4b0a}h1{font-size:2.1rem;line-height:1.35;color:#113e57;margin:0 0 16px}h2{font-size:1.55rem;line-height:1.45;border-bottom:2px solid #9ac8ce;padding-bottom:10px;margin-top:58px;scroll-margin-top:24px}h3{font-size:1.15rem;color:#14606d;margin-top:28px}p{margin:12px 0}strong{font-weight:750}ul,ol{padding-left:1.6em}li{margin:5px 0}table{border-collapse:collapse;width:100%;margin:18px 0 26px;font-size:.92rem}th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}th{background:#eaf3f5}tr:nth-child(even) td{background:#fafcfd}pre{background:#12283b;color:#edf6fb;padding:18px 20px;border-radius:10px;overflow:auto;line-height:1.65;font-size:.9rem}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}p code,li code,td code{background:#edf3f6;padding:2px 5px;border-radius:4px;font-size:.92em}blockquote{border-left:4px solid #80b7c1;padding:8px 16px;background:#f4f9fa;margin:16px 0}.meta{color:var(--muted);font-size:.9rem}.back{display:inline-block;margin-top:40px;color:var(--accent)}
 @media(max-width:880px){.layout{display:block;padding:10px}nav{position:static;max-height:none;margin-bottom:12px}nav a{display:inline-block;padding:5px 8px;border:none}main{padding:24px 18px}h1{font-size:1.7rem}h2{font-size:1.3rem}table{display:block;overflow-x:auto}pre{font-size:.8rem}}
 @media print{body{background:white}.layout{display:block;padding:0}nav{display:none}main{border:0;box-shadow:none;padding:0}h2{break-after:avoid}pre,table{break-inside:avoid}}
-</style><link rel="stylesheet" href="../assets/unified.css?v=20261012-3"><link rel="stylesheet" href="../assets/lesson16.css?v=4"></head><body><nav class="sc-global-nav" aria-label="講義ナビゲーション"><a href="../index.html?v=20261012-3">講義一覧</a><span>第16講 / 23講</span><span><a href="15.html?v=20261012-3">← 前へ</a> <a href="17.html?v=20261012-3">次へ →</a></span></nav><div class="layout"><nav><strong>第16講｜目次</strong><a href="#section-01">1. 到達目標・参考書・学習優先度</a>
+</style><link rel="stylesheet" href="../assets/unified.css?v=20261012-3"><style id="sc-inline-layout">/* Lesson 16-inspired unified shell v2 */
+:root{--sc-ink:#1c3045;--sc-muted:#53697b;--sc-accent:#176c78;--sc-line:#dbe5eb;--sc-bg:#f5f8fa}
+html{scroll-padding-top:80px}body{background:var(--sc-bg)!important;color:var(--sc-ink)!important;font-size:16px!important;line-height:1.85!important}
+.sc-shell{display:grid!important;grid-template-columns:255px minmax(0,850px)!important;gap:34px!important;max-width:1200px!important;margin:auto!important;padding:30px 22px!important;align-items:start!important}
+.sc-content{min-width:0!important;max-width:850px!important}
+.sc-content>header{background:white!important;color:var(--sc-ink)!important;padding:32px 42px 12px!important;border:1px solid var(--sc-line)!important;border-bottom:0!important;border-radius:16px 16px 0 0!important;margin:0!important;box-shadow:none!important}
+.sc-content>header h1,.sc-content>header p,.sc-content>header div{color:var(--sc-ink)!important}
+.sc-content>header h1{font-size:2.1rem!important;color:#113e57!important}
+.sc-content main,.sc-content article,.sc-content>.wrap,.sc-content>.layout,.sc-content>.container,.sc-content>.wrapper{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;min-width:0!important}
+.sc-content{background:#fff!important;border:1px solid var(--sc-line)!important;border-radius:16px!important;padding:42px 48px!important;box-shadow:0 6px 30px #263b4b0a!important}
+.sc-content>header{padding:0 0 12px!important;border:0!important;border-radius:0!important}
+.sc-content section{max-width:100%!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.sc-content section+section{margin-top:20px!important}
+.sc-content h1{font-size:2.1rem!important;color:#113e57!important;line-height:1.35!important}
+.sc-content h2{font-size:1.55rem!important;color:#145466!important;margin:54px 0 18px!important;border:0!important;border-bottom:2px solid #9ac8ce!important;padding:0 0 10px!important;background:transparent!important}
+.sc-content h3{font-size:1.15rem!important;color:#14606d!important;margin:28px 0 12px!important;border:0!important;background:transparent!important;padding:0!important}
+.sc-content p{margin:12px 0!important}.sc-content table{width:100%!important}
+.sc-content aside,.sc-content .note,.sc-content .panel,.sc-content .diagram{max-width:100%}
+.sc-sidebar{position:sticky!important;top:70px!important;align-self:start!important;max-height:calc(100vh - 90px)!important;overflow:auto!important;background:white!important;border:1px solid var(--sc-line)!important;border-radius:14px!important;padding:16px!important;box-shadow:0 4px 20px #263b4b08!important}
+.sc-sidebar summary{font-weight:750!important;color:#143e57!important;cursor:pointer!important;padding:4px 2px 12px!important;list-style:none!important}
+.sc-sidebar summary::-webkit-details-marker{display:none}.sc-sidebar summary:after{content:" −";float:right}.sc-sidebar:not([open]) summary:after{content:" ＋"}
+.sc-sidebar a{display:block!important;color:var(--sc-muted)!important;font-size:13px!important;line-height:1.55!important;text-decoration:none!important;padding:7px 2px!important;border-bottom:1px solid #f0f3f5!important}
+.sc-sidebar a:hover{color:var(--sc-accent)!important}
+.sc-old-toc{display:none!important}
+.sc-global-nav{position:sticky!important;top:0!important}
+@media(max-width:880px){.sc-shell{display:block!important;padding:10px!important}.sc-sidebar{position:relative!important;top:auto!important;max-height:none!important;margin-bottom:12px!important}.sc-sidebar[open] .sc-sidebar-links{max-height:45vh;overflow:auto}.sc-content{max-width:none!important;padding:24px 18px!important}.sc-content h1{font-size:1.7rem!important}.sc-content h2{font-size:1.3rem!important}}
+@media print{.sc-sidebar,.sc-global-nav{display:none!important}.sc-shell{display:block!important;padding:0!important}.sc-content{box-shadow:none!important;border:0!important}}
+
+/* Full-width reading mode for collapsed TOC */
+.sc-shell{grid-template-columns:255px minmax(0,1fr)!important;max-width:1400px!important;transition:grid-template-columns .2s ease!important}
+.sc-content{max-width:none!important;width:100%!important}
+.sc-shell:has(.sc-sidebar:not([open])){grid-template-columns:46px minmax(0,1fr)!important;gap:16px!important}
+.sc-sidebar:not([open]){padding:10px 5px!important;overflow:visible!important;min-height:46px!important}
+.sc-sidebar:not([open]) summary{writing-mode:vertical-rl!important;white-space:nowrap!important;font-size:12px!important;padding:6px 7px!important;min-height:126px!important;letter-spacing:.06em!important}
+.sc-sidebar:not([open]) summary:after{content:" ＋"!important;float:none!important}
+.sc-sidebar[open] summary{font-size:14px!important}
+.sc-sidebar[open] summary:after{content:" −"!important}
+.sc-sidebar:not([open]) .sc-sidebar-links{display:none!important}
+@media(max-width:880px){.sc-shell,.sc-shell:has(.sc-sidebar:not([open])){display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important;padding:8px!important}.sc-sidebar{position:relative!important;top:auto!important}.sc-sidebar:not([open]){min-height:0!important;padding:9px 14px!important;margin:0!important}.sc-sidebar:not([open]) summary{writing-mode:horizontal-tb!important;min-height:0!important;padding:4px!important}.sc-content{width:100%!important;padding:22px 16px!important}}
+</style></head><body><nav class="sc-global-nav" aria-label="講義ナビゲーション"><a href="../index.html?v=20261012-3">講義一覧</a><span>第16講 / 23講</span><span><a href="15.html?v=20261012-3">← 前へ</a> <a href="17.html?v=20261012-3">次へ →</a></span></nav><div class="layout"><nav><strong>第16講｜目次</strong><a href="#section-01">1. 到達目標・参考書・学習優先度</a>
 <a href="#section-02">2. TCPは何をするプロトコルなのか</a>
 <a href="#section-03">3. TCPの通信を識別する情報</a>
 <a href="#section-04">4. TCPヘッダの主要フィールド</a>
@@ -828,4 +867,4 @@ Server → Client  ACK=1501
 <li>TCP Fast Openなどの追加機能</li>
 </ul>
 <p>まずは、<strong>3ウェイハンドシェイク、SEQ・ACK計算、再送、SYN Floodの原因と対策</strong>を確実に理解してください。</p>
-<a class="back" href="#section-01">↑ 講義の先頭へ</a></main></div><script src="../assets/lesson16.js?v=4"></script></body></html>
+<a class="back" href="#section-01">↑ 講義の先頭へ</a></main></div><script id="sc-inline-layout-script">(()=>{function init(){if(document.querySelector('.sc-shell'))return;const body=document.body;const global=body.querySelector(':scope > .sc-global-nav');const shell=document.createElement('div');shell.className='sc-shell';const side=document.createElement('details');side.className='sc-sidebar';side.open=window.matchMedia('(min-width: 881px)').matches;const summary=document.createElement('summary');summary.textContent='目次（タップで開閉）';side.appendChild(summary);const links=document.createElement('div');links.className='sc-sidebar-links';side.appendChild(links);const content=document.createElement('div');content.className='sc-content';for(const node of [...body.childNodes]){if(node===global||node===shell)continue;if(node.nodeType===1&&['SCRIPT','STYLE'].includes(node.tagName))continue;content.appendChild(node)}shell.append(side,content);if(global)global.after(shell);else body.prepend(shell);const candidates=[...content.querySelectorAll('nav')].filter(n=>n!==global&&(/目次/.test(n.textContent||'')||n.querySelector('a[href^="#"]')));for(const nav of candidates){nav.classList.add('sc-old-toc')}const heads=[...content.querySelectorAll('h2')];heads.forEach((h,i)=>{if(!h.id)h.id='sc-heading-'+(i+1);const a=document.createElement('a');a.href='#'+h.id;a.textContent=h.textContent.trim();links.appendChild(a)});if(!heads.length){for(const a of candidates.flatMap(n=>[...n.querySelectorAll('a[href^="#"]')])){links.appendChild(a.cloneNode(true))}}if(!links.children.length)side.remove();links.addEventListener('click',e=>{if(e.target.closest('a')&&window.matchMedia('(max-width: 880px)').matches)side.open=false});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init()})();</script></body></html>
