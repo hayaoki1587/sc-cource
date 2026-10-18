@@ -1,0 +1,25 @@
+name: SC Lecture Source Fidelity
+on:
+  push:
+    paths:
+      - 'lessons/**'
+      - 'sources/lessons/**'
+      - 'scripts/check_lesson_fidelity.py'
+      - '.github/workflows/lecture-fidelity.yml'
+  pull_request:
+    paths:
+      - 'lessons/**'
+      - 'sources/lessons/**'
+      - 'scripts/check_lesson_fidelity.py'
+      - '.github/workflows/lecture-fidelity.yml'
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compare lesson pages with verified originals
+        run: python scripts/check_lesson_fidelity.py --lessons 25 26 27
