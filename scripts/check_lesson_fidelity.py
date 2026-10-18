@@ -49,6 +49,7 @@ def normalize(s):
     return re.sub(r'\s+','',s).replace('＜','<').replace('＞','>')
 
 def chunks(source):
+    source=re.sub(r'<!--\\s*SOURCE_STATUS:\\s*VERIFIED_ORIGINAL\\s*-->', '', source)
     # Preserve fenced code as a single unit; paragraphs otherwise.
     parts=re.split(r'(```[\s\S]*?```)',source)
     out=[]
