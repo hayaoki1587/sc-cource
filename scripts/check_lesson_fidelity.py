@@ -33,33 +33,33 @@ class Extract(HTMLParser):
             self.svg+=1
             self.svg_count+=1
         if tag in ('p','li','h1','h2','h3','td','th','tr','pre','section','br','div'):
-            self.out.append('\\n')
+            self.out.append('\n')
     def handle_endtag(self,tag):
         if self.skip:
             self.skip-=1
             return
         if tag=='svg' and self.svg: self.svg-=1
         if tag in ('p','li','h1','h2','h3','td','th','tr','pre','section','div'):
-            self.out.append('\\n')
+            self.out.append('\n')
     def handle_data(self,data):
         if not self.skip and not self.svg:self.out.append(data)
 
 def normalize(s):
     s=html.unescape(s)
-    return re.sub(r'\\s+','',s).replace('＜','<').replace('＞','>')
+    return re.sub(r'\s+','',s).replace('＜','<').replace('＞','>')
 
 def chunks(source):
     # Preserve fenced code as a single unit; paragraphs otherwise.
-    parts=re.split(r'(```[\\s\\S]*?```)',source)
+    parts=re.split(r'(```[\s\S]*?```)',source)
     out=[]
     for part in parts:
         if part.startswith('```'):
-            out.append(re.sub(r'^\\`\\`\\`[^\\n]*\\n|\\n\\`\\`\\`$', '', part))
+            out.append(re.sub(r'^\`\`\`[^\n]*\n|\n\`\`\`$', '', part))
         else:
-            for p in re.split(r'\\n\\s*\\n',part):
-                p=re.sub(r'(?m)^\\s*#{1,6}\\s*','',p)
-                p=re.sub(r'(?m)^\\s*[-*]\\s+','',p)
-                p=re.sub(r'(?m)^\\s*\\d+\\.\\s+','',p)
+            for p in re.split(r'\n\s*\n',part):
+                p=re.sub(r'(?m)^\s*#{1,6}\s*','',p)
+                p=re.sub(r'(?m)^\s*[-*]\s+','',p)
+                p=re.sub(r'(?m)^\s*\d+\.\s+','',p)
                 p=p.replace('**','').replace('`','')
                 if normalize(p):out.append(p)
     return out
@@ -87,12 +87,12 @@ def audit(n,root):
             problems.append(f'OMITTED/REORDERED source chunk {idx}: {needle[:85]}')
             if len(problems)>=20:break
         else:cursor=pos+len(needle)
-    expected_svg=len(re.findall(r'<svg\\b',source,re.I))
-    actual_svg=len(re.findall(r'<svg\\b',raw,re.I))
+    expected_svg=len(re.findall(r'<svg\b',source,re.I))
+    actual_svg=len(re.findall(r'<svg\b',raw,re.I))
     if actual_svg<expected_svg:
         problems.append(f'SVG LOSS: original {expected_svg}, HTML {actual_svg}')
     # A source containing diagrams represented as SVG requires matching markup
-    for svg in re.findall(r'<svg\\b[\\s\\S]*?</svg>',source,re.I):
+    for svg in re.findall(r'<svg\b[\s\S]*?</svg>',source,re.I):
         if normalize(svg) not in normalize(raw):
             problems.append('SVG markup differs from source')
     return problems
