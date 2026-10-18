@@ -5,6 +5,7 @@ on:
       - 'lessons/**'
       - 'sources/lessons/**'
       - 'scripts/check_lesson_fidelity.py'
+      - 'scripts/test_lesson_fidelity.py'
       - '.github/workflows/lecture-fidelity.yml'
   pull_request:
     paths:
@@ -21,5 +22,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Run checker regression tests
+        run: python scripts/test_lesson_fidelity.py
       - name: Compare lesson pages with verified originals
         run: python scripts/check_lesson_fidelity.py --lessons 25 26 27
