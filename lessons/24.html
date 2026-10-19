@@ -1,274 +1,233 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第24講｜HTTP/HTTPSの仕組みとセキュリティ｜全文版</title><style>:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#f3f7fa;color:#1e3041;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;line-height:1.9}header{background:#123a57;color:#fff;padding:32px max(20px,calc((100vw - 1000px)/2))}header h1{font-size:1.7rem;margin:0}header p{margin:8px 0 0}nav.top{background:#fff;padding:12px 5%;display:flex;gap:20px;flex-wrap:wrap;border-bottom:1px solid #d9e3ea}a{color:#146383}main{max-width:1040px;margin:25px auto;padding:24px 34px 70px;background:white;border:1px solid #dae5eb;border-radius:14px}aside{padding:15px;background:#eef6fa;border-radius:8px}aside a{display:inline-block;margin:4px 12px 4px 0}h2{color:#123f5c;border-bottom:2px solid #cfe2ed;padding-top:30px;padding-bottom:8px;font-size:1.42rem}h3{color:#1b6079;font-size:1.12rem;margin-top:24px}.source-block{white-space:pre-wrap;overflow-wrap:anywhere;margin:14px 0;tab-size:18;font-family:inherit}.tabular{background:#f5f9fb;border:1px solid #dce7ee;padding:14px;border-radius:8px;overflow-x:auto}pre.source-block{background:#172b3b;color:#f6f9fd;padding:18px;border-radius:9px;line-height:1.65;font-family:ui-monospace,monospace;white-space:pre-wrap}@media(max-width:650px){main{margin:0;padding:16px}header{padding:24px 18px}.tabular{tab-size:8;font-size:.87rem}}</style><link rel="stylesheet" href="../assets/unified.css?v=20261012-3"></head><body><nav class="top"><a href="../index.html">講義一覧</a><a href="23.html">← 第23講</a><a href="25.html">第25講 →</a></nav><header><h1>第24講｜HTTP/HTTPSの仕組みとセキュリティ</h1><p>SC合格講座・講義本文（原文無省略／確認問題・採点記録は別管理）</p></header><main><aside><strong>目次</strong><div><a href="#s1">1. 到達目標と参考書</a><a href="#s2">2. HTTPは何をするプロトコルなのか【A】</a><a href="#s3">3. HTTPリクエストの構造【A】</a><a href="#s4">4. HTTPレスポンスの構造【A】</a><a href="#s5">5. Cookieとセッション管理【A】</a><a href="#s6">6. セッションを狙う攻撃【A】</a><a href="#s7">7. HTTPSとTLSの仕組み【A】</a><a href="#s8">8. HTTPヘッダーを利用した防御【A】</a><a href="#s9">9. HTTPログ・設定の読み方【A】</a><a href="#s10">10. 科目A・科目Bの解答ポイント</a><a href="#s11">11. 重要事項の整理</a></div></aside><article id="lesson-original"><div class="source-block">第24講｜HTTP/HTTPSの仕組みとセキュリティ</div>
-<div class="source-block">情報処理安全確保支援士（SC）合格講座｜第III部 Web・アプリケーション技術</div>
-<div class="source-block">第24講を開始します。今回は、これまで学んだTCP・DNS・ポート番号の知識を、Web通信の仕組みとセキュリティに結び付けます。</div>
-<div class="source-block">この講義の中心は、HTTPメッセージを読めるようになること、Cookieによるセッション管理を理解すること、HTTPSで守れるものと守れないものを判断することです。</div>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第24講 HTTP/HTTPSの仕組みとセキュリティ｜講義全文版</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;background:#f5f7fa;color:#202938;line-height:1.9;margin:0}header{background:#123458;color:white;padding:45px max(24px,calc((100vw - 920px)/2))}header h1{font-size:2rem;line-height:1.45;margin:12px 0}header p{color:#d8e6f5}main{max-width:960px;margin:0 auto;padding:28px 20px 80px}nav,section{background:white;border:1px solid #e1e6ed;border-radius:13px;padding:25px 32px;margin-bottom:22px;box-shadow:0 3px 14px #172b4d0a}nav ol{columns:2;column-gap:36px;padding-left:22px}nav a{color:#165c97;text-decoration:none}h2{font-size:1.38rem;color:#123b60;border-bottom:2px solid #d8e6f4;padding-bottom:10px;margin:0 0 20px}h3{font-size:1.12rem;color:#245276;margin:24px 0 10px}p{margin:12px 0}table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.94rem}th,td{border:1px solid #d8e0e8;padding:9px 11px;text-align:left;vertical-align:top}th{background:#edf3f9}tr:nth-child(even) td{background:#fafbfd}pre{background:#172738;color:#f0f5fc;padding:18px;border-radius:8px;overflow:auto;line-height:1.6;font-size:.91rem}figure{margin:20px 0;padding:18px;background:#f8fbff;border:1px solid #dbe5f0;border-radius:10px}figcaption{text-align:center;font-size:.83rem;color:#617186;margin-top:10px}.sequence{display:grid;grid-template-columns:1fr 1fr;text-align:center;gap:8px;align-items:center}.sequence>div{padding:7px;border-radius:5px;background:#eaf1f9}.sequence>.arrow{color:#1a5d99;font-weight:bold;background:#f5f9fd}.network{text-align:center;max-width:560px;margin:auto}.node{padding:12px;border-radius:8px;border:1px solid #8294a6;margin:auto;max-width:360px}.client{background:#e8f1ff;border-color:#7aa6dc}.server{background:#e6f6ed;border-color:#78c09b}.router{background:#eef0f4}.attacker{background:#fff0f0;border-color:#e7a1a1}.connector{padding:9px}.branches{display:flex;gap:14px;margin-top:16px}.branches .node{flex:1}.foot{color:#637489;font-size:.85rem;text-align:center}@media(max-width:650px){header{padding:25px 20px}header h1{font-size:1.5rem}nav,section{padding:20px 16px}nav ol{columns:1}table{font-size:.82rem}th,td{padding:6px}pre{font-size:.78rem}}@media print{body{background:white}nav,section{box-shadow:none;break-inside:auto}section{break-before:page}header{color:black;background:white}a{color:black}}</style><link rel="stylesheet" href="../assets/unified.css?v=20261012-3"><style id="sc-inline-layout">/* Lesson 16-inspired unified shell v2 */
+:root{--sc-ink:#1c3045;--sc-muted:#53697b;--sc-accent:#176c78;--sc-line:#dbe5eb;--sc-bg:#f5f8fa}
+html{scroll-padding-top:80px}body{background:var(--sc-bg)!important;color:var(--sc-ink)!important;font-size:16px!important;line-height:1.85!important}
+.sc-shell{display:grid!important;grid-template-columns:255px minmax(0,850px)!important;gap:34px!important;max-width:1200px!important;margin:auto!important;padding:30px 22px!important;align-items:start!important}
+.sc-content{min-width:0!important;max-width:850px!important}
+.sc-content>header{background:white!important;color:var(--sc-ink)!important;padding:32px 42px 12px!important;border:1px solid var(--sc-line)!important;border-bottom:0!important;border-radius:16px 16px 0 0!important;margin:0!important;box-shadow:none!important}
+.sc-content>header h1,.sc-content>header p,.sc-content>header div{color:var(--sc-ink)!important}
+.sc-content>header h1{font-size:2.1rem!important;color:#113e57!important}
+.sc-content main,.sc-content article,.sc-content>.wrap,.sc-content>.layout,.sc-content>.container,.sc-content>.wrapper{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;min-width:0!important}
+.sc-content{background:#fff!important;border:1px solid var(--sc-line)!important;border-radius:16px!important;padding:42px 48px!important;box-shadow:0 6px 30px #263b4b0a!important}
+.sc-content>header{padding:0 0 12px!important;border:0!important;border-radius:0!important}
+.sc-content section{max-width:100%!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.sc-content section+section{margin-top:20px!important}
+.sc-content h1{font-size:2.1rem!important;color:#113e57!important;line-height:1.35!important}
+.sc-content h2{font-size:1.55rem!important;color:#145466!important;margin:54px 0 18px!important;border:0!important;border-bottom:2px solid #9ac8ce!important;padding:0 0 10px!important;background:transparent!important}
+.sc-content h3{font-size:1.15rem!important;color:#14606d!important;margin:28px 0 12px!important;border:0!important;background:transparent!important;padding:0!important}
+.sc-content p{margin:12px 0!important}.sc-content table{width:100%!important}
+.sc-content aside,.sc-content .note,.sc-content .panel,.sc-content .diagram{max-width:100%}
+.sc-sidebar{position:sticky!important;top:70px!important;align-self:start!important;max-height:calc(100vh - 90px)!important;overflow:auto!important;background:white!important;border:1px solid var(--sc-line)!important;border-radius:14px!important;padding:16px!important;box-shadow:0 4px 20px #263b4b08!important}
+.sc-sidebar summary{font-weight:750!important;color:#143e57!important;cursor:pointer!important;padding:4px 2px 12px!important;list-style:none!important}
+.sc-sidebar summary::-webkit-details-marker{display:none}.sc-sidebar summary:after{content:" −";float:right}.sc-sidebar:not([open]) summary:after{content:" ＋"}
+.sc-sidebar a{display:block!important;color:var(--sc-muted)!important;font-size:13px!important;line-height:1.55!important;text-decoration:none!important;padding:7px 2px!important;border-bottom:1px solid #f0f3f5!important}
+.sc-sidebar a:hover{color:var(--sc-accent)!important}
+.sc-old-toc{display:none!important}
+.sc-global-nav{position:sticky!important;top:0!important}
+@media(max-width:880px){.sc-shell{display:block!important;padding:10px!important}.sc-sidebar{position:relative!important;top:auto!important;max-height:none!important;margin-bottom:12px!important}.sc-sidebar[open] .sc-sidebar-links{max-height:45vh;overflow:auto}.sc-content{max-width:none!important;padding:24px 18px!important}.sc-content h1{font-size:1.7rem!important}.sc-content h2{font-size:1.3rem!important}}
+@media print{.sc-sidebar,.sc-global-nav{display:none!important}.sc-shell{display:block!important;padding:0!important}.sc-content{box-shadow:none!important;border:0!important}}
+
+/* Full-width reading mode for collapsed TOC */
+.sc-shell{grid-template-columns:255px minmax(0,1fr)!important;max-width:1400px!important;transition:grid-template-columns .2s ease!important}
+.sc-content{max-width:none!important;width:100%!important}
+.sc-shell:has(.sc-sidebar:not([open])){grid-template-columns:46px minmax(0,1fr)!important;gap:16px!important}
+.sc-sidebar:not([open]){padding:10px 5px!important;overflow:visible!important;min-height:46px!important}
+.sc-sidebar:not([open]) summary{writing-mode:vertical-rl!important;white-space:nowrap!important;font-size:12px!important;padding:6px 7px!important;min-height:126px!important;letter-spacing:.06em!important}
+.sc-sidebar:not([open]) summary:after{content:" ＋"!important;float:none!important}
+.sc-sidebar[open] summary{font-size:14px!important}
+.sc-sidebar[open] summary:after{content:" −"!important}
+.sc-sidebar:not([open]) .sc-sidebar-links{display:none!important}
+@media(max-width:880px){.sc-shell,.sc-shell:has(.sc-sidebar:not([open])){display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important;padding:8px!important}.sc-sidebar{position:relative!important;top:auto!important}.sc-sidebar:not([open]){min-height:0!important;padding:9px 14px!important;margin:0!important}.sc-sidebar:not([open]) summary{writing-mode:horizontal-tb!important;min-height:0!important;padding:4px!important}.sc-content{width:100%!important;padding:22px 16px!important}}
+</style><style>.sc-content .source-block{white-space:pre-wrap;overflow-wrap:anywhere}.sc-content .sc-table-wrap{overflow-x:auto;margin:16px 0}.sc-content table{width:100%;border-collapse:collapse}.sc-content th,.sc-content td{border:1px solid #d8e0e8;padding:10px;vertical-align:top}.sc-content th{background:#eaf2f8}.sc-content pre{white-space:pre-wrap;overflow-wrap:anywhere}.sc-diagram{text-align:center;background:#f5f9fd;border:1px solid #d7e6f0;border-radius:12px;padding:20px}.sc-node{border:1px solid #8ab4ca;border-radius:9px;padding:13px;background:#fff;max-width:390px;margin:auto;font-weight:650}.sc-connection{white-space:pre-line;color:#176c78;font-weight:650;padding:7px}.sc-content ul{padding-left:1.5em}</style></head><body><nav class="sc-global-nav" aria-label="講義ナビゲーション"><a href="../index.html">講義一覧</a><span>第24講 / 217講</span><span><a href="23.html">← 前へ</a> <a href="25.html">次へ →</a></span></nav><header><div>情報処理安全確保支援士（SC）合格講座｜詳細講義</div><h1>第24講｜HTTP/HTTPSの仕組みとセキュリティ</h1><p>科目A・科目B対応／講義本文のみ</p></header><main><nav><h2>目次</h2><ol><li><a href="#s1">1. 到達目標と参考書</a></li><li><a href="#s2">2. HTTPは何をするプロトコルなのか【A】</a></li><li><a href="#s3">3. HTTPリクエストの構造【A】</a></li><li><a href="#s4">4. HTTPレスポンスの構造【A】</a></li><li><a href="#s5">5. Cookieとセッション管理【A】</a></li><li><a href="#s6">6. セッションを狙う攻撃【A】</a></li><li><a href="#s7">7. HTTPSとTLSの仕組み【A】</a></li><li><a href="#s8">8. HTTPヘッダーを利用した防御【A】</a></li><li><a href="#s9">9. HTTPログ・設定の読み方【A】</a></li><li><a href="#s10">10. 科目A・科目Bの解答ポイント</a></li><li><a href="#s11">11. 重要事項の整理</a></li></ol></nav><article id="lesson-original"><p class="source-block">第24講｜HTTP/HTTPSの仕組みとセキュリティ</p>
+<p class="source-block">情報処理安全確保支援士（SC）合格講座｜第III部 Web・アプリケーション技術</p>
+<p class="source-block">第24講を開始します。今回は、これまで学んだTCP・DNS・ポート番号の知識を、Web通信の仕組みとセキュリティに結び付けます。</p>
+<p class="source-block">この講義の中心は、HTTPメッセージを読めるようになること、Cookieによるセッション管理を理解すること、HTTPSで守れるものと守れないものを判断することです。</p>
 <h2 id="s1">1. 到達目標と参考書</h2>
-<div class="source-block">今回の講義を終えた時点で、次のことを説明できる状態を目指します。</div>
-<div class="source-block">* HTTPリクエストとレスポンスの構造を読み取れる。
-* GET・POSTなどのメソッドとステータスコードを区別できる。
-* CookieとセッションIDの役割、セッション乗っ取りの仕組みを説明できる。
-* HTTPSとTLSによる暗号化・サーバ認証の仕組みを説明できる。
-* HTTPヘッダーやログを根拠に、脅威と対策を科目Bの答案として記述できる。</div>
-<div class="source-block">参考書の実確認箇所</div>
-<div class="source-block">『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』</div>
-<div class="source-block">第3章「ネットワーク基礎技術」3-3「アプリケーションプロトコル」、3-3-1「Webのプロトコル」、pp.205〜211。</div>
-<div class="source-block">HTTP通信、メッセージ構造、メソッド、ステータスコード、HTTPヘッダー、Cookie、HTTP認証を確認しました。TLSの暗号化・認証の説明は、参考書のこの節だけでは完結しないため、今回は講師による補足として扱います。</div>
-<div class="source-block tabular">優先度	学習範囲	目安
-A：必須	HTTP構造、メソッド、ヘッダー、Cookie、セッション、HTTPSの安全性、攻撃と対策	75%
-B：理解補助	HTTPのステートレス性、通信バージョン、キャッシュ、プロキシ	20%
-C：発展	HTTP/2・HTTP/3の内部実装、TLSの暗号スイート詳細	5%</div>
+<p class="source-block">今回の講義を終えた時点で、次のことを説明できる状態を目指します。</p>
+<ul><li>HTTPリクエストとレスポンスの構造を読み取れる。</li><li>GET・POSTなどのメソッドとステータスコードを区別できる。</li><li>CookieとセッションIDの役割、セッション乗っ取りの仕組みを説明できる。</li><li>HTTPSとTLSによる暗号化・サーバ認証の仕組みを説明できる。</li><li>HTTPヘッダーやログを根拠に、脅威と対策を科目Bの答案として記述できる。</li></ul>
+<p class="source-block">参考書の実確認箇所</p>
+<p class="source-block">『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』</p>
+<p class="source-block">第3章「ネットワーク基礎技術」3-3「アプリケーションプロトコル」、3-3-1「Webのプロトコル」、pp.205〜211。</p>
+<p class="source-block">HTTP通信、メッセージ構造、メソッド、ステータスコード、HTTPヘッダー、Cookie、HTTP認証を確認しました。TLSの暗号化・認証の説明は、参考書のこの節だけでは完結しないため、今回は講師による補足として扱います。</p>
+<div class="sc-table-wrap"><table><thead><tr><th>優先度</th><th>学習範囲</th><th>目安</th></tr></thead><tbody><tr><td>A：必須</td><td>HTTP構造、メソッド、ヘッダー、Cookie、セッション、HTTPSの安全性、攻撃と対策</td><td>75%</td></tr><tr><td>B：理解補助</td><td>HTTPのステートレス性、通信バージョン、キャッシュ、プロキシ</td><td>20%</td></tr><tr><td>C：発展</td><td>HTTP/2・HTTP/3の内部実装、TLSの暗号スイート詳細</td><td>5%</td></tr></tbody></table></div>
 <h2 id="s2">2. HTTPは何をするプロトコルなのか【A】</h2>
-<div class="source-block">HTTP（Hypertext Transfer Protocol）は、WebブラウザなどのクライアントとWebサーバの間で、情報の要求と応答を行うためのアプリケーション層プロトコルです。</div>
-<div class="source-block">例えば、ブラウザで次のURLを開くとします。</div>
-<div class="source-block">https://shop.example.jp/products</div>
-<div class="source-block">このとき、ブラウザはWebサーバに対して「商品の一覧ページを取得したい」と要求し、WebサーバはHTMLなどのデータを返します。</div>
-<div class="source-block">ここで重要なのは、HTTPはデータのやり取りのルールであり、暗号化そのものを提供するプロトコルではないという点です。</div>
-<div class="source-block">通常のHTTP通信は暗号化されません。一方、HTTPSではHTTPメッセージをTLSによって保護します。</div>
+<p class="source-block">HTTP（Hypertext Transfer Protocol）は、WebブラウザなどのクライアントとWebサーバの間で、情報の要求と応答を行うためのアプリケーション層プロトコルです。</p>
+<p class="source-block">例えば、ブラウザで次のURLを開くとします。</p>
+<p class="source-block">https://shop.example.jp/products</p>
+<p class="source-block">このとき、ブラウザはWebサーバに対して「商品の一覧ページを取得したい」と要求し、WebサーバはHTMLなどのデータを返します。</p>
+<p class="source-block">ここで重要なのは、HTTPはデータのやり取りのルールであり、暗号化そのものを提供するプロトコルではないという点です。</p>
+<p class="source-block">通常のHTTP通信は暗号化されません。一方、HTTPSではHTTPメッセージをTLSによって保護します。</p>
 <h3>2-1. TCP・IP・DNSとの関係</h3>
-<div class="source-block">第16講でTCP、第21〜22講でDNSを学びました。これらは次のようにつながります。</div>
-<div class="source-block">HTTP</div>
-<div class="source-block">何を要求し、何を返すかを決める</div>
-<div class="source-block">TLS</div>
-<div class="source-block">通信の暗号化と相手の認証などを行う</div>
-<div class="source-block">TCP</div>
-<div class="source-block">データを順序どおりに届ける</div>
-<div class="source-block">IP</div>
-<div class="source-block">宛先までパケットを転送する</div>
-<div class="source-block">典型的なHTTPS over TCPの概念図。HTTP/3はQUIC（UDP上）を利用するため、すべてのHTTPS通信がTCPを使用するわけではありません。</div>
-<div class="source-block">DNSは、この通信を始める前に、サーバ名から接続先のIPアドレスを調べる役割を担います。</div>
+<p class="source-block">第16講でTCP、第21〜22講でDNSを学びました。これらは次のようにつながります。</p>
+<p class="source-block">HTTP</p>
+<p class="source-block">何を要求し、何を返すかを決める</p>
+<p class="source-block">TLS</p>
+<p class="source-block">通信の暗号化と相手の認証などを行う</p>
+<p class="source-block">TCP</p>
+<p class="source-block">データを順序どおりに届ける</p>
+<p class="source-block">IP</p>
+<p class="source-block">宛先までパケットを転送する</p>
+<p class="source-block">典型的なHTTPS over TCPの概念図。HTTP/3はQUIC（UDP上）を利用するため、すべてのHTTPS通信がTCPを使用するわけではありません。</p>
+<p class="source-block">DNSは、この通信を始める前に、サーバ名から接続先のIPアドレスを調べる役割を担います。</p>
 <h2 id="s3">3. HTTPリクエストの構造【A】</h2>
-<div class="source-block">HTTP/1.1のリクエストを見てみましょう。</div>
-<pre class="source-block">GET /products HTTP/1.1
+<pre>HTTP/1.1のリクエストを見てみましょう。</pre>
+<pre>GET /products HTTP/1.1
 Host: shop.example.jp
 User-Agent: ExampleBrowser/1.0
 Accept: text/html
 Cookie: sessionid=abc123</pre>
-<div class="source-block">これは「shop.example.jp にある /products を取得したい」という要求です。</div>
-<div class="source-block tabular">要素	意味
-GET	HTTPメソッド。何をしたいか
-/products	対象のパス
-HTTP/1.1	HTTPのバージョン
-Host	要求先のホスト名
-User-Agent	クライアントの情報
-Accept	受け入れ可能なデータ形式
-Cookie	ブラウザに保存されたCookieの値</div>
-<div class="source-block">最初の行をリクエストラインと呼びます。続く各行がHTTPヘッダーです。空行の後に、必要に応じてメッセージボディが続きます。</div>
+<p class="source-block">これは「shop.example.jp にある /products を取得したい」という要求です。</p>
+<div class="sc-table-wrap"><table><thead><tr><th>要素</th><th>意味</th></tr></thead><tbody><tr><td>GET</td><td>HTTPメソッド。何をしたいか</td></tr><tr><td>/products</td><td>対象のパス</td></tr><tr><td>HTTP/1.1</td><td>HTTPのバージョン</td></tr><tr><td>Host</td><td>要求先のホスト名</td></tr><tr><td>User-Agent</td><td>クライアントの情報</td></tr><tr><td>Accept</td><td>受け入れ可能なデータ形式</td></tr><tr><td>Cookie</td><td>ブラウザに保存されたCookieの値</td></tr></tbody></table></div>
+<p class="source-block">最初の行をリクエストラインと呼びます。続く各行がHTTPヘッダーです。空行の後に、必要に応じてメッセージボディが続きます。</p>
 <h3>3-1. GETとPOSTの違い</h3>
-<div class="source-block">GETは主に情報の取得に使用します。</div>
-<pre class="source-block">GET /search?q=security HTTP/1.1
+<p class="source-block">GETは主に情報の取得に使用します。</p>
+<pre>GET /search?q=security HTTP/1.1
 Host: example.jp</pre>
-<div class="source-block">検索語 security がURLのクエリ文字列に含まれています。</div>
-<div class="source-block">POSTは主にサーバへデータを送信し、登録や処理を依頼するときに使用します。</div>
-<pre class="source-block">POST /login HTTP/1.1
+<p class="source-block">検索語 security がURLのクエリ文字列に含まれています。</p>
+<p class="source-block">POSTは主にサーバへデータを送信し、登録や処理を依頼するときに使用します。</p>
+<pre>POST /login HTTP/1.1
 Host: example.jp
 Content-Type: application/x-www-form-urlencoded
 Content-Length: 28
 username=alice&amp;password=demo</pre>
-<div class="source-block">この例では、ログイン情報がメッセージボディに含まれています。</div>
-<div class="source-block">重要なのは、POSTだから安全というわけではないことです。HTTPのままなら、POSTのボディも通信経路上で盗聴され得ます。</div>
-<div class="source-block">また、GETは本来、リソースの状態を変更しない安全なメソッドとして設計されています。削除や送金などの処理をGETだけで実行できるようにすると、意図しない操作や攻撃につながる可能性があります。</div>
+<p class="source-block">この例では、ログイン情報がメッセージボディに含まれています。</p>
+<p class="source-block">重要なのは、POSTだから安全というわけではないことです。HTTPのままなら、POSTのボディも通信経路上で盗聴され得ます。</p>
+<p class="source-block">また、GETは本来、リソースの状態を変更しない安全なメソッドとして設計されています。削除や送金などの処理をGETだけで実行できるようにすると、意図しない操作や攻撃につながる可能性があります。</p>
 <h3>3-2. その他のメソッド</h3>
-<div class="source-block tabular">メソッド	典型的な用途
-GET	情報を取得する
-HEAD	レスポンスのヘッダーのみ取得する
-POST	データを送信し、処理を依頼する
-PUT	対象リソースを作成・置換する
-DELETE	対象リソースを削除する
-CONNECT	プロキシを通じてトンネルを確立する</div>
-<div class="source-block">PUTやDELETEというメソッド名だけで操作が許可されるわけではありません。サーバ側で認証・認可を実施する必要があります。</div>
+<div class="sc-table-wrap"><table><thead><tr><th>メソッド</th><th>典型的な用途</th></tr></thead><tbody><tr><td>GET</td><td>情報を取得する</td></tr><tr><td>HEAD</td><td>レスポンスのヘッダーのみ取得する</td></tr><tr><td>POST</td><td>データを送信し、処理を依頼する</td></tr><tr><td>PUT</td><td>対象リソースを作成・置換する</td></tr><tr><td>DELETE</td><td>対象リソースを削除する</td></tr><tr><td>CONNECT</td><td>プロキシを通じてトンネルを確立する</td></tr></tbody></table></div>
+<p class="source-block">PUTやDELETEというメソッド名だけで操作が許可されるわけではありません。サーバ側で認証・認可を実施する必要があります。</p>
 <h2 id="s4">4. HTTPレスポンスの構造【A】</h2>
-<div class="source-block">サーバからの応答例です。</div>
-<pre class="source-block">HTTP/1.1 200 OK
+<p class="source-block">サーバからの応答例です。</p>
+<pre>HTTP/1.1 200 OK
 Content-Type: text/html; charset=UTF-8
 Cache-Control: no-store
 Set-Cookie: sessionid=abc123; Secure; HttpOnly; SameSite=Lax
 &lt;html&gt;...&lt;/html&gt;</pre>
-<div class="source-block">先頭の 200 OK は、要求が成功したことを示しています。</div>
-<div class="source-block">Content-Type は返すデータの種類、Cache-Control はキャッシュの扱い、Set-Cookie はブラウザにCookieを保存させるためのヘッダーです。</div>
+<p class="source-block">先頭の 200 OK は、要求が成功したことを示しています。</p>
+<p class="source-block">Content-Type は返すデータの種類、Cache-Control はキャッシュの扱い、Set-Cookie はブラウザにCookieを保存させるためのヘッダーです。</p>
 <h3>4-1. ステータスコード</h3>
-<div class="source-block tabular">分類	意味	例
-1xx	処理途中の情報	100 Continue
-2xx	成功	200 OK、201 Created
-3xx	リダイレクトなど	301 Moved Permanently、302 Found、304 Not Modified
-4xx	クライアント側の要求に関する問題	400 Bad Request、401 Unauthorized、403 Forbidden、404 Not Found
-5xx	サーバ側の問題	500 Internal Server Error、503 Service Unavailable</div>
-<div class="source-block">特に混同しやすいのが401と403です。</div>
-<div class="source-block">* 401 Unauthorized： 有効な認証情報が必要、または認証が成立していない。
-* 403 Forbidden： サーバが要求を理解したものの、アクセスを拒否している。</div>
-<div class="source-block">ただし、実際のWebアプリケーションはセキュリティ上の理由などから、意図的に404を返す場合もあります。ステータスコードだけで内部状態を断定してはいけません。</div>
+<div class="sc-table-wrap"><table><thead><tr><th>分類</th><th>意味</th><th>例</th></tr></thead><tbody><tr><td>1xx</td><td>処理途中の情報</td><td>100 Continue</td></tr><tr><td>2xx</td><td>成功</td><td>200 OK、201 Created</td></tr><tr><td>3xx</td><td>リダイレクトなど</td><td>301 Moved Permanently、302 Found、304 Not Modified</td></tr><tr><td>4xx</td><td>クライアント側の要求に関する問題</td><td>400 Bad Request、401 Unauthorized、403 Forbidden、404 Not Found</td></tr><tr><td>5xx</td><td>サーバ側の問題</td><td>500 Internal Server Error、503 Service Unavailable</td></tr></tbody></table></div>
+<p class="source-block">特に混同しやすいのが401と403です。</p>
+<ul><li>401 Unauthorized： 有効な認証情報が必要、または認証が成立していない。</li><li>403 Forbidden： サーバが要求を理解したものの、アクセスを拒否している。</li></ul>
+<p class="source-block">ただし、実際のWebアプリケーションはセキュリティ上の理由などから、意図的に404を返す場合もあります。ステータスコードだけで内部状態を断定してはいけません。</p>
 <h2 id="s5">5. Cookieとセッション管理【A】</h2>
-<div class="source-block">ここからが、Webセキュリティを理解するうえで特に重要な部分です。</div>
+<p class="source-block">ここからが、Webセキュリティを理解するうえで特に重要な部分です。</p>
 <h3>5-1. HTTPはステートレス</h3>
-<div class="source-block">HTTPは、個々のリクエストを独立して扱うプロトコルです。これをステートレスといいます。</div>
-<div class="source-block">例えば、ネット通販サイトで次の操作を行うとします。</div>
-<div class="source-block">* ログインする。
-* 商品をカートに入れる。
-* 注文内容を確認する。
-* 購入する。</div>
-<div class="source-block">これらは別々のHTTPリクエストですが、サーバは同じ利用者による一連の操作として扱わなければなりません。</div>
-<div class="source-block">そこで使用するのが、Cookieとセッション管理です。</div>
+<p class="source-block">HTTPは、個々のリクエストを独立して扱うプロトコルです。これをステートレスといいます。</p>
+<p class="source-block">例えば、ネット通販サイトで次の操作を行うとします。</p>
+<ul><li>ログインする。</li><li>商品をカートに入れる。</li><li>注文内容を確認する。</li><li>購入する。</li></ul>
+<p class="source-block">これらは別々のHTTPリクエストですが、サーバは同じ利用者による一連の操作として扱わなければなりません。</p>
+<p class="source-block">そこで使用するのが、Cookieとセッション管理です。</p>
 <h3>5-2. CookieとセッションID</h3>
-<div class="source-block">Cookieは、Webサーバからの指示などによってブラウザに保存され、条件に応じて後続のHTTPリクエストで送信されるデータです。</div>
-<div class="source-block">セッションIDは、サーバ側で管理するログイン状態などと利用者のリクエストを結び付ける識別子です。</div>
-<div class="source-block">Cookieを使った典型的なログインセッション。実際にはTLSによって通信を保護します。</div>
-<div class="source-block">流れを詳しく追いましょう。</div>
-<div class="source-block">① ログイン</div>
-<div class="source-block">ブラウザがIDとパスワードを送信します。サーバは認証に成功すると、推測困難なセッションIDを生成し、セッション情報を管理します。</div>
-<div class="source-block">② Cookieの発行</div>
-<div class="source-block">サーバが次のようなレスポンスを返します。</div>
-<div class="source-block">Set-Cookie: sessionid=RANDOM_VALUE; Secure; HttpOnly; SameSite=Lax; Path=/</div>
-<div class="source-block">ブラウザはCookieを保存します。</div>
-<div class="source-block">③ 次回以降のアクセス</div>
-<div class="source-block">ブラウザは対象サイトにアクセスするとき、Cookieを送ります。</div>
-<pre class="source-block">GET /mypage HTTP/1.1
+<p class="source-block">Cookieは、Webサーバからの指示などによってブラウザに保存され、条件に応じて後続のHTTPリクエストで送信されるデータです。</p>
+<p class="source-block">セッションIDは、サーバ側で管理するログイン状態などと利用者のリクエストを結び付ける識別子です。</p>
+<p class="source-block">Cookieを使った典型的なログインセッション。実際にはTLSによって通信を保護します。</p>
+<p class="source-block">流れを詳しく追いましょう。</p>
+<p class="source-block">① ログイン</p>
+<p class="source-block">ブラウザがIDとパスワードを送信します。サーバは認証に成功すると、推測困難なセッションIDを生成し、セッション情報を管理します。</p>
+<p class="source-block">② Cookieの発行</p>
+<p class="source-block">サーバが次のようなレスポンスを返します。</p>
+<pre>Set-Cookie: sessionid=RANDOM_VALUE; Secure; HttpOnly; SameSite=Lax; Path=/</pre>
+<p class="source-block">ブラウザはCookieを保存します。</p>
+<p class="source-block">③ 次回以降のアクセス</p>
+<p class="source-block">ブラウザは対象サイトにアクセスするとき、Cookieを送ります。</p>
+<pre>GET /mypage HTTP/1.1
 Host: shop.example.jp
 Cookie: sessionid=RANDOM_VALUE</pre>
-<div class="source-block">④ セッションの照合</div>
-<div class="source-block">サーバは受信したセッションIDを、サーバ側のセッション情報と照合します。対応する有効なログインセッションがあれば、利用者のマイページを返します。</div>
-<div class="source-block">重要なのは、セッションIDを知っている第三者が、それを使って本人になりすませる可能性があることです。</div>
-<div class="source-block">パスワードを知らなくても、セッションIDだけでログイン状態を悪用できる実装は珍しくありません。</div>
+<p class="source-block">④ セッションの照合</p>
+<p class="source-block">サーバは受信したセッションIDを、サーバ側のセッション情報と照合します。対応する有効なログインセッションがあれば、利用者のマイページを返します。</p>
+<p class="source-block">重要なのは、セッションIDを知っている第三者が、それを使って本人になりすませる可能性があることです。</p>
+<p class="source-block">パスワードを知らなくても、セッションIDだけでログイン状態を悪用できる実装は珍しくありません。</p>
 <h3>5-3. Cookieのセキュリティ属性</h3>
-<div class="source-block tabular">属性	役割
-Secure	HTTPS通信の場合にCookieを送信する
-HttpOnly	JavaScriptのdocument.cookieなどからの参照を禁止する
-SameSite	クロスサイトのリクエストにおけるCookie送信を制限する
-Domain	Cookieを送信するドメインの範囲を指定する
-Path	Cookieを送信するURLパスの範囲を指定する
-Max-Age / Expires	Cookieの有効期間を指定する</div>
-<div class="source-block">ここは暗記だけでなく、何を防げるのかを区別してください。</div>
-<div class="source-block">例えば、HttpOnly を設定すると、XSS攻撃で実行されたJavaScriptからCookieの値を直接読み取ることを防ぎやすくなります。</div>
-<div class="source-block">ただし、XSS攻撃そのものを防ぐわけではありません。悪意あるスクリプトが利用者の権限で操作を実行する危険は残ります。</div>
-<div class="source-block">また、SameSite はCSRF対策に役立ちますが、すべての状況で十分な防御になるわけではありません。重要な更新処理ではCSRFトークンやOrigin検証なども検討します。</div>
+<div class="sc-table-wrap"><table><thead><tr><th>属性</th><th>役割</th></tr></thead><tbody><tr><td>Secure</td><td>HTTPS通信の場合にCookieを送信する</td></tr><tr><td>HttpOnly</td><td>JavaScriptのdocument.cookieなどからの参照を禁止する</td></tr><tr><td>SameSite</td><td>クロスサイトのリクエストにおけるCookie送信を制限する</td></tr><tr><td>Domain</td><td>Cookieを送信するドメインの範囲を指定する</td></tr><tr><td>Path</td><td>Cookieを送信するURLパスの範囲を指定する</td></tr><tr><td>Max-Age / Expires</td><td>Cookieの有効期間を指定する</td></tr></tbody></table></div>
+<p class="source-block">ここは暗記だけでなく、何を防げるのかを区別してください。</p>
+<p class="source-block">例えば、HttpOnly を設定すると、XSS攻撃で実行されたJavaScriptからCookieの値を直接読み取ることを防ぎやすくなります。</p>
+<p class="source-block">ただし、XSS攻撃そのものを防ぐわけではありません。悪意あるスクリプトが利用者の権限で操作を実行する危険は残ります。</p>
+<p class="source-block">また、SameSite はCSRF対策に役立ちますが、すべての状況で十分な防御になるわけではありません。重要な更新処理ではCSRFトークンやOrigin検証なども検討します。</p>
 <h2 id="s6">6. セッションを狙う攻撃【A】</h2>
 <h3>6-1. セッションハイジャック</h3>
-<div class="source-block">攻撃者が有効なセッションIDを入手し、正規利用者になりすます攻撃です。</div>
-<div class="source-block">例えば、利用者AのセッションIDが攻撃者に漏えいした場合、攻撃者はそのIDを自分のHTTPリクエストに付けて送信します。</div>
-<pre class="source-block">GET /account HTTP/1.1
+<p class="source-block">攻撃者が有効なセッションIDを入手し、正規利用者になりすます攻撃です。</p>
+<p class="source-block">例えば、利用者AのセッションIDが攻撃者に漏えいした場合、攻撃者はそのIDを自分のHTTPリクエストに付けて送信します。</p>
+<pre>GET /account HTTP/1.1
 Host: shop.example.jp
 Cookie: sessionid=STOLEN_SESSION_ID</pre>
-<div class="source-block">サーバがセッションIDだけで利用者を識別していれば、攻撃者の要求を利用者Aの要求として処理する可能性があります。</div>
-<div class="source-block">主な対策は、HTTPSによる通信保護、Cookieの適切な属性設定、推測困難なセッションID、ログイン時のセッションID再生成、セッションの有効期限・失効管理などです。</div>
+<p class="source-block">サーバがセッションIDだけで利用者を識別していれば、攻撃者の要求を利用者Aの要求として処理する可能性があります。</p>
+<p class="source-block">主な対策は、HTTPSによる通信保護、Cookieの適切な属性設定、推測困難なセッションID、ログイン時のセッションID再生成、セッションの有効期限・失効管理などです。</p>
 <h3>6-2. セッション固定攻撃（Session Fixation）</h3>
-<div class="source-block">セッションハイジャックと似ていますが、攻撃の順序が違います。</div>
-<div class="source-block">セッション固定攻撃では、攻撃者があらかじめ知っているセッションIDを利用者に使わせ、そのIDのままログインさせることを狙います。</div>
-<div class="source-block">* 攻撃者がセッションID「XYZ」を入手または用意する。
-* 利用者にそのセッションIDを使わせる。
-* 利用者がログインする。
-* サーバがログイン前後で同じセッションIDを使い続ける。
-* 攻撃者が「XYZ」でログイン済みセッションを利用する。</div>
-<div class="source-block">有効な対策は、認証成功時にセッションIDを再生成し、認証前のIDを無効化することです。</div>
+<p class="source-block">セッションハイジャックと似ていますが、攻撃の順序が違います。</p>
+<p class="source-block">セッション固定攻撃では、攻撃者があらかじめ知っているセッションIDを利用者に使わせ、そのIDのままログインさせることを狙います。</p>
+<ul><li>攻撃者がセッションID「XYZ」を入手または用意する。</li><li>利用者にそのセッションIDを使わせる。</li><li>利用者がログインする。</li><li>サーバがログイン前後で同じセッションIDを使い続ける。</li><li>攻撃者が「XYZ」でログイン済みセッションを利用する。</li></ul>
+<p class="source-block">有効な対策は、認証成功時にセッションIDを再生成し、認証前のIDを無効化することです。</p>
 <h3>6-3. CSRFとの違い</h3>
-<div class="source-block">CSRF（Cross-Site Request Forgery）は、攻撃者が利用者のブラウザを利用して、本人の意図しないリクエストを送信させる攻撃です。</div>
-<div class="source-block">セッションハイジャックと異なり、攻撃者がセッションIDを直接知る必要はありません。</div>
-<div class="source-block tabular">攻撃	何を悪用するか	代表的な対策
-セッションハイジャック	盗まれた有効なセッションID	IDの保護・失効管理
-セッション固定	ログイン前から攻撃者が知っているID	認証時のID再生成
-CSRF	ブラウザが自動送信する認証情報	CSRFトークン、Origin検証、SameSite</div>
-<div class="source-block">科目Bでは「どの攻撃だから、何を防ぐ設定が必要なのか」を具体的に対応させることが重要です。</div>
+<p class="source-block">CSRF（Cross-Site Request Forgery）は、攻撃者が利用者のブラウザを利用して、本人の意図しないリクエストを送信させる攻撃です。</p>
+<p class="source-block">セッションハイジャックと異なり、攻撃者がセッションIDを直接知る必要はありません。</p>
+<div class="sc-table-wrap"><table><thead><tr><th>攻撃</th><th>何を悪用するか</th><th>代表的な対策</th></tr></thead><tbody><tr><td>セッションハイジャック</td><td>盗まれた有効なセッションID</td><td>IDの保護・失効管理</td></tr><tr><td>セッション固定</td><td>ログイン前から攻撃者が知っているID</td><td>認証時のID再生成</td></tr><tr><td>CSRF</td><td>ブラウザが自動送信する認証情報</td><td>CSRFトークン、Origin検証、SameSite</td></tr></tbody></table></div>
+<p class="source-block">科目Bでは「どの攻撃だから、何を防ぐ設定が必要なのか」を具体的に対応させることが重要です。</p>
 <h2 id="s7">7. HTTPSとTLSの仕組み【A】</h2>
-<div class="source-block">HTTPSは、HTTPの通信をTLS（Transport Layer Security）によって保護する仕組みです。</div>
-<div class="source-block">HTTPSの主な役割は次の三つです。</div>
-<div class="source-block">* 機密性： 通信内容を第三者に読まれにくくする。
-* 完全性： 通信内容の不正な改ざんを検出する。
-* 認証： 接続先サーバが意図した相手であることを、証明書などによって検証する。</div>
+<p class="source-block">HTTPSは、HTTPの通信をTLS（Transport Layer Security）によって保護する仕組みです。</p>
+<p class="source-block">HTTPSの主な役割は次の三つです。</p>
+<ul><li>機密性： 通信内容を第三者に読まれにくくする。</li><li>完全性： 通信内容の不正な改ざんを検出する。</li><li>認証： 接続先サーバが意図した相手であることを、証明書などによって検証する。</li></ul>
 <h3>7-1. HTTPS接続の流れ</h3>
-<div class="source-block">典型的なTLS 1.3を使ったHTTPS通信を例にします。</div>
-<div class="source-block">* ブラウザがDNSで接続先IPアドレスを調べる。
-* TCP接続を確立する（HTTP/1.1やHTTP/2の場合）。
-* TLSハンドシェイクを開始し、暗号方式や鍵交換に必要な情報をやり取りする。
-* サーバ証明書を検証し、接続先の正当性を確認する。
-* 双方が通信に使用する暗号鍵を導出する。
-* 暗号化・完全性保護されたHTTPメッセージを送受信する。</div>
-<div class="source-block">TLS 1.3では、通常、ECDHEなどの鍵交換方式によって共有秘密を確立し、そこから対称鍵を導出します。</div>
-<div class="source-block">サーバ証明書の公開鍵でHTTP本文全体を暗号化しているわけではありません。</div>
+<p class="source-block">典型的なTLS 1.3を使ったHTTPS通信を例にします。</p>
+<ul><li>ブラウザがDNSで接続先IPアドレスを調べる。</li><li>TCP接続を確立する（HTTP/1.1やHTTP/2の場合）。</li><li>TLSハンドシェイクを開始し、暗号方式や鍵交換に必要な情報をやり取りする。</li><li>サーバ証明書を検証し、接続先の正当性を確認する。</li><li>双方が通信に使用する暗号鍵を導出する。</li><li>暗号化・完全性保護されたHTTPメッセージを送受信する。</li></ul>
+<p class="source-block">TLS 1.3では、通常、ECDHEなどの鍵交換方式によって共有秘密を確立し、そこから対称鍵を導出します。</p>
+<p class="source-block">サーバ証明書の公開鍵でHTTP本文全体を暗号化しているわけではありません。</p>
 <h3>7-2. サーバ証明書の検証</h3>
-<div class="source-block">ブラウザは、受け取ったサーバ証明書について主に以下を確認します。</div>
-<div class="source-block">* 信頼できる認証局につながる証明書チェーンか。
-* 証明書の有効期間内か。
-* アクセス先のホスト名と証明書の名前が一致するか。
-* 証明書の署名が正しいか。
-* 失効確認など、適用される証明書検証ポリシーを満たすか。</div>
-<div class="source-block">例えば、shop.example.jp にアクセスしたのに、証明書が無関係な attacker.example 用であれば、名前の不一致が問題になります。</div>
-<div class="source-block">証明書の検証エラーを無視して接続を続けると、中間者攻撃を許す危険が高まります。</div>
+<p class="source-block">ブラウザは、受け取ったサーバ証明書について主に以下を確認します。</p>
+<ul><li>信頼できる認証局につながる証明書チェーンか。</li><li>証明書の有効期間内か。</li><li>アクセス先のホスト名と証明書の名前が一致するか。</li><li>証明書の署名が正しいか。</li><li>失効確認など、適用される証明書検証ポリシーを満たすか。</li></ul>
+<p class="source-block">例えば、shop.example.jp にアクセスしたのに、証明書が無関係な attacker.example 用であれば、名前の不一致が問題になります。</p>
+<p class="source-block">証明書の検証エラーを無視して接続を続けると、中間者攻撃を許す危険が高まります。</p>
 <h3>7-3. HTTPSでも防げないもの</h3>
-<div class="source-block">HTTPSは万能ではありません。</div>
-<div class="source-block tabular">脅威	HTTPSで防げるか
-通信経路上でのHTTP本文の盗聴	適切なTLS接続なら防げる
-通信経路上でのHTTP本文の改ざん	適切なTLS接続なら検出できる
-WebアプリケーションのSQLインジェクション	防げない
-WebアプリケーションのXSS	防げない
-正規サーバから配信される悪意あるJavaScript	防げない
-サーバ内部からの情報漏えい	防げない</div>
-<div class="source-block">HTTPSで保護されるのは主に通信経路です。サーバ側のアプリケーションの安全性まで保証するものではありません。</div>
+<p class="source-block">HTTPSは万能ではありません。</p>
+<div class="sc-table-wrap"><table><thead><tr><th>脅威</th><th>HTTPSで防げるか</th></tr></thead><tbody><tr><td>通信経路上でのHTTP本文の盗聴</td><td>適切なTLS接続なら防げる</td></tr><tr><td>通信経路上でのHTTP本文の改ざん</td><td>適切なTLS接続なら検出できる</td></tr><tr><td>WebアプリケーションのSQLインジェクション</td><td>防げない</td></tr><tr><td>WebアプリケーションのXSS</td><td>防げない</td></tr><tr><td>正規サーバから配信される悪意あるJavaScript</td><td>防げない</td></tr><tr><td>サーバ内部からの情報漏えい</td><td>防げない</td></tr></tbody></table></div>
+<p class="source-block">HTTPSで保護されるのは主に通信経路です。サーバ側のアプリケーションの安全性まで保証するものではありません。</p>
 <h2 id="s8">8. HTTPヘッダーを利用した防御【A】</h2>
-<div class="source-block">参考書pp.208〜209と、第6章6-2-1「Webセキュリティ」pp.402〜405に対応する内容です。</div>
-<div class="source-block tabular">ヘッダー	役割
-Strict-Transport-Security	HSTS。対応ブラウザにHTTPS接続を強制する
-Content-Security-Policy	スクリプトなどの読み込み・実行元を制限する
-X-Content-Type-Options: nosniff	MIMEタイプの推測による解釈を制限する
-X-Frame-Options	ページをフレーム内に表示できるか制御する
-Cache-Control: no-store	レスポンスをキャッシュに保存しないよう指示する</div>
+<p class="source-block">参考書pp.208〜209と、第6章6-2-1「Webセキュリティ」pp.402〜405に対応する内容です。</p>
+<div class="sc-table-wrap"><table><thead><tr><th>ヘッダー</th><th>役割</th></tr></thead><tbody><tr><td>Strict-Transport-Security</td><td>HSTS。対応ブラウザにHTTPS接続を強制する</td></tr><tr><td>Content-Security-Policy</td><td>スクリプトなどの読み込み・実行元を制限する</td></tr><tr><td>X-Content-Type-Options: nosniff</td><td>MIMEタイプの推測による解釈を制限する</td></tr><tr><td>X-Frame-Options</td><td>ページをフレーム内に表示できるか制御する</td></tr><tr><td>Cache-Control: no-store</td><td>レスポンスをキャッシュに保存しないよう指示する</td></tr></tbody></table></div>
 <h3>8-1. HSTS</h3>
-<div class="source-block">Strict-Transport-Security: max-age=31536000; includeSubDomains</div>
-<div class="source-block">HSTSは、対応ブラウザに対して、指定期間中はHTTPSで接続するよう指示します。</div>
-<div class="source-block">ただし、初めてアクセスするサイトでは、HSTSの設定をまだ受信していない場合があります。HSTSプリロードリストに登録されている場合は、初回アクセスからHTTPSを強制できます。</div>
+<pre>Strict-Transport-Security: max-age=31536000; includeSubDomains</pre>
+<p class="source-block">HSTSは、対応ブラウザに対して、指定期間中はHTTPSで接続するよう指示します。</p>
+<p class="source-block">ただし、初めてアクセスするサイトでは、HSTSの設定をまだ受信していない場合があります。HSTSプリロードリストに登録されている場合は、初回アクセスからHTTPSを強制できます。</p>
 <h3>8-2. CSP</h3>
-<div class="source-block">Content-Security-Policy: default-src 'self'; script-src 'self'</div>
-<div class="source-block">この例は、原則として同一オリジンのリソースを使用し、スクリプトの読み込み元も同一オリジンに限定します。</div>
-<div class="source-block">CSPはXSSによる被害を軽減する重要な防御層ですが、適切な出力エスケープや入力値の検証に代わるものではありません。</div>
+<pre>Content-Security-Policy: default-src 'self'; script-src 'self'</pre>
+<p class="source-block">この例は、原則として同一オリジンのリソースを使用し、スクリプトの読み込み元も同一オリジンに限定します。</p>
+<p class="source-block">CSPはXSSによる被害を軽減する重要な防御層ですが、適切な出力エスケープや入力値の検証に代わるものではありません。</p>
 <h3>8-3. リバースプロキシでTLSを終端する場合</h3>
-<div class="source-block">実務では、ブラウザとリバースプロキシ間をHTTPSにし、リバースプロキシからバックエンドへHTTPで通信する構成もあります。</div>
-<pre class="source-block">ブラウザ
-   │ HTTPS
-   ▼
-リバースプロキシ
-   │ HTTP（暗号化なし）
-   ▼
-アプリケーションサーバ</pre>
-<div class="source-block">この構成では、外部との通信がHTTPSでも、プロキシからバックエンドまでの通信は暗号化されていません。</div>
-<div class="source-block">内部ネットワークだから必ず安全とは限らず、要件に応じてバックエンド側もTLSで保護します。</div>
+<p class="source-block">実務では、ブラウザとリバースプロキシ間をHTTPSにし、リバースプロキシからバックエンドへHTTPで通信する構成もあります。</p>
+<figure class="sc-diagram"><div class="sc-node">ブラウザ</div><div class="sc-connection">│ HTTPS
+▼</div><div class="sc-node">リバースプロキシ</div><div class="sc-connection">│ HTTP（暗号化なし）
+▼</div><div class="sc-node">アプリケーションサーバ</div></figure>
+<p class="source-block">この構成では、外部との通信がHTTPSでも、プロキシからバックエンドまでの通信は暗号化されていません。</p>
+<p class="source-block">内部ネットワークだから必ず安全とは限らず、要件に応じてバックエンド側もTLSで保護します。</p>
 <h2 id="s9">9. HTTPログ・設定の読み方【A】</h2>
-<div class="source-block">次のアクセスログを見てください。</div>
-<pre class="source-block">10:15:01 192.0.2.10 GET  /login    200
+<p class="source-block">次のアクセスログを見てください。</p>
+<pre>10:15:01 192.0.2.10 GET  /login    200
 10:15:09 192.0.2.10 POST /login    302
 10:15:10 192.0.2.10 GET  /mypage   200
 10:17:42 198.51.100.8 GET /mypage 200</pre>
-<div class="source-block">このログだけで「セッションハイジャックが発生した」と断定できるでしょうか。</div>
-<div class="source-block">答えは、断定できません。</div>
-<div class="source-block">最後の行では別のIPアドレスから /mypage へのアクセスが成功しています。しかし、利用者が別の回線に切り替えた可能性や、別の利用者が正常にアクセスした可能性もあります。</div>
-<div class="source-block">調査では、セッションIDに対応する内部識別子、認証済みユーザー、User-Agent、アクセス時刻、セッション発行・失効の記録などを突き合わせます。セッションIDそのものをログへ平文記録することは、漏えいリスクがあるため避けます。</div>
+<p class="source-block">このログだけで「セッションハイジャックが発生した」と断定できるでしょうか。</p>
+<p class="source-block">答えは、断定できません。</p>
+<p class="source-block">最後の行では別のIPアドレスから /mypage へのアクセスが成功しています。しかし、利用者が別の回線に切り替えた可能性や、別の利用者が正常にアクセスした可能性もあります。</p>
+<p class="source-block">調査では、セッションIDに対応する内部識別子、認証済みユーザー、User-Agent、アクセス時刻、セッション発行・失効の記録などを突き合わせます。セッションIDそのものをログへ平文記録することは、漏えいリスクがあるため避けます。</p>
 <h3>9-1. セッションCookie設定の問題</h3>
-<div class="source-block">次の設定を見てください。</div>
-<div class="source-block">Set-Cookie: sessionid=abc123; Path=/</div>
-<div class="source-block">ここには Secure、HttpOnly、SameSite が明示されていません。</div>
-<div class="source-block">この設定の問題は、セッションCookieがHTTPS以外の通信で送信され得ること、JavaScriptから参照され得ること、クロスサイトのリクエストに対するCookie送信制限が明示されていないことです。</div>
-<div class="source-block">ただし、SameSite属性が省略されたときの実際の挙動はブラウザによって異なります。現代の主要ブラウザには、既定でLax相当として扱うものがあります。</div>
+<p class="source-block">次の設定を見てください。</p>
+<pre>Set-Cookie: sessionid=abc123; Path=/</pre>
+<p class="source-block">ここには Secure、HttpOnly、SameSite が明示されていません。</p>
+<p class="source-block">この設定の問題は、セッションCookieがHTTPS以外の通信で送信され得ること、JavaScriptから参照され得ること、クロスサイトのリクエストに対するCookie送信制限が明示されていないことです。</p>
+<p class="source-block">ただし、SameSite属性が省略されたときの実際の挙動はブラウザによって異なります。現代の主要ブラウザには、既定でLax相当として扱うものがあります。</p>
 <h3>9-2. 対策後の設定例</h3>
-<div class="source-block">Set-Cookie: __Host-sessionid=RANDOM_VALUE; Path=/; Secure; HttpOnly; SameSite=Lax</div>
-<div class="source-block">__Host- プレフィックスを使用するCookieには、Secure属性、Path=/、Domain属性を指定しないことなどの条件があります。</div>
-<div class="source-block">このように設定することで、Cookieの送信範囲やスクリプトからの参照を制限できます。</div>
+<pre>Set-Cookie: __Host-sessionid=RANDOM_VALUE; Path=/; Secure; HttpOnly; SameSite=Lax</pre>
+<p class="source-block">__Host- プレフィックスを使用するCookieには、Secure属性、Path=/、Domain属性を指定しないことなどの条件があります。</p>
+<p class="source-block">このように設定することで、Cookieの送信範囲やスクリプトからの参照を制限できます。</p>
 <h2 id="s10">10. 科目A・科目Bの解答ポイント</h2>
-<div class="source-block">科目Aで区別すること</div>
-<div class="source-block tabular">問われる内容	判断のポイント
-GETとPOST	URLに載るかどうかだけでなく、メソッドの目的と意味を区別
-Cookieとセッション	Cookieはブラウザに保存されるデータ、セッションは状態管理の仕組み
-SecureとHttpOnly	HTTPS限定送信とJavaScriptからの参照制限
-401と403	認証情報の問題とアクセス拒否
-HTTPとHTTPS	HTTPの通信をTLSで保護しているか
-HSTSとCSP	HTTPS強制とコンテンツ読み込み制限</div>
-<div class="source-block">科目Bの答案の組み立て方</div>
-<div class="source-block">記述式では、単に「セキュリティを強化する」と書いても十分な答案にはなりません。</div>
-<div class="source-block">例えば、問題文に「ログイン後も同じセッションIDを使用している」と書かれていたら、次のように整理します。</div>
-<div class="source-block">原因： 認証前後でセッションIDが変更されない。</div>
-<div class="source-block">脅威： 攻撃者が事前に把握したIDで、認証後のセッションを利用できる可能性がある。</div>
-<div class="source-block">対策： 認証成功時にセッションIDを再生成し、旧IDを無効化する。</div>
-<div class="source-block">このように、問題文に書かれた設定や通信の事実から、原因と対策を直接つなげます。</div>
+<p class="source-block">科目Aで区別すること</p>
+<div class="sc-table-wrap"><table><thead><tr><th>問われる内容</th><th>判断のポイント</th></tr></thead><tbody><tr><td>GETとPOST</td><td>URLに載るかどうかだけでなく、メソッドの目的と意味を区別</td></tr><tr><td>Cookieとセッション</td><td>Cookieはブラウザに保存されるデータ、セッションは状態管理の仕組み</td></tr><tr><td>SecureとHttpOnly</td><td>HTTPS限定送信とJavaScriptからの参照制限</td></tr><tr><td>401と403</td><td>認証情報の問題とアクセス拒否</td></tr><tr><td>HTTPとHTTPS</td><td>HTTPの通信をTLSで保護しているか</td></tr><tr><td>HSTSとCSP</td><td>HTTPS強制とコンテンツ読み込み制限</td></tr></tbody></table></div>
+<p class="source-block">科目Bの答案の組み立て方</p>
+<p class="source-block">記述式では、単に「セキュリティを強化する」と書いても十分な答案にはなりません。</p>
+<p class="source-block">例えば、問題文に「ログイン後も同じセッションIDを使用している」と書かれていたら、次のように整理します。</p>
+<p class="source-block">原因： 認証前後でセッションIDが変更されない。</p>
+<p class="source-block">脅威： 攻撃者が事前に把握したIDで、認証後のセッションを利用できる可能性がある。</p>
+<p class="source-block">対策： 認証成功時にセッションIDを再生成し、旧IDを無効化する。</p>
+<p class="source-block">このように、問題文に書かれた設定や通信の事実から、原因と対策を直接つなげます。</p>
 <h2 id="s11">11. 重要事項の整理</h2>
-<div class="source-block">* HTTPはリクエストとレスポンスで通信するアプリケーション層プロトコル。
-* HTTPはステートレスであり、Cookieとセッションによってログイン状態などを管理する。
-* セッションIDが漏えいすると、利用者へのなりすましにつながる可能性がある。
-* Secure、HttpOnly、SameSiteはそれぞれ防御する対象が異なる。
-* HTTPSはTLSによって通信の機密性・完全性・サーバ認証を提供する。
-* HTTPSだけではXSSやSQLインジェクションなどのアプリケーションの脆弱性を防げない。
-* HTTPヘッダーとアクセスログは、科目Bで原因と対策を判断するための重要な材料となる。</div>
-<div class="source-block">C：発展・任意学習として、HTTP/2のHPACK、HTTP/3のQPACK、QUICの輻輳制御、TLS 1.3の鍵スケジュール詳細などは今回は扱いません。</div></article></main></body></html>
+<ul><li>HTTPはリクエストとレスポンスで通信するアプリケーション層プロトコル。</li><li>HTTPはステートレスであり、Cookieとセッションによってログイン状態などを管理する。</li><li>セッションIDが漏えいすると、利用者へのなりすましにつながる可能性がある。</li><li>Secure、HttpOnly、SameSiteはそれぞれ防御する対象が異なる。</li><li>HTTPSはTLSによって通信の機密性・完全性・サーバ認証を提供する。</li><li>HTTPSだけではXSSやSQLインジェクションなどのアプリケーションの脆弱性を防げない。</li><li>HTTPヘッダーとアクセスログは、科目Bで原因と対策を判断するための重要な材料となる。</li></ul>
+<p class="source-block">C：発展・任意学習として、HTTP/2のHPACK、HTTP/3のQPACK、QUICの輻輳制御、TLS 1.3の鍵スケジュール詳細などは今回は扱いません。</p></article></main></body></html>
