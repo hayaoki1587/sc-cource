@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 864" role="img" aria-label="ECDHE：秘密値は送らず、公開情報だけを交換">
+<rect width="1040" height="864" fill="#f8fafc"/>
+<text x="35" y="48" font-size="26" font-weight="bold" fill="#142e4b">ECDHE：秘密値は送らず、公開情報だけを交換</text>
+<rect x="35" y="72" width="230" height="46" rx="12" fill="#dbeafe" stroke="#3b82f6"/>
+<text x="150" y="101" text-anchor="middle" font-size="18" fill="#102a43">ブラウザ A</text>
+<path d="M150 120 V776" stroke="#94a3b8" stroke-dasharray="6 6"/>
+<rect x="775" y="72" width="230" height="46" rx="12" fill="#dbeafe" stroke="#3b82f6"/>
+<text x="890" y="101" text-anchor="middle" font-size="18" fill="#102a43">サーバ B</text>
+<path d="M890 120 V776" stroke="#94a3b8" stroke-dasharray="6 6"/>
+<rect x="25" y="147" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="150" y="174" font-size="15" text-anchor="middle" fill="#14532d">一時秘密 a を作る</text>
+<rect x="765" y="225" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="890" y="252" font-size="15" text-anchor="middle" fill="#14532d">一時秘密 b を作る</text>
+<path d="M150 321 H890" stroke="#2563eb" stroke-width="3"/>
+<path d="M878 314 L890 321 L878 328" fill="none" stroke="#2563eb" stroke-width="3"/>
+<text x="520.0" y="309" font-size="17" text-anchor="middle" fill="#1e3a8a">公開情報 A_pub = aG</text>
+<path d="M890 399 H150" stroke="#2563eb" stroke-width="3"/>
+<path d="M162 392 L150 399 L162 406" fill="none" stroke="#2563eb" stroke-width="3"/>
+<text x="520.0" y="387" font-size="17" text-anchor="middle" fill="#1e3a8a">公開情報 B_pub = bG</text>
+<rect x="25" y="459" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="150" y="486" font-size="15" text-anchor="middle" fill="#14532d">a × B_pub = abG</text>
+<rect x="765" y="537" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="890" y="564" font-size="15" text-anchor="middle" fill="#14532d">b × A_pub = baG</text>
+<rect x="25" y="615" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="150" y="642" font-size="15" text-anchor="middle" fill="#14532d">共有秘密 abG を得る</text>
+<rect x="765" y="693" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="890" y="720" font-size="15" text-anchor="middle" fill="#14532d">同じ共有秘密 abG を得る</text>
+<text x="36" y="829" font-size="16" fill="#334155">盗聴者は公開情報を見られるが、一時秘密 a・b は送信されない。</text>
+</svg>
