@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 864" role="img" aria-label="RSA鍵配送：秘密の材料を公開鍵で保護して送る">
+<rect width="1040" height="864" fill="#f8fafc"/>
+<text x="35" y="48" font-size="26" font-weight="bold" fill="#142e4b">RSA鍵配送：秘密の材料を公開鍵で保護して送る</text>
+<rect x="35" y="72" width="230" height="46" rx="12" fill="#dbeafe" stroke="#3b82f6"/>
+<text x="150" y="101" text-anchor="middle" font-size="18" fill="#102a43">ブラウザ A</text>
+<path d="M150 120 V776" stroke="#94a3b8" stroke-dasharray="6 6"/>
+<rect x="775" y="72" width="230" height="46" rx="12" fill="#dbeafe" stroke="#3b82f6"/>
+<text x="890" y="101" text-anchor="middle" font-size="18" fill="#102a43">サーバ B</text>
+<path d="M890 120 V776" stroke="#94a3b8" stroke-dasharray="6 6"/>
+<rect x="765" y="147" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="890" y="174" font-size="15" text-anchor="middle" fill="#14532d">RSA公開鍵・秘密鍵を保有</text>
+<path d="M890 243 H150" stroke="#2563eb" stroke-width="3"/>
+<path d="M162 236 L150 243 L162 250" fill="none" stroke="#2563eb" stroke-width="3"/>
+<text x="520.0" y="231" font-size="17" text-anchor="middle" fill="#1e3a8a">証明書とRSA公開鍵</text>
+<rect x="25" y="303" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="150" y="330" font-size="15" text-anchor="middle" fill="#14532d">秘密の鍵材料 S を生成</text>
+<path d="M150 399 H890" stroke="#2563eb" stroke-width="3"/>
+<path d="M878 392 L890 399 L878 406" fill="none" stroke="#2563eb" stroke-width="3"/>
+<text x="520.0" y="387" font-size="17" text-anchor="middle" fill="#1e3a8a">RSA公開鍵で暗号化した S</text>
+<rect x="765" y="459" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="890" y="486" font-size="15" text-anchor="middle" fill="#14532d">RSA秘密鍵で S を復号</text>
+<rect x="25" y="537" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="150" y="564" font-size="15" text-anchor="middle" fill="#14532d">S から共通鍵を導出</text>
+<rect x="765" y="615" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="890" y="642" font-size="15" text-anchor="middle" fill="#14532d">S から共通鍵を導出</text>
+<path d="M150 711 H890" stroke="#2563eb" stroke-width="3"/>
+<path d="M878 704 L890 711 L878 718" fill="none" stroke="#2563eb" stroke-width="3"/>
+<text x="520.0" y="699" font-size="17" text-anchor="middle" fill="#1e3a8a">共通鍵で暗号化した通信データ</text>
+<text x="36" y="829" font-size="16" fill="#334155">注意：サーバRSA秘密鍵は送信しない。TLS 1.3ではRSA鍵配送を使わない。</text>
+</svg>
