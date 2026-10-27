@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 864" role="img" aria-label="認証なしECDHE：中間者が別々の鍵共有を作る">
+<rect width="1040" height="864" fill="#f8fafc"/>
+<text x="35" y="48" font-size="26" font-weight="bold" fill="#142e4b">認証なしECDHE：中間者が別々の鍵共有を作る</text>
+<rect x="35" y="72" width="230" height="46" rx="12" fill="#dbeafe" stroke="#3b82f6"/>
+<text x="150" y="101" text-anchor="middle" font-size="18" fill="#102a43">ブラウザ A</text>
+<path d="M150 120 V776" stroke="#94a3b8" stroke-dasharray="6 6"/>
+<rect x="405" y="72" width="230" height="46" rx="12" fill="#dbeafe" stroke="#3b82f6"/>
+<text x="520" y="101" text-anchor="middle" font-size="18" fill="#102a43">攻撃者 E</text>
+<path d="M520 120 V776" stroke="#94a3b8" stroke-dasharray="6 6"/>
+<rect x="775" y="72" width="230" height="46" rx="12" fill="#dbeafe" stroke="#3b82f6"/>
+<text x="890" y="101" text-anchor="middle" font-size="18" fill="#102a43">正規サーバ B</text>
+<path d="M890 120 V776" stroke="#94a3b8" stroke-dasharray="6 6"/>
+<path d="M150 165 H520" stroke="#2563eb" stroke-width="3"/>
+<path d="M508 158 L520 165 L508 172" fill="none" stroke="#2563eb" stroke-width="3"/>
+<text x="335.0" y="153" font-size="17" text-anchor="middle" fill="#1e3a8a">A の公開情報</text>
+<path d="M520 243 H150" stroke="#2563eb" stroke-width="3"/>
+<path d="M162 236 L150 243 L162 250" fill="none" stroke="#2563eb" stroke-width="3"/>
+<text x="335.0" y="231" font-size="17" text-anchor="middle" fill="#1e3a8a">E の公開情報（B と偽る）</text>
+<path d="M520 321 H890" stroke="#2563eb" stroke-width="3"/>
+<path d="M878 314 L890 321 L878 328" fill="none" stroke="#2563eb" stroke-width="3"/>
+<text x="705.0" y="309" font-size="17" text-anchor="middle" fill="#1e3a8a">E の別の公開情報</text>
+<path d="M890 399 H520" stroke="#2563eb" stroke-width="3"/>
+<path d="M532 392 L520 399 L532 406" fill="none" stroke="#2563eb" stroke-width="3"/>
+<text x="705.0" y="387" font-size="17" text-anchor="middle" fill="#1e3a8a">B の公開情報</text>
+<rect x="25" y="459" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="150" y="486" font-size="15" text-anchor="middle" fill="#14532d">A と E の共有秘密</text>
+<rect x="765" y="537" width="250" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+<text x="890" y="564" font-size="15" text-anchor="middle" fill="#14532d">E と B の共有秘密</text>
+<path d="M150 633 H520" stroke="#2563eb" stroke-width="3"/>
+<path d="M508 626 L520 633 L508 640" fill="none" stroke="#2563eb" stroke-width="3"/>
+<text x="335.0" y="621" font-size="17" text-anchor="middle" fill="#1e3a8a">暗号文を E が復号できる</text>
+<path d="M520 711 H890" stroke="#2563eb" stroke-width="3"/>
+<path d="M878 704 L890 711 L878 718" fill="none" stroke="#2563eb" stroke-width="3"/>
+<text x="705.0" y="699" font-size="17" text-anchor="middle" fill="#1e3a8a">E が再暗号化して転送</text>
+<text x="36" y="829" font-size="16" fill="#334155">対策：サーバ証明書とハンドシェイク認証を検証し、失敗時は接続を拒否。</text>
+</svg>
