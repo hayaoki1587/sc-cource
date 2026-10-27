@@ -1,1 +1,196 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第36講 ハイブリッド暗号｜SC合格講座</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;background:#f5f7fa;color:#202938;line-height:1.9;margin:0}header{background:#123458;color:white;padding:45px max(24px,calc((100vw - 920px)/2))}header h1{font-size:2rem;line-height:1.45;margin:12px 0}header p{color:#d8e6f5}main{max-width:960px;margin:0 auto;padding:28px 20px 80px}nav,section{background:white;border:1px solid #e1e6ed;border-radius:13px;padding:25px 32px;margin-bottom:22px;box-shadow:0 3px 14px #172b4d0a}nav ol{columns:2;column-gap:36px;padding-left:22px}nav a{color:#165c97;text-decoration:none}h2{font-size:1.38rem;color:#123b60;border-bottom:2px solid #d8e6f4;padding-bottom:10px;margin:0 0 20px}h3{font-size:1.12rem;color:#245276;margin:24px 0 10px}p{margin:12px 0}table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.94rem}th,td{border:1px solid #d8e0e8;padding:9px 11px;text-align:left;vertical-align:top}th{background:#edf3f9}tr:nth-child(even) td{background:#fafbfd}pre{background:#172738;color:#f0f5fc;padding:18px;border-radius:8px;overflow:auto;line-height:1.6;font-size:.91rem}figure{margin:20px 0;padding:18px;background:#f8fbff;border:1px solid #dbe5f0;border-radius:10px}figcaption{text-align:center;font-size:.83rem;color:#617186;margin-top:10px}.sequence{display:grid;grid-template-columns:1fr 1fr;text-align:center;gap:8px;align-items:center}.sequence>div{padding:7px;border-radius:5px;background:#eaf1f9}.sequence>.arrow{color:#1a5d99;font-weight:bold;background:#f5f9fd}.network{text-align:center;max-width:560px;margin:auto}.node{padding:12px;border-radius:8px;border:1px solid #8294a6;margin:auto;max-width:360px}.client{background:#e8f1ff;border-color:#7aa6dc}.server{background:#e6f6ed;border-color:#78c09b}.router{background:#eef0f4}.attacker{background:#fff0f0;border-color:#e7a1a1}.connector{padding:9px}.branches{display:flex;gap:14px;margin-top:16px}.branches .node{flex:1}.foot{color:#637489;font-size:.85rem;text-align:center}@media(max-width:650px){header{padding:25px 20px}header h1{font-size:1.5rem}nav,section{padding:20px 16px}nav ol{columns:1}table{font-size:.82rem}th,td{padding:6px}pre{font-size:.78rem}}@media print{body{background:white}nav,section{box-shadow:none;break-inside:auto}section{break-before:page}header{color:black;background:white}a{color:black}}</style></head><body><nav class="sc-global-nav" aria-label="講義ナビゲーション"><a href="../index.html">講義一覧</a><span>第36講 / 217講</span><span><a href="35.html">← 前へ</a></span></nav><header><div>情報処理安全確保支援士（SC）合格講座｜講義全文版</div><h1>第36講｜ハイブリッド暗号</h1><p>A：必須中心／講義本文のみ（確認問題・採点結果を除く）</p></header><main><nav><h2>目次</h2><ol><li><a href="#s1">第36講｜ハイブリッド暗号</a></li><li><a href="#s2">参考書・学習優先度</a></li><li><a href="#s3">なぜハイブリッド暗号が必要なのか【A】</a></li><li><a href="#s4">RSA鍵配送型の処理【A】</a></li><li><a href="#s5">RSA鍵配送の概念図【A】</a></li><li><a href="#s6">ECDHE鍵共有の処理【A】</a></li><li><a href="#s7">ECDHE鍵共有の概念図【A】</a></li><li><a href="#s8">RSA鍵配送とECDHEの違い【A】</a></li><li><a href="#s9">TLS 1.3での役割分担【A】</a></li><li><a href="#s10">TLS 1.3通信の概念図【A】</a></li><li><a href="#s11">攻撃・脅威・対策【A】</a></li><li><a href="#s12">設定・ログの読み方【A】</a></li><li><a href="#s13">科目A・科目Bの答案ポイント【A】</a></li><li><a href="#s14">重要事項と発展学習【A・B・C】</a></li></ol></nav><section id="s1"><h2>第36講｜ハイブリッド暗号</h2><p>本講の到達目標は、①共通鍵暗号と公開鍵技術を組み合わせる理由、②RSA鍵配送とECDHE鍵共有の処理、③TLS 1.3での鍵共有・認証・通信暗号化の役割、④攻撃条件と防御策を、科目A・Bで説明できることです。</p></section><section id="s2"><h2>参考書・学習優先度</h2><p>参考書『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』の4-1-1「共通鍵暗号方式」（257〜262ページ）、4-1-2「公開鍵暗号方式」（263〜266ページ）、6-1のTLS関連（378〜380ページ）、6-1-5「SSH」（397ページ）を参照します。参考書に基づくのは共通鍵暗号・公開鍵暗号の役割と組合せの基本です。TLS 1.3とECDHEの具体的な説明は現行仕様を踏まえた講師補足です。学習時間の目安はA：必須75％、B：理解補助20％、C：発展5％です。</p></section><section id="s3"><h2>なぜハイブリッド暗号が必要なのか【A】</h2><p>AさんがBさんに大容量ファイルを安全に送る場面を考えます。AESなどの共通鍵暗号は大量のデータを高速に暗号化できますが、受信者にも同じ秘密の鍵を渡さなければなりません。鍵をそのまま通信で送ると、盗聴者に知られるおそれがあります。一方、RSAなどの公開鍵暗号は、相手の公開鍵で秘密情報を保護できますが、大容量のデータ全体を暗号化する用途には計算効率や一度に扱えるデータ長の制約があります。そこで、データ本体はAESで暗号化し、そのAES鍵の配送・共有を公開鍵技術で支えます。これがハイブリッド暗号の基本的な考え方です。</p></section><section id="s4"><h2>RSA鍵配送型の処理【A】</h2><p>登場人物は送信者Aと受信者Bです。BはRSA公開鍵と対応するRSA秘密鍵を持ち、公開鍵をAに渡します。①Aは安全な乱数生成器で今回の通信に使うAES鍵を生成します。②AはそのAES鍵でファイル本体を暗号化します。③AはAES鍵をBのRSA公開鍵で暗号化します。④Aは「暗号化したAES鍵」と「AESで暗号化したファイル」をBへ送ります。⑤Bは自分のRSA秘密鍵でAES鍵を復元します。⑥Bは復元したAES鍵でファイルを復号します。通信路に流れるBの公開鍵、暗号化AES鍵、ファイル暗号文は公開されてもよい情報ですが、Bの秘密鍵と平文のAES鍵は秘密にします。なお、Aが入手した公開鍵が本当にBのものかを検証しなければ、攻撃者の公開鍵にすり替えられるおそれがあります。暗号化だけでは送信者認証や改ざん検知を自動的には保証しません。</p></section><section id="s5"><h2>RSA鍵配送の概念図【A】</h2><p>B → A：BのRSA公開鍵（公開してよい）。A：AESセッション鍵を生成し、ファイルをAESで暗号化。A → B：BのRSA公開鍵で暗号化したAES鍵 ＋ AES暗号文。B：RSA秘密鍵でAES鍵を取り出し、その鍵でファイルを復号。これは仕組みを説明する概念例であり、TLS 1.3の手順ではありません。</p></section><section id="s6"><h2>ECDHE鍵共有の処理【A】</h2><p>ECDHE（Ephemeral Elliptic Curve Diffie-Hellman）は、AES鍵そのものを暗号化して送る方式ではありません。クライアントは一時秘密値aを生成し、対応する公開情報A＝aGを計算します。サーバも一時秘密値bを生成し、公開情報B＝bGを計算します。Gは両者が使う楕円曲線上の基準点です。両者はAとBを交換しますが、aとbは送信しません。クライアントはaB＝abG、サーバはbA＝abGを計算するため、同じ共有秘密を得られます。盗聴者は公開情報AとBを見ても、適切なパラメータの下では秘密値を求めるのが困難です。共有秘密をそのままAES鍵にするとは限らず、KDF（鍵導出関数）で通信鍵を導出します。重要なのは、ECDHEだけでは通信相手の本人確認ができないことです。認証がなければ中間者攻撃が成立し得ます。</p></section><section id="s7"><h2>ECDHE鍵共有の概念図【A】</h2><p>クライアント：秘密値a（送らない）→ 公開情報Aを計算。サーバ：秘密値b（送らない）→ 公開情報Bを計算。クライアント → サーバ：公開情報A。サーバ → クライアント：公開情報B。クライアント：aとBから共有秘密を計算。サーバ：bとAから同じ共有秘密を計算。共有秘密を材料にKDFで暗号鍵を生成します。</p></section><section id="s8"><h2>RSA鍵配送とECDHEの違い【A】</h2><p>RSA鍵配送では、送信側が作った秘密の鍵を受信側のRSA公開鍵で暗号化して送ります。受信側の長期RSA秘密鍵が後日漏えいし、過去の鍵配送メッセージが記録されていた場合、過去の通信鍵を復元されるおそれがあります。ECDHEでは双方が一時秘密値を生成し、公開情報を交換して共有秘密を計算します。一時秘密値を適切に破棄すれば、長期認証秘密鍵が後日漏えいしただけでは過去の共有秘密を復元できません。この性質をForward Secrecy（前方秘匿性）と呼びます。ただし、当時のセッション鍵や一時秘密値そのものが漏えいすれば、対応する通信は危険になります。</p></section><section id="s9"><h2>TLS 1.3での役割分担【A】</h2><p>①ブラウザはClientHelloで対応方式やECDHE用の公開情報を送ります。②サーバはServerHelloで選択した方式と自身の鍵共有用公開情報を返します。③双方は一時秘密値と相手の公開情報から共有秘密を計算し、HKDFなどを使ってハンドシェイク鍵やアプリケーション通信鍵を導出します。④サーバは証明書と署名などを提示し、ブラウザは証明書の信頼の連鎖、接続先ホスト名、署名などを検証します。⑤ハンドシェイクが完了すると、HTTPのリクエストとレスポンスはAES-GCMなどの共通鍵暗号で保護されます。TLS 1.3ではRSA鍵配送を利用しません。証明書の公開鍵は、鍵配送ではなく主に認証の役割を担います。</p></section><section id="s10"><h2>TLS 1.3通信の概念図【A】</h2><p>ブラウザ → サーバ：ClientHello＋鍵共有公開情報。サーバ → ブラウザ：ServerHello＋鍵共有公開情報。双方：ECDHE共有秘密の計算、HKDFによる鍵導出。サーバ → ブラウザ：証明書・署名など（TLS 1.3ではハンドシェイク途中から暗号化される）。双方：Finishedでハンドシェイク内容を確認。以降：共通鍵暗号で保護したHTTP通信。</p></section><section id="s11"><h2>攻撃・脅威・対策【A】</h2><p>【証明書検証の無効化】ECDHEで鍵共有してAES-GCMで通信していても、ブラウザがサーバ証明書を検証しなければ、攻撃者がブラウザと攻撃者の間、および攻撃者と本物サーバの間に別々の暗号化接続を確立できます。攻撃者は中継点で平文を読んだり改ざんしたりできます。対策は信頼できる認証局への連鎖、接続先ホスト名、有効期間、署名などの検証を有効にすることです。【長期秘密鍵の漏えい】RSA鍵配送型では、過去に記録された鍵配送データが解読されるおそれがあります。ECDHEなどでForward Secrecyを確保します。【通信鍵そのものの漏えい】Forward Secrecyは、当時の通信鍵が直接漏えいした場合まで保護するものではありません。</p></section><section id="s12"><h2>設定・ログの読み方【A】</h2><p>設定例1：Protocol＝TLSv1.3、KeyShare＝X25519、Cipher＝TLS_AES_256_GCM_SHA384、CertVerify＝enabled。X25519はECDH鍵共有に使われ、HTTPデータはAES-GCMで保護されます。証明書検証も有効です。設定例2：Protocol＝TLSv1.2、Cipher＝TLS_RSA_WITH_AES_128_CBC_SHA、CertVerify＝enabled。この暗号スイートはRSA鍵配送型で、ECDHEによるForward Secrecyを提供しません。いずれも概念的な確認例であり、実環境ではクライアントとサーバの設定、交渉結果、証明書検証の実施状況を区別して調べます。</p></section><section id="s13"><h2>科目A・科目Bの答案ポイント【A】</h2><p>科目Aでは「データ本体は共通鍵暗号」「鍵の配送・共有には公開鍵技術」「認証は証明書や署名」「ECDHEは鍵共有であって認証ではない」「Forward Secrecyは長期秘密鍵の後日の漏えいに備える」という役割の違いを押さえます。科目Bでは観測された設定→攻撃成立条件→影響→対策の順に書きます。答案例：『TLS 1.2のRSA鍵配送では、サーバの長期RSA秘密鍵が漏えいすると、記録済みの鍵配送メッセージから過去の通信鍵を復元されるおそれがある。ECDHEを用いた鍵共有方式に変更し、Forward Secrecyを確保する。』証明書検証無効が問題なら、『ECDHEで共有秘密を作れても接続相手を認証できず、中間者が別々のTLS接続を確立できるため、証明書の信頼性とホスト名の検証を有効にする』と説明します。</p></section><section id="s14"><h2>重要事項と発展学習【A・B・C】</h2><p>A：AESは大量データの暗号化、RSA鍵配送は暗号化した鍵の配送、ECDHEは一時秘密値からの鍵共有、証明書と署名は相手認証、Forward Secrecyは長期秘密鍵の後日漏えいから過去通信を守る性質です。B：KDFは共有秘密などを材料に通信鍵を導出する関数で、TLS 1.3ではHKDFを使います。C：HKDFの個別ラベルや内部計算、RSA-OAEPの数式、TLS 1.3の細かなTraffic Secretは任意学習です。試験ではまず、どの情報を誰が作り、何を送信し、どの鍵で何を守るかを説明できるようにしてください。</p></section><p class="foot"><a href="35.html">← 第35講 公開鍵暗号</a>　｜　<a href="../index.html">講義一覧へ</a></p></main><script id="sc-inline-layout-script">(()=>{function init(){if(document.querySelector('.sc-shell'))return;const body=document.body;const global=body.querySelector(':scope > .sc-global-nav');const shell=document.createElement('div');shell.className='sc-shell';const side=document.createElement('details');side.className='sc-sidebar';side.open=window.matchMedia('(min-width: 881px)').matches;const summary=document.createElement('summary');summary.textContent='目次（タップで開閉）';side.appendChild(summary);const links=document.createElement('div');links.className='sc-sidebar-links';side.appendChild(links);const content=document.createElement('div');content.className='sc-content';for(const node of [...body.childNodes]){if(node===global||node===shell)continue;if(node.nodeType===1&&['SCRIPT','STYLE'].includes(node.tagName))continue;content.appendChild(node)}shell.append(side,content);if(global)global.after(shell);else body.prepend(shell);const candidates=[...content.querySelectorAll('nav')].filter(n=>n!==global&&(/目次/.test(n.textContent||'')||n.querySelector('a[href^="#"]')));for(const nav of candidates){nav.classList.add('sc-old-toc')}const heads=[...content.querySelectorAll('h2')];heads.forEach((h,i)=>{if(!h.id)h.id='sc-heading-'+(i+1);const a=document.createElement('a');a.href='#'+h.id;a.textContent=h.textContent.trim();links.appendChild(a)});if(!heads.length){for(const a of candidates.flatMap(n=>[...n.querySelectorAll('a[href^="#"]')])){links.appendChild(a.cloneNode(true))}}if(!links.children.length)side.remove();links.addEventListener('click',e=>{if(e.target.closest('a')&&window.matchMedia('(max-width: 880px)').matches)side.open=false});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init()})();</script></body></html>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第36講 ハイブリッド暗号｜SC合格講座</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;background:#f5f7fa;color:#202938;line-height:1.9;margin:0}header{background:#123458;color:white;padding:45px max(24px,calc((100vw - 920px)/2))}header h1{font-size:2rem;line-height:1.45;margin:12px 0}header p{color:#d8e6f5}main{max-width:960px;margin:0 auto;padding:28px 20px 80px}nav,section{background:white;border:1px solid #e1e6ed;border-radius:13px;padding:25px 32px;margin-bottom:22px;box-shadow:0 3px 14px #172b4d0a}nav ol{columns:2;column-gap:36px;padding-left:22px}nav a{color:#165c97;text-decoration:none}h2{font-size:1.38rem;color:#123b60;border-bottom:2px solid #d8e6f4;padding-bottom:10px;margin:0 0 20px}h3{font-size:1.12rem;color:#245276;margin:24px 0 10px}p{margin:12px 0}table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.94rem}th,td{border:1px solid #d8e0e8;padding:9px 11px;text-align:left;vertical-align:top}th{background:#edf3f9}tr:nth-child(even) td{background:#fafbfd}pre{background:#172738;color:#f0f5fc;padding:18px;border-radius:8px;overflow:auto;line-height:1.6;font-size:.91rem}figure{margin:20px 0;padding:18px;background:#f8fbff;border:1px solid #dbe5f0;border-radius:10px}figcaption{text-align:center;font-size:.83rem;color:#617186;margin-top:10px}.sequence{display:grid;grid-template-columns:1fr 1fr;text-align:center;gap:8px;align-items:center}.sequence>div{padding:7px;border-radius:5px;background:#eaf1f9}.sequence>.arrow{color:#1a5d99;font-weight:bold;background:#f5f9fd}.network{text-align:center;max-width:560px;margin:auto}.node{padding:12px;border-radius:8px;border:1px solid #8294a6;margin:auto;max-width:360px}.client{background:#e8f1ff;border-color:#7aa6dc}.server{background:#e6f6ed;border-color:#78c09b}.router{background:#eef0f4}.attacker{background:#fff0f0;border-color:#e7a1a1}.connector{padding:9px}.branches{display:flex;gap:14px;margin-top:16px}.branches .node{flex:1}.foot{color:#637489;font-size:.85rem;text-align:center}@media(max-width:650px){header{padding:25px 20px}header h1{font-size:1.5rem}nav,section{padding:20px 16px}nav ol{columns:1}table{font-size:.82rem}th,td{padding:6px}pre{font-size:.78rem}}@media print{body{background:white}nav,section{box-shadow:none;break-inside:auto}section{break-before:page}header{color:black;background:white}a{color:black}}</style></head><body><nav class="sc-global-nav" aria-label="講義ナビゲーション"><a href="../index.html">講義一覧</a><span>第36講 / 217講</span><span><a href="35.html">← 前へ</a></span><span><a href="37.html">次へ →</a></span></nav><header><div>情報処理安全確保支援士（SC）合格講座｜講義全文版</div><h1>第36講｜ハイブリッド暗号</h1><p>A：必須中心／講義本文のみ（確認問題・採点結果を除く）</p></header><main><section><h1>第36講　ハイブリッド暗号</h1>
+<p>第III部・暗号技術。<strong>到達目標</strong>は、共通鍵暗号と公開鍵技術を組み合わせる理由を説明し、RSA鍵配送とECDHE鍵共有の違い、TLSの認証、Forward Secrecy（前方秘匿性）を、科目Aの選択肢と科目Bの事例で判断できることである。</p>
+<p><strong>参考書の確認箇所</strong>：『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』4-1-1「共通鍵暗号方式」（p.257～262）、4-1-2「公開鍵暗号方式」（p.263～266）、6-1-1「TLS」（p.378～380）。本文の暗号方式の基本とTLSの目的は参考書に基づく。TLS 1.3の具体的なメッセージ順序、HKDF、X25519などは講師の技術仕様補足であり、参考書の旧来のTLS説明と区別する。図、ログ、設問例は講師作成。</p>
+<p><strong>学習優先度</strong>：A（必須）75％＝鍵配送・鍵共有・認証・前方秘匿性・TLS・攻撃判断。B（理解補助）20％＝公開鍵の数学的イメージと鍵導出。C（任意）5％＝HKDFの内部式や楕円曲線演算の詳細。</p>
+<h2>1．なぜ二つの暗号技術を組み合わせるのか【A】</h2>
+<p>顧客がWebサイトでクレジットカード情報を送る場面を考えよう。通信を暗号化するにはAESのような<strong>共通鍵暗号</strong>が適している。AESは比較的高速で、大量のHTTPデータを継続して暗号化できる。しかしAESでは暗号化と復号に同じ秘密鍵が必要になる。ブラウザとWebサーバが初めて通信する場合、両者はまだ同じ秘密鍵を持っていない。鍵をそのままネットワークに流せば、盗聴者もその鍵を知り、暗号文を復号できてしまう。つまり「データを暗号化できる」ことと「その暗号鍵を安全に共有できる」ことは別の課題である。</p>
+<p>公開鍵暗号なら、受信者が公開する鍵を用いて秘密情報を暗号化し、受信者だけが保持する秘密鍵で復号する方法を取れる。一方、RSAなどの公開鍵暗号は計算負荷が大きく、暗号化できる平文の長さにも制限がある。大きなファイルをRSAで直接暗号化するのは実用的ではない。そこで、公開鍵技術で<strong>小さな鍵を確立</strong>し、実データはAESなどの共通鍵暗号で保護する。これがハイブリッド暗号の基本発想である。</p>
+<table>
+<thead>
+<tr>
+  <th>技術</th>
+  <th>得意なこと</th>
+  <th>それだけでは足りないこと</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>AESなどの共通鍵暗号</td>
+  <td>大量データを効率的に暗号化する</td>
+  <td>初対面の相手との鍵共有</td>
+</tr>
+<tr>
+  <td>RSAによる鍵配送</td>
+  <td>受信者の公開鍵で秘密情報を暗号化して届ける</td>
+  <td>大量データの直接暗号化、前方秘匿性</td>
+</tr>
+<tr>
+  <td>ECDHEによる鍵共有</td>
+  <td>双方が秘密値を送らずに共有秘密を確立する</td>
+  <td>通信相手が本物かどうかの認証</td>
+</tr>
+<tr>
+  <td>証明書と電子署名</td>
+  <td>公開鍵の持ち主やハンドシェイクの正当性を検証する</td>
+  <td>HTTPデータの高速な暗号化</td>
+</tr>
+</tbody>
+</table>
+<p>ここで重要な区別がある。「公開鍵暗号で共通鍵を送る」は<strong>RSA鍵配送型</strong>の説明としては正しいが、<strong>ECDHEを使う現代のTLS</strong>では同じ説明は正確ではない。ECDHEでは共通の秘密を暗号化して送るのではなく、双方が計算によって共有秘密を作る。</p>
+<h2>2．RSA鍵配送型のハイブリッド暗号【A】</h2>
+<p>送信者Aが受信者Bへ機密ファイルを送る例で、登場する鍵を分けて考える。BはRSA公開鍵とRSA秘密鍵のペアを生成し、公開鍵を公開する。秘密鍵はBだけが厳重に保管する。Aはファイル暗号化用に新しいランダムなAES鍵Kを生成する。<strong>BのRSA公開鍵、BのRSA秘密鍵、AES鍵Kは別物</strong>である。</p>
+<p><strong>図1：RSA鍵配送型の流れ</strong></p>
+<pre><code class="language-text">送信者A                                          受信者B
+  |                                                |
+  |&lt;--------- BのRSA公開鍵（事前に取得） -----------|
+  |                                                |
+  | AES鍵Kを乱数で生成                              |
+  | ファイルをAES鍵Kで暗号化                        |
+  | KをBのRSA公開鍵で暗号化                         |
+  |                                                |
+  |-- RSAで暗号化したK + AESで暗号化したファイル --&gt;|
+  |                                                | RSA秘密鍵でKを復号
+  |                                                | Kでファイルを復号
+</code></pre>
+<p>①BはRSA鍵ペアを準備する。②AはAES鍵Kを生成し、ファイルをKで暗号化する。③Aは<strong>BのRSA公開鍵</strong>でKだけを暗号化する。④Aは「RSAで暗号化されたK」と「AESで暗号化されたファイル」を送る。⑤Bは<strong>BのRSA秘密鍵</strong>でKを復元する。⑥Bは復元したKでファイルを復号する。RSAが処理するのは小さな鍵であり、ファイル本体ではない。これが性能面での利点である。</p>
+<p>なお、公開鍵を取得しただけでは、その鍵が本当にBのものか分からない。攻撃者がBの公開鍵を自分の公開鍵に差し替えれば、Aは攻撃者に読める形でKを送ってしまう。公開鍵と本人の対応関係を確認する仕組みが必要になる。TLSでは証明書による認証がこの問題に関係する。</p>
+<p>ファイルをAES-GCMで暗号化する場合、暗号文のほかにnonceと認証タグを扱う。認証タグは改ざん検出に使う。第34講の復習として、<strong>同じAES-GCM鍵の下でnonceを再利用しない</strong>ことも忘れない。単に「AESで暗号化した」だけでは、どの動作モードを使い、完全性をどう保護したかまでは分からない。</p>
+<h2>3．RSA鍵配送と過去通信の危険【A】</h2>
+<p>攻撃者が今日の暗号化通信を記録し、数年後にBの長期RSA秘密鍵を盗んだとする。記録の中にRSAで暗号化されたKがあれば、攻撃者は盗んだ秘密鍵でKを復号し、さらにKで当時のデータを復号できる可能性がある。<strong>盗聴した当時に復号できなくても、後日の秘密鍵漏えいで過去の通信が危険になる</strong>という点が重要である。</p>
+<p><strong>図2：過去通信の記録と後日漏えい</strong></p>
+<pre><code class="language-text">時点1：攻撃者が [RSA暗号化されたK] と [AES暗号化された通信] を保存
+                             |
+時点2：サーバの長期RSA秘密鍵が漏えい
+                             |
+時点3：保存していたKを復号 → Kで保存済み通信を復号するおそれ
+</code></pre>
+<p>このような長期秘密鍵の後日漏えいから過去通信を守る性質を<strong>Forward Secrecy（前方秘匿性）</strong>という。RSA鍵配送型は通常この性質を備えない。一方、ECDHEでは通信ごとに生成した一時秘密値を適切に破棄することによって、長期認証秘密鍵だけが後から漏えいしても過去の共有秘密を計算し直せないようにする。ただし、当時の一時秘密値や通信鍵自体が漏えいすれば、対応する通信は危険になり得る。「前方秘匿性があれば鍵漏えいの被害がゼロになる」という意味ではない。</p>
+<h2>4．ECDHEでは何を交換し、なぜ同じ秘密を作れるのか【A・B】</h2>
+<p>ECDHEは <em>Elliptic Curve Diffie-Hellman Ephemeral</em> の略で、楕円曲線を用いる一時的なDiffie-Hellman鍵共有である。ここでいう「一時的」は、鍵共有用の秘密値をセッションに応じて新しく生成することを意味する。数学の詳細はCだが、誰が何を秘密にし、何を送るかはAの必須知識である。</p>
+<p>ブラウザは秘密値 <code>a</code> を、サーバは秘密値 <code>b</code> を、それぞれ独立して生成する。公開された基準点を <code>G</code> とすると、ブラウザは公開情報 <code>A = aG</code>、サーバは公開情報 <code>B = bG</code> を計算する。ここでの掛け算は楕円曲線上の点の演算であり、通常の整数の掛け算ではない。公開情報から元の秘密値を逆算することは、適切な方式・パラメータでは計算上困難である。</p>
+<p><strong>図3：ECDHEの交換と共有秘密の計算</strong></p>
+<pre><code class="language-text">ブラウザ                                     サーバ
+秘密値 a を生成                              秘密値 b を生成
+公開情報 A = aG を計算                        公開情報 B = bG を計算
+    |                                           |
+    |--------------- 公開情報 A ---------------&gt;|
+    |&lt;-------------- 公開情報 B ----------------|
+    |                                           |
+    | 自分の a と相手の B を使用                 | 自分の b と相手の A を使用
+    | aB = a(bG) = abG                          | bA = b(aG) = abG
+    |                                           |
+    +-------- 両者が同じ共有秘密 abG を得る -----+
+
+通信路に流れる：A、B（公開情報）
+通信路に流れない：a、b、共有秘密 abG
+</code></pre>
+<p>ブラウザは受け取ったBに自分の秘密値aを作用させて <code>aB = abG</code> を計算する。サーバは受け取ったAに自分の秘密値bを作用させて <code>bA = abG</code> を計算する。両者の結果が一致するのは、楕円曲線上のスカラー倍の性質による。盗聴者はAとBを見られるが、aもbも知らないため、通常は同じ結果を得られない。<strong>秘密値を送らず、公開情報だけで共有秘密を確立できる</strong>のが鍵共有の核心である。</p>
+<p>ただし、ECDHEで得た共有秘密をそのままAES鍵として使用するとは限らない。TLS 1.3では、<strong>HKDF（HMAC-based Key Derivation Function）</strong>という鍵導出の仕組みを使い、共有秘密とハンドシェイクの情報などから用途別の鍵を導出する。クライアントからサーバへの暗号化鍵と、サーバからクライアントへの暗号化鍵も区別する。HMACはハッシュ関数を利用したメッセージ認証コードの仕組みである。HKDF内部の式は今回の必須範囲ではない。</p>
+<h2>5．なぜECDHEだけでは中間者攻撃を防げないのか【A】</h2>
+<p>ECDHEの数学が安全でも、<strong>相手の公開情報が本当に正規サーバから来たか</strong>は別問題である。攻撃者Mがブラウザと正規サーバの間でメッセージを差し替えられる場合、Mはブラウザには「サーバ」を装って自分の公開情報を送り、サーバには「ブラウザ」を装って別の公開情報を送れる。すると、ブラウザとM、Mとサーバの間に<strong>別々の共有秘密</strong>が成立する。</p>
+<p><strong>図4：認証のない鍵共有で起こる中間者攻撃</strong></p>
+<pre><code class="language-text">ブラウザ                攻撃者M                  正規サーバ
+   |                       |                         |
+   |--- ECDHE公開情報 ----&gt;|--- 別の公開情報 -------&gt;|
+   |&lt;-- Mの公開情報 -------|&lt;-- サーバの公開情報 -----|
+   |                       |                         |
+   |&lt;== 共有秘密 K1 ======&gt;|&lt;====== 共有秘密 K2 ====&gt;|
+   |                       |                         |
+   |--- K1で暗号化 -------&gt;|                         |
+   |                       | 復号・閲覧・改変可能    |
+   |                       |--- K2で再暗号化 -------&gt;|
+</code></pre>
+<p>MはECDHEを破っているのではない。<strong>M自身が二つの鍵共有の正当な計算当事者になっている</strong>ので、それぞれの通信を復号できるのである。だから「ECDHEを使用している」というログだけでは、相手認証が安全とは判断できない。</p>
+<p>TLSではサーバが<strong>公開鍵証明書</strong>を提示する。証明書は、サーバ名などの識別情報と公開鍵を結び付け、認証局（CA）が署名する仕組みである。ブラウザは信頼の連鎖、接続先ホスト名、有効期間などを検証する。TLS 1.3ではさらにサーバがハンドシェイクに関係する情報へ電子署名を行い、ブラウザが証明書中の公開鍵で検証する。これによって正規サーバの秘密鍵を持たないMは、単純に公開情報を差し替えただけでは正当な署名を作れない。</p>
+<p>逆に、アプリケーションが証明書検証を無効化していると、Mの偽証明書を受け入れ、Mとの鍵共有を正規サーバとの通信だと誤認するおそれがある。<strong>対策はECDHEの採用だけでなく、証明書・ホスト名・署名の適切な検証を維持すること</strong>である。第35講での復習対象「証明書検証無効が中間者攻撃につながる因果関係」は、この具体例で確認しておこう。</p>
+<h2>6．TLS 1.3の通信を順番に追う【A】</h2>
+<p>HTTPSは、HTTPをTLSで保護する仕組みである。TLS 1.3の通常のサーバ認証付きフルハンドシェイクを簡略化して追う。再接続時のPSKや0-RTTなど、別の経路もあるが、ここでは扱わない。</p>
+<p><strong>図5：TLS 1.3の主要メッセージ（概念図）</strong></p>
+<pre><code class="language-text">ブラウザ                                              Webサーバ
+  |                                                       |
+  |-- ClientHello ----------------------------------------&gt;|
+  |   対応方式、ECDHE公開情報など                          |
+  |&lt;------------------------------------------ ServerHello-|
+  |                             選択方式、ECDHE公開情報   |
+  |                                                       |
+  |  双方がECDHE共有秘密を計算し、HKDFで鍵を導出            |
+  |                                                       |
+  |&lt;-- {EncryptedExtensions} ------------------------------|
+  |&lt;-- {Certificate} -------------------------------------|
+  |&lt;-- {CertificateVerify} -------------------------------|
+  |&lt;-- {Finished} ----------------------------------------|
+  |    証明書・署名・Finishedを検証                         |
+  |-- {Finished} -----------------------------------------&gt;|
+  |                                                       |
+  |&lt;==== アプリケーション用の共通鍵でHTTPを保護 ==========&gt;|
+
+{ }：ハンドシェイク用の鍵で保護されるメッセージ
+</code></pre>
+<p><strong>①ClientHello</strong>：ブラウザは対応する方式と鍵共有用の公開情報などを提示する。<strong>②ServerHello</strong>：サーバは方式を選択し、自分の鍵共有公開情報を返す。双方はそれぞれの秘密値を用いて同じECDHE共有秘密を計算し、HKDFでハンドシェイク用の鍵を導出する。<strong>③EncryptedExtensions</strong>：サーバは暗号化された拡張情報を送る。<strong>④Certificate</strong>：サーバは証明書を提示する。<strong>⑤CertificateVerify</strong>：サーバはハンドシェイクの内容に関連した署名を送り、証明書の秘密鍵を持つことを証明する。<strong>⑥Finished</strong>：双方がハンドシェイクの整合性を確認する。認証・検証に成功したら、導出したアプリケーション用の鍵でHTTP要求・応答を保護する。</p>
+<p>ここで二つの注意点がある。第一に、<strong>TLS 1.3ではServerHelloの後、ハンドシェイク途中から暗号化が始まる</strong>。第二に、<strong>TLS 1.3ではRSA鍵配送を使わない</strong>。ただしRSAの署名アルゴリズムをサーバ認証に使うことはある。「RSA鍵配送なし」と「RSAを一切使わない」は同義ではない。</p>
+<h2>7．設定・ログを読む【A】</h2>
+<p>以下は実製品のログではなく、学習用に簡略化した<strong>擬似ログ</strong>である。実際のTLS 1.3では鍵共有グループと暗号スイートは別に交渉される。</p>
+<pre><code class="language-text">[接続A]
+Protocol    = TLSv1.3
+KeyShare    = X25519
+CipherSuite = TLS_AES_256_GCM_SHA384
+CertVerify  = enabled
+
+[接続B]
+Protocol    = TLSv1.2
+CipherSuite = TLS_RSA_WITH_AES_128_CBC_SHA
+CertVerify  = enabled
+
+[接続C]
+Protocol    = TLSv1.3
+KeyShare    = X25519
+CipherSuite = TLS_AES_128_GCM_SHA256
+CertVerify  = disabled
+</code></pre>
+<p>接続AはTLS 1.3で、X25519によるECDHE鍵共有とAES-256-GCMによるデータ保護を利用する例である。<code>SHA384</code>はハッシュ関数に関係する表示であり、HTTP本文をSHA-384で「暗号化する」という意味ではない。接続BはTLS 1.2のRSA鍵配送型で、後日長期RSA秘密鍵が漏えいした場合に過去通信が解読されるおそれがある。接続CはECDHEを使っていても証明書検証が無効であり、攻撃者の偽証明書を受け入れる中間者攻撃の危険がある。したがって、<strong>鍵共有方式・データ暗号方式・証明書検証の三つを別々に確認する</strong>。</p>
+<p>TLS 1.3の<code>TLS_AES_256_GCM_SHA384</code>だけからECDHEの曲線を断定してはいけない。TLS 1.3では鍵共有方式は暗号スイート名と別に示される。試験では、ログのどの欄が何を表しているかを正確に読み分けよう。</p>
+<h2>8．科目Aの判断と科目Bの答案【A】</h2>
+<p><strong>科目Aの判断</strong>：①大量データは共通鍵暗号、②RSA鍵配送とECDHE鍵共有を混同しない、③ECDHEだけでサーバ認証が完成するわけではない、④Forward Secrecyは長期秘密鍵の後日漏えいに対する過去通信の保護、⑤TLS 1.3はRSA鍵配送を使わない、の五点を判断できるようにする。</p>
+<p><strong>科目B例題1</strong>：「TLS 1.2のRSA鍵配送を使用しており、攻撃者が暗号化通信を保存していた。後日サーバのRSA秘密鍵が漏えいした。影響と対策を述べよ。」</p>
+<p><strong>答案例</strong>：「攻撃者は保存した鍵配送メッセージを漏えいしたRSA秘密鍵で復号し、当時の通信鍵を復元して過去通信を解読するおそれがある。ECDHEを用いる鍵共有へ変更し、長期秘密鍵の後日漏えいから過去通信を保護する。」</p>
+<p>単に「RSAは危険」と答えても、何がどのように漏れるかが分からない。<strong>保存された鍵配送メッセージ → 秘密鍵による復号 → 通信鍵の復元 → 過去通信の解読</strong>という因果関係が答案の中心である。</p>
+<p><strong>科目B例題2</strong>：「WebアプリケーションはTLS 1.3とECDHEを使うが、サーバ証明書の検証を無効にしている。問題点と対策を述べよ。」</p>
+<p><strong>答案例</strong>：「攻撃者が偽のサーバ証明書を提示しても受け入れられ、攻撃者とのECDHE鍵共有を正規サーバとの通信と誤認するため、通信を盗聴・改ざんされるおそれがある。信頼の連鎖、接続先ホスト名、有効期間などの証明書検証とハンドシェイクの署名検証を適切に実施する。」</p>
+<p>ここでも「証明書を検証する」とだけ書くより、<strong>検証しない → 偽サーバを受け入れる → 攻撃者と鍵共有する → 通信内容を読まれる</strong>という理由をつなげることが重要である。</p>
+<h2>9．混同しやすい事項と復習【A・B】</h2>
+<table>
+<thead>
+<tr>
+  <th>混同する概念</th>
+  <th>区別するポイント</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>RSA公開鍵とAES鍵</td>
+  <td>RSA公開鍵は鍵配送に使い、AES鍵はファイル本体の暗号化に使う</td>
+</tr>
+<tr>
+  <td>鍵配送と鍵共有</td>
+  <td>鍵配送は暗号化した秘密情報を送る。ECDHE鍵共有は公開情報を交換し、各自で共有秘密を計算する</td>
+</tr>
+<tr>
+  <td>鍵共有と相手認証</td>
+  <td>同じ秘密を計算できても、その相手が正規サーバとは限らない</td>
+</tr>
+<tr>
+  <td>長期秘密鍵と一時秘密値</td>
+  <td>長期秘密鍵は認証等で継続利用。一時秘密値はECDHEの各鍵共有で使用</td>
+</tr>
+<tr>
+  <td>前方秘匿性と絶対安全</td>
+  <td>長期秘密鍵の後日漏えいへの保護であり、当時の通信鍵の漏えいまで防ぐわけではない</td>
+</tr>
+<tr>
+  <td>TLS 1.3のRSA署名とRSA鍵配送</td>
+  <td>署名でRSAを使うことはあっても、RSA鍵配送は使用しない</td>
+</tr>
+</tbody>
+</table>
+<p>今回の最重要事項は三つある。<strong>第一に、共通鍵暗号はデータの保護、公開鍵技術は鍵の確立に役割分担する。第二に、ECDHEは盗聴者に秘密値を送らず共有秘密を作れるが、相手認証は別に必要である。第三に、RSA鍵配送とECDHEでは、長期秘密鍵が後から漏えいした場合の過去通信への影響が異なる。</strong></p>
+<p><strong>C：任意発展</strong>として、X25519の演算実装、HKDF-Extract/HKDF-Expandの詳細、TLS 1.3のPSK再開や0-RTT、鍵更新を学ぶ余地がある。ただし、今回の15点の理解度チェックではこれらの内部式を前提にしない。</p></section><p class="foot"><a href="35.html">← 第35講 公開鍵暗号</a>　｜　<a href="../index.html">講義一覧へ</a>　｜　<a href="37.html">第37講 ハッシュ関数 →</a></p></main><script id="sc-inline-layout-script">(()=>{function init(){if(document.querySelector('.sc-shell'))return;const body=document.body;const global=body.querySelector(':scope > .sc-global-nav');const shell=document.createElement('div');shell.className='sc-shell';const side=document.createElement('details');side.className='sc-sidebar';side.open=window.matchMedia('(min-width: 881px)').matches;const summary=document.createElement('summary');summary.textContent='目次（タップで開閉）';side.appendChild(summary);const links=document.createElement('div');links.className='sc-sidebar-links';side.appendChild(links);const content=document.createElement('div');content.className='sc-content';for(const node of [...body.childNodes]){if(node===global||node===shell)continue;if(node.nodeType===1&&['SCRIPT','STYLE'].includes(node.tagName))continue;content.appendChild(node)}shell.append(side,content);if(global)global.after(shell);else body.prepend(shell);const candidates=[...content.querySelectorAll('nav')].filter(n=>n!==global&&(/目次/.test(n.textContent||'')||n.querySelector('a[href^="#"]')));for(const nav of candidates){nav.classList.add('sc-old-toc')}const heads=[...content.querySelectorAll('h2')];heads.forEach((h,i)=>{if(!h.id)h.id='sc-heading-'+(i+1);const a=document.createElement('a');a.href='#'+h.id;a.textContent=h.textContent.trim();links.appendChild(a)});if(!heads.length){for(const a of candidates.flatMap(n=>[...n.querySelectorAll('a[href^="#"]')])){links.appendChild(a.cloneNode(true))}}if(!links.children.length)side.remove();links.addEventListener('click',e=>{if(e.target.closest('a')&&window.matchMedia('(max-width: 880px)').matches)side.open=false});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init()})();</script></body></html>
