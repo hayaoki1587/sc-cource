@@ -1,0 +1,67 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第38講 ハイブリッド暗号｜SC合格講座</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;background:#f5f7fa;color:#202938;line-height:1.9;margin:0}header{background:#123458;color:white;padding:45px max(24px,calc((100vw - 920px)/2))}header h1{font-size:2rem;line-height:1.45;margin:12px 0}header p{color:#d8e6f5}main{max-width:960px;margin:0 auto;padding:28px 20px 80px}nav,section{background:white;border:1px solid #e1e6ed;border-radius:13px;padding:25px 32px;margin-bottom:22px;box-shadow:0 3px 14px #172b4d0a}nav ol{columns:2;column-gap:36px;padding-left:22px}nav a{color:#165c97;text-decoration:none}h2{font-size:1.38rem;color:#123b60;border-bottom:2px solid #d8e6f4;padding-bottom:10px;margin:0 0 20px}h3{font-size:1.12rem;color:#245276;margin:24px 0 10px}p{margin:12px 0}table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.94rem}th,td{border:1px solid #d8e0e8;padding:9px 11px;text-align:left;vertical-align:top}th{background:#edf3f9}tr:nth-child(even) td{background:#fafbfd}pre{background:#172738;color:#f0f5fc;padding:18px;border-radius:8px;overflow:auto;line-height:1.6;font-size:.91rem}figure{margin:20px 0;padding:18px;background:#f8fbff;border:1px solid #dbe5f0;border-radius:10px}figcaption{text-align:center;font-size:.83rem;color:#617186;margin-top:10px}.sequence{display:grid;grid-template-columns:1fr 1fr;text-align:center;gap:8px;align-items:center}.sequence>div{padding:7px;border-radius:5px;background:#eaf1f9}.sequence>.arrow{color:#1a5d99;font-weight:bold;background:#f5f9fd}.network{text-align:center;max-width:560px;margin:auto}.node{padding:12px;border-radius:8px;border:1px solid #8294a6;margin:auto;max-width:360px}.client{background:#e8f1ff;border-color:#7aa6dc}.server{background:#e6f6ed;border-color:#78c09b}.router{background:#eef0f4}.attacker{background:#fff0f0;border-color:#e7a1a1}.connector{padding:9px}.branches{display:flex;gap:14px;margin-top:16px}.branches .node{flex:1}.foot{color:#637489;font-size:.85rem;text-align:center}@media(max-width:650px){header{padding:25px 20px}header h1{font-size:1.5rem}nav,section{padding:20px 16px}nav ol{columns:1}table{font-size:.82rem}th,td{padding:6px}pre{font-size:.78rem}}@media print{body{background:white}nav,section{box-shadow:none;break-inside:auto}section{break-before:page}header{color:black;background:white}a{color:black}}</style></head><body><nav class="sc-global-nav" aria-label="講義ナビゲーション"><a href="../index.html">講義一覧</a><span>第38講 / 217講</span><span><a href="37.html">← 前へ</a></span></nav><header><div>情報処理安全確保支援士（SC）合格講座｜講義全文版</div><h1>第38講｜ハイブリッド暗号</h1><p>A：必須中心／講義本文のみ（確認問題・採点結果を除く）</p></header><main><section><h1>第38講「MAC／HMAC」</h1>
+<p><strong>第III部 暗号技術／全217講の第38講</strong></p>
+<p><strong>到達目標</strong>：①通常のハッシュとMACの違いを説明する。②HMACの送受信処理と共有鍵の役割を追う。③改ざん・なりすまし・再送攻撃を区別する。④科目Bで原因・攻撃の手順・影響・対策を書く。</p>
+<p><strong>参考書</strong>：『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』第4章4-2「認証」内「内容認証」「MAC」、印刷283〜284ページ（PDF実確認）。参考書はMACを共有鍵を使うメッセージ認証コード、HMACをハッシュ関数を用いたMACと説明している。以下の具体的な通信例、HMACの構造、再送対策、実装時の注意点は<strong>講師独自の補足</strong>。現代の推奨アルゴリズムと参考書に例示されたMD5/SHA-1は区別する。</p>
+<p><strong>学習優先度</strong>：A（必須）約75％＝MACの目的、HMACの処理、認証範囲、攻撃と防御、科目B答案。B（理解補助）約20％＝HMACの内部構造、APIの具体例、鍵管理。C（任意）約5％＝証明可能安全性やアルゴリズム実装。</p>
+<h2>1. なぜハッシュ関数だけでは足りないのか【A】</h2>
+<p>前回は、ソフトウェア配布サイトのファイルと公開ハッシュ値を<strong>両方</strong>攻撃者に書き換えられると、照合値が一致しても安全とはいえないと学んだ。今回は、社内システム間の注文APIを考える。店舗サーバAが決済サーバBに「注文番号=731、金額=1000円」というメッセージを送る。AもBも、インターネット上を通るデータが途中で変更されていないか知りたい。</p>
+<p>最初にAがメッセージのSHA-256値を添付する方法を考える。Bは受信した本文からSHA-256を再計算し、添付値と比較できる。しかし攻撃者Eが通信を途中で書き換えられるなら、「金額=9000円」に変えた本文から<strong>新しいSHA-256値も自分で計算</strong>して送れてしまう。ハッシュ関数の計算方法は公開されており、Eも実行できるからだ。Bは「受信した本文と添付値が一致した」ことしか確認できず、<strong>Aが作った本文かどうか</strong>は分からない。</p>
+<p>では、Eには作れない照合値をAだけが付けられればどうか。AとBだけが知る秘密鍵Kを計算に使い、本文MとKから「認証タグ」Tを作る。EはMを見てもKを知らないので、書き換え後のMに合う正しいTを容易に作れない。これがMAC（Message Authentication Code、メッセージ認証コード）の基本的な発想である。ここでの「認証」は<strong>共有鍵を知る主体が作成したメッセージであることの確認</strong>であって、公開鍵証明書による個人の身元確認とは異なる。</p>
+<h2>2. MACを使った正常時の通信を一段階ずつ追う【A】</h2>
+<p>登場人物は送信者A、受信者B、盗聴・改ざんを試みる攻撃者Eの三者。AとBは事前に同じ秘密鍵Kを安全な経路で共有しているとする。Kは公開しない。注文データをM、MACの計算を <code>MAC(K, M)</code> と書き、その出力を認証タグTと呼ぶ。</p>
+<p><figure><img src="../assets/lesson38/mac-flow.svg" alt="送信側が共有鍵でタグを生成し、受信側が再計算する流れ" style="width:100%;height:auto;max-width:100%"><figcaption>送信側が共有鍵でタグを生成し、受信側が再計算する流れ</figcaption></figure></p>
+<p><strong>① Aが本文Mを確定する。</strong> 例えば <code>order=731&amp;amount=1000&amp;currency=JPY</code> とする。重要なのは、何を認証対象に含めるかを明確にすること。金額だけ認証して注文番号を認証しなければ、注文番号を書き換えられる危険が残る。</p>
+<p><strong>② AがKとMからTを計算する。</strong> 例として <code>T=HMAC-SHA256(K,M)</code>。HMACはMACを作る方法の一つで、SHA-256を内部で使う。Tは通常のSHA-256(M)とは異なり、<strong>秘密鍵Kを知らないと正しい値を生成しにくい</strong>。ここでは計算結果を短縮して <code>T=8F3A…</code> と表記するが、実際のタグはもっと長い。</p>
+<p><strong>③ AがMとTをBへ送る。</strong> ネットワーク上を流れるのは本文MとタグT。<strong>Kは送らない</strong>。暗号化を別途行わなければ、Eは本文Mを読むことができる。MACは本文を隠す技術ではない。</p>
+<p><strong>④ Bが受信した本文M'を、手元の同じKで再計算する。</strong> Bは <code>T'=HMAC-SHA256(K,M')</code> を求め、受信したTと安全な比較処理で照合する。AとBでKとMが同じなら計算結果も同じになる。もし途中で金額が書き換えられたなら、Bが計算するT'は通常、元のTと一致しない。</p>
+<p><strong>⑤ Bは一致なら認証に成功、不一致なら拒否する。</strong> 一致は「そのKを知る主体が作った可能性が高く、対象本文は変更されていない」ことを意味する。ただしAとBが同じKを知るため、第三者に対して「必ずAだけが作成した」と証明することはできない。またKが漏えいすればEもタグを偽造できる。<strong>MACの安全性は鍵の秘密保持に依存する。</strong></p>
+<h2>3. MACとHMACの関係、ハッシュとの違い【A・B】</h2>
+<p><strong>MACは目的を表す一般名</strong>である。共有秘密鍵を使ってメッセージの完全性と共有鍵保有者による認証を行う仕組み全般を指す。<strong>HMACはハッシュ関数を使ってMACを実現する具体的な方式</strong>である。つまり、すべてのHMACはMACだが、すべてのMACがHMACではない。AESを使うCMACなど、ハッシュ以外を基にするMACもある。</p>
+<p>前回の <code>SHA-256(M)</code> は鍵を使わないので、誰でも同じ値を作れる。一方 <code>HMAC-SHA256(K,M)</code> は秘密鍵Kを計算に使う。ここで「ハッシュ値に秘密鍵をただ付け足してSHA-256に入れるだけ」と理解してはいけない。HMACには鍵を内側と外側の二段階で組み合わせる<strong>規定の構造</strong>がある。安全性を確保するための構造なので、独自に <code>SHA-256(K || M)</code> のような方式を設計してHMACの代わりにしない。</p>
+<p>B（理解補助）として、HMACの形を示す。</p>
+<p><code>HMAC(K,M) = H((K0 XOR opad) || H((K0 XOR ipad) || M))</code></p>
+<p>ここでHはSHA-256などのハッシュ関数、K0は所定のブロック長に整えた鍵、<code>||</code> はデータの連結、XORはビットごとの排他的論理和、ipadとopadは規格で定められた異なる定数である。内側の計算結果を外側の計算に組み込む二段構造だと分かればよい。<strong>ipadやopadの具体的なバイト列を暗記する必要はない</strong>。実装では標準ライブラリのHMAC関数を使う。</p>
+<h2>4. 攻撃者は何を変更でき、何をできないか【A】</h2>
+<h3>4-1. 本文改ざんとタグ偽造</h3>
+<p>Eが <code>amount=1000</code> を <code>amount=9000</code> に変更して送ったとする。元のタグTをそのまま添えれば、Bの再計算結果と一致せず拒否される。Eが変更後の本文に合わせたタグを作ろうとしても、秘密鍵Kが分からなければ適切なHMACを計算できない。<strong>攻撃の成立条件</strong>は、Kの漏えい、認証処理の無効化、認証対象外の重要項目の存在などである。</p>
+<p>ただしMACは<strong>機密性を提供しない</strong>。EはMとTを盗聴できる場合がある。本文を秘密にしたければTLSなどで暗号化も必要となる。MACと暗号化は役割が異なる。</p>
+<h3>4-2. 正規タグの付いた過去メッセージをそのまま再送する</h3>
+<p>ここが重要である。EはKを知らなくても、Aが以前送った<strong>正規のMとTの組</strong>を記録できる。Eが同じ組を後日再送したら、Bが計算するHMACは元のTと一致する。本文もタグも書き換えていないからである。</p>
+<p>例えば「口座XからYへ1000円送金する」という正規の依頼をEが記録し、そのまま再送すると、Bの設計次第では同じ送金を二回処理してしまう。これは<strong>再送攻撃（リプレイ攻撃）</strong>である。HMACが破られたのではなく、HMACが保証する「本文の認証」と、アプリケーションが必要とする「新しい要求であること」は別の性質なのだ。</p>
+<p><figure><img src="../assets/lesson38/attack-flow.svg" alt="本文改ざんと正規メッセージ再送を比較した図" style="width:100%;height:auto;max-width:100%"><figcaption>本文改ざんと正規メッセージ再送を比較した図</figcaption></figure></p>
+<p>対策には、要求ごとに異なる<strong>ノンス（nonce、一度限りの値）</strong>、単調増加するシーケンス番号、許容時間を設けたタイムスタンプなどを使う。これらの値も<strong>MACの認証対象に含める</strong>。さらに受信側Bは、使用済みノンスを記録して再利用を拒否する、既に処理した番号を拒否する、時刻の許容範囲を検査するなどの状態管理が必要だ。<strong>ノンスを付けるだけでは再送を防げない</strong>。Bが使用済みか確認しなければ、Eは同じノンス付きの正規メッセージを再送できる。</p>
+<p>時刻だけの対策にも限界がある。許容時間内なら同じメッセージを再送できるため、重要な取引では一意な取引IDや重複処理防止と組み合わせる。</p>
+<h3>4-3. 秘密鍵が漏えいした場合</h3>
+<p>EがKを盗んだら、変更したMに対して正しいタグTを計算できる。Bはタグが一致しただけではEの偽造を見分けられない。したがってKは安全に配布・保存し、不要な主体に共有しない。鍵の漏えいが疑われたら交換し、古い鍵での認証を停止する。複数の取引先に同じ鍵を共有すると、一社の漏えいが他社にも影響し得るので、主体・用途ごとに鍵を分離する。</p>
+<h2>5. ハッシュ・HMAC・電子署名の比較【A】</h2>
+<p><figure><img src="../assets/lesson38/compare.svg" alt="ハッシュとHMACと電子署名の役割比較" style="width:100%;height:auto;max-width:100%"><figcaption>ハッシュとHMACと電子署名の役割比較</figcaption></figure></p>
+<table><tr><th>技術</th><th>秘密情報</th><th>検証者</th><th>主な保証</th><th>保証しないもの</th></tr><tr><td>SHA-256など通常のハッシュ</td><td>なし</td><td>誰でも計算できる</td><td>信頼できる照合値との一致</td><td>発信者の認証、秘匿性</td></tr><tr><td>HMAC</td><td>送受信者が共有するK</td><td>Kを知る者</td><td>Kを知る主体が作成したメッセージの完全性・認証</td><td>秘匿性、第三者に対する否認防止、再送防止</td></tr><tr><td>電子署名</td><td>署名者だけが秘密鍵を保持</td><td>対応する公開鍵を持つ者</td><td>署名者の認証、改ざん検出</td><td>秘匿性、単独での再送防止</td></tr></table>
+<p>電子署名の公開鍵は正規の署名者に対応していると確認できる必要がある。HMACはAもBもKを持っているため、B自身も正しいタグを生成できる。したがって第三者に「このメッセージは絶対にAが作成した」と証明する<strong>否認防止</strong>には向かない。これが次回のデジタル署名との重要な違いである。</p>
+<h2>6. 具体的なAPI設計と擬似ログ【A】</h2>
+<p>次は説明用のHTTP API例で、特定製品の実際のログではない。</p>
+<pre><code class="language-text">POST /transfer HTTP/1.1
+X-Request-Id: 008731
+X-Timestamp: 2026-10-29T07:00:00+09:00
+X-Signature: hmac-sha256=&lt;計算した認証タグ&gt;
+
+{"from":"A","to":"B","amount":1000}</code></pre>
+<p>この例では、送信側はHTTP本文だけでなく、<code>X-Request-Id</code> と <code>X-Timestamp</code> も規定された順序・表現で結合し、その全体に対してHMACを計算すると仮定する。受信側も<strong>全く同じバイト列</strong>を作って再計算する。JSONの空白やフィールド順序、改行などの扱いが違うとタグが一致しない場合があるため、どのデータをどの順序で認証するかという仕様が必要だ。</p>
+<pre><code class="language-text">07:00:01 request_id=008731 hmac_valid=true nonce_unused=true accepted=true
+07:00:05 request_id=008731 hmac_valid=true nonce_unused=false accepted=false reason=replay
+07:01:02 request_id=008732 hmac_valid=false accepted=false reason=tag_mismatch</code></pre>
+<p><strong>1行目</strong>：タグが一致し、未使用の要求IDなので処理する。<strong>2行目</strong>：タグは一致しているが、同じ要求IDを再送したため拒否する。<strong>3行目</strong>：本文またはタグが一致せず拒否する。3行目だけで「必ず攻撃」と断定せず、鍵の設定違い、データの正規化不一致、通信中の破損なども確認する。</p>
+<p>HMACのタグ比較では、入力内容によって比較処理時間が変わりにくい<strong>定数時間比較</strong>を用いるのが望ましい。これは高度な実装の詳細に属するが、試験では「単純な文字列比較で十分と決めつけない」程度の理解でよい。HMAC自体の計算と再送防止は別の処理であり、両方のログを確認する。</p>
+<h2>7. 科目Aの典型論点と科目Bの答案作成【A】</h2>
+<p><strong>科目A</strong>では「HMACはハッシュを用いるMAC」「共有鍵が必要」「本文を暗号化しない」「再送攻撃はHMACの一致だけでは防げない」「否認防止には向かない」を区別する。MACが一致したときに何が保証され、何が保証されないかを問われたら、<strong>認証対象に含まれるデータ</strong>と<strong>鍵の管理条件</strong>を考える。</p>
+<h3>科目B例題①：HMACを付けているのに送金が二重処理された</h3>
+<p><strong>観測事実</strong>：サーバはHMACの一致を確認している。ログには同じ要求IDの送金が二度成功した記録がある。<strong>攻撃条件</strong>：Eは正規のMとTを記録できる。<strong>原因</strong>：Bはタグを検証しても、過去の要求IDを再利用していないか検査していない。<strong>影響</strong>：Eが正規の組を再送し、送金が重複処理される。<strong>対策</strong>：要求IDを認証対象に含め、受信側で処理済みIDを記録して再利用を拒否する。これにより同じ正規タグ付きメッセージでも二回目は処理されない。</p>
+<p><strong>答案例</strong>：「攻撃者が過去の正規の要求とHMACタグをそのまま再送しても検証に成功するため、送金が重複実行される。要求IDをHMAC対象に含め、受信側で処理済みIDの再使用を拒否する。」</p>
+<h3>科目B例題②：金額を改ざんしても検証を通過した</h3>
+<p><strong>観測事実</strong>：送信者は注文番号だけにHMACを付け、金額を認証対象に含めていなかった。<strong>原因</strong>：HMACは認証対象のバイト列しか保護しない。<strong>攻撃の操作</strong>：Eは注文番号とタグを維持し、認証対象外の金額だけを変更する。<strong>影響</strong>：受信側はタグ一致と判断し、改ざん後の金額を処理する。<strong>対策</strong>：注文番号・金額・通貨など重要なフィールドをすべて明確な形式で認証対象に含める。</p>
+<p><strong>答案例</strong>：「HMACの対象外だった金額を攻撃者が変更しても、注文番号に対するタグは一致する。金額を含む取引の重要項目をHMACの認証対象に追加する。」</p>
+<h2>8. 要点整理と発展の切り分け</h2>
+<p><strong>A（必須）</strong>：MACは共有秘密鍵を用いてメッセージの完全性と共有鍵保有者による認証を確認する仕組み。HMACはハッシュ関数を用いたMAC。送信者が <code>HMAC(K,M)</code> を作り、受信者が同じKと受信Mから再計算して比較する。Kは送らない。本文の秘匿、再送防止、第三者に対する否認防止はHMACだけでは実現しない。再送対策はノンス・要求ID等を認証対象に含め、受信側で重複拒否する。</p>
+<p><strong>B（理解補助）</strong>：HMACの内側・外側の二重構造、認証対象のバイト列の統一、鍵の用途別分離を理解する。</p>
+<p><strong>C（任意）</strong>：HMACの証明可能安全性、定数時間比較の具体的実装、KDFやプロトコルごとの鍵導出の詳細は後回しでよい。</p>
+<p><strong>次は理解度チェック</strong>。選択式6問×1点、記述式3問×3点の合計15点。回答前に正解は示さない。</p>
+</section><p class="foot"><a href="37.html">← 第35講 公開鍵暗号</a>　｜　<a href="../index.html">講義一覧へ</a>　｜　<a href="37.html">第38講 ハッシュ関数 →</a></p></main><script id="sc-inline-layout-script">(()=>{function init(){if(document.querySelector('.sc-shell'))return;const body=document.body;const global=body.querySelector(':scope > .sc-global-nav');const shell=document.createElement('div');shell.className='sc-shell';const side=document.createElement('details');side.className='sc-sidebar';side.open=window.matchMedia('(min-width: 881px)').matches;const summary=document.createElement('summary');summary.textContent='目次（タップで開閉）';side.appendChild(summary);const links=document.createElement('div');links.className='sc-sidebar-links';side.appendChild(links);const content=document.createElement('div');content.className='sc-content';for(const node of [...body.childNodes]){if(node===global||node===shell)continue;if(node.nodeType===1&&['SCRIPT','STYLE'].includes(node.tagName))continue;content.appendChild(node)}shell.append(side,content);if(global)global.after(shell);else body.prepend(shell);const candidates=[...content.querySelectorAll('nav')].filter(n=>n!==global&&(/目次/.test(n.textContent||'')||n.querySelector('a[href^="#"]')));for(const nav of candidates){nav.classList.add('sc-old-toc')}const heads=[...content.querySelectorAll('h2')];heads.forEach((h,i)=>{if(!h.id)h.id='sc-heading-'+(i+1);const a=document.createElement('a');a.href='#'+h.id;a.textContent=h.textContent.trim();links.appendChild(a)});if(!heads.length){for(const a of candidates.flatMap(n=>[...n.querySelectorAll('a[href^="#"]')])){links.appendChild(a.cloneNode(true))}}if(!links.children.length)side.remove();links.addEventListener('click',e=>{if(e.target.closest('a')&&window.matchMedia('(max-width: 880px)').matches)side.open=false});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init()})();</script></body></html>
