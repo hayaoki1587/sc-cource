@@ -1,0 +1,66 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第39講 デジタル署名｜SC合格講座</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;background:#f5f7fa;color:#202938;line-height:1.9;margin:0}header{background:#123458;color:white;padding:45px max(24px,calc((100vw - 920px)/2))}header h1{font-size:2rem;line-height:1.45;margin:12px 0}header p{color:#d8e6f5}main{max-width:960px;margin:0 auto;padding:28px 20px 80px}nav,section{background:white;border:1px solid #e1e6ed;border-radius:13px;padding:25px 32px;margin-bottom:22px;box-shadow:0 3px 14px #172b4d0a}nav ol{columns:2;column-gap:36px;padding-left:22px}nav a{color:#165c97;text-decoration:none}h2{font-size:1.38rem;color:#123b60;border-bottom:2px solid #d8e6f4;padding-bottom:10px;margin:0 0 20px}h3{font-size:1.12rem;color:#245276;margin:24px 0 10px}p{margin:12px 0}table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.94rem}th,td{border:1px solid #d8e0e8;padding:9px 11px;text-align:left;vertical-align:top}th{background:#edf3f9}tr:nth-child(even) td{background:#fafbfd}pre{background:#172738;color:#f0f5fc;padding:18px;border-radius:8px;overflow:auto;line-height:1.6;font-size:.91rem}figure{margin:20px 0;padding:18px;background:#f8fbff;border:1px solid #dbe5f0;border-radius:10px}figcaption{text-align:center;font-size:.83rem;color:#617186;margin-top:10px}.sequence{display:grid;grid-template-columns:1fr 1fr;text-align:center;gap:8px;align-items:center}.sequence>div{padding:7px;border-radius:5px;background:#eaf1f9}.sequence>.arrow{color:#1a5d99;font-weight:bold;background:#f5f9fd}.network{text-align:center;max-width:560px;margin:auto}.node{padding:12px;border-radius:8px;border:1px solid #8294a6;margin:auto;max-width:360px}.client{background:#e8f1ff;border-color:#7aa6dc}.server{background:#e6f6ed;border-color:#78c09b}.router{background:#eef0f4}.attacker{background:#fff0f0;border-color:#e7a1a1}.connector{padding:9px}.branches{display:flex;gap:14px;margin-top:16px}.branches .node{flex:1}.foot{color:#637489;font-size:.85rem;text-align:center}@media(max-width:650px){header{padding:25px 20px}header h1{font-size:1.5rem}nav,section{padding:20px 16px}nav ol{columns:1}table{font-size:.82rem}th,td{padding:6px}pre{font-size:.78rem}}@media print{body{background:white}nav,section{box-shadow:none;break-inside:auto}section{break-before:page}header{color:black;background:white}a{color:black}}</style></head><body><nav class="sc-global-nav" aria-label="講義ナビゲーション"><a href="../index.html">講義一覧</a><span>第39講 / 217講</span><span><a href="38.html">← 前へ</a></span></nav><header><div>情報処理安全確保支援士（SC）合格講座｜講義全文版</div><h1>第39講｜デジタル署名</h1><p>A：必須中心／講義本文のみ（確認問題・採点結果を除く）</p></header><main><section><h1>第39講「デジタル署名」</h1>
+<p><strong>第III部・暗号技術／全217講の第39講</strong></p>
+<p><strong>到達目標</strong>：①署名生成と検証の主体・鍵・データを順に説明する。②完全性・真正性・否認防止と、署名だけでは保証しないことを区別する。③公開鍵のすり替え、署名対象外データの改ざん、秘密鍵漏えいを分析する。④RSA-PSS・ECDSA・DSAを試験で識別する。⑤科目Bで攻撃の操作と対策まで記述する。</p>
+<p><strong>参考書</strong>：『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』第4章「情報セキュリティ基礎技術（暗号化，認証）」4-2「認証」の「デジタル署名」、印刷273～274ページ（PDFを実確認）。署名者の秘密鍵と検証者の公開鍵、ハッシュとの組合せ、RSA・DSA・ECDSAが参考書の基礎事項。以下の契約API、攻撃例、検証ログ、RSA-PSSの厳密な説明は<strong>講師独自の補足</strong>。証明書の信頼経路の詳細は次講以降で扱う。</p>
+<p><strong>学習配分</strong>：A（必須）約75%：署名・検証、鍵とハッシュ、脅威・対策、科目A/B。B（理解補助）約20%：署名方式と実装例。C（任意）約5%：パディング・楕円曲線の数学。</p>
+<h2>1. なぜHMACではなくデジタル署名が必要なのか【A】</h2>
+<p>第39講では、店舗サーバAと決済サーバBが<strong>同じ秘密鍵K</strong>を共有し、本文Mから <code>HMAC(K,M)</code> を作って照合した。通信途中の第三者はKを知らなければタグを偽造しにくい。しかしBもKを知っている。後日、Aが「その注文を送っていない」と主張したとき、第三者はAとBのどちらがタグを作ったかを区別できない。HMACは共有鍵を持つ相手の認証には役立つが、<strong>署名者だけが作成できる証拠</strong>にはならない。</p>
+<p>例として、企業Aが取引先Bに「契約金額は100万円」と書かれた電子契約書を送る。Bは改ざんされていないことに加え、Aが署名したことを後から確認したい。ここで使うのが<strong>デジタル署名（digital signature）</strong>である。Aだけが管理する<strong>署名用秘密鍵</strong>で署名し、Bは対応する<strong>公開鍵</strong>で検証する。公開鍵は検証に使えるが、適切な署名方式なら公開鍵だけで新しい正当な署名を作ることは計算上困難である。</p>
+<p>ただし「Aの公開鍵」と称する鍵が本当にAのものかを確認しなければ、攻撃者の鍵を使った偽の署名を受け入れる。署名の数学的な検証成功と、現実の本人確認は区別する。</p>
+<h2>2. 正常時の署名生成・送信・検証【A】</h2>
+<p>登場人物は、<strong>署名者A</strong>、<strong>検証者B</strong>、通信途中で改ざんを試みる<strong>攻撃者E</strong>。Aは鍵ペア（秘密鍵 <code>sk_A</code>、公開鍵 <code>pk_A</code>）を生成し、<code>sk_A</code> を秘密に保持する。Bは、<code>pk_A</code> がAのものだと信頼できる方法で確認しているとする。対象文書をM、ハッシュ関数をHとする。</p>
+<figure><img src="../assets/lesson39/sign-verify.svg" alt="署名者Aから検証者Bへの署名生成・検証の流れ" style="width:100%;height:auto;max-width:100%"><figcaption>署名者Aから検証者Bへの署名生成・検証の流れ</figcaption></figure>
+<p><strong>① Aが署名対象の文書Mを確定する。</strong> 例：<code>契約番号=731; 金額=1000000円; 支払先=B</code>。文書の一部だけに署名すると、署名対象外の支払先などが変更されても検出できない。署名対象の範囲とバイト表現を決める必要がある。</p>
+<p><strong>② Aが文書のハッシュ値を計算する。</strong> 例えば <code>h = SHA-256(M)</code>。ハッシュ値は文書内容を代表する固定長の値だが、ハッシュだけでは署名者を認証できないことを第37講で学んだ。</p>
+<p><strong>③ Aが署名用秘密鍵で署名値Sを生成する。</strong> 概念的には <code>S = Sign(sk_A, M)</code>。多くの署名方式では内部でハッシュ値を用いる。実際のRSA-PSSやECDSAは規定の署名アルゴリズムに従い、<strong>単純に「ハッシュ値を秘密鍵で暗号化する」処理と同一ではない</strong>。参考書の「秘密鍵でハッシュ値を暗号化」は仕組みをつかむための概念的説明として理解する。</p>
+<p><strong>④ AがMとSをBに送信する。</strong> <code>sk_A</code> は送信しない。<code>pk_A</code> は公開してよいが、その正当性を確認する仕組みが必要である。署名を付けてもM自体は平文のまま送れるため、<strong>署名だけでは機密性を保証しない</strong>。</p>
+<p><strong>⑤ Bが正しい公開鍵で検証する。</strong> <code>Verify(pk_A, M, S)</code> が成功するか確認する。検証処理では署名方式に応じてMのハッシュなどが用いられる。文書Mの一文字でも変更されれば、適切な方式では検証に失敗する。署名検証が失敗した文書を受理しない。</p>
+<p><strong>⑥ Bが検証結果を業務判断に結び付ける。</strong> 署名が正しくても「契約金額が妥当」「送金が承認済み」「署名鍵が失効していない」といった業務条件まで自動的に満たすわけではない。署名検証、鍵・証明書の信頼性、権限・承認の確認を別々に行う。</p>
+<h2>3. デジタル署名が提供する性質と限界【A】</h2>
+<table><tr><th>性質</th><th>署名でできること</th><th>注意すべき限界</th></tr><tr><td>完全性</td><td>署名対象データの変更を検出できる</td><td>対象外の項目は保護されない</td></tr><tr><td>署名者の真正性</td><td>対応する秘密鍵の保有者が署名したことを確認できる</td><td>公開鍵の帰属確認と秘密鍵管理が必要</td></tr><tr><td>否認防止への寄与</td><td>署名者しか秘密鍵を持たない前提で、後から署名を否定しにくくする</td><td>秘密鍵漏えい・代理署名・法的証拠評価等は別途考慮</td></tr><tr><td>機密性</td><td><strong>提供しない</strong></td><td>本文の秘匿には暗号化が必要</td></tr><tr><td>新鮮性・再送防止</td><td><strong>自動では提供しない</strong></td><td>時刻、取引ID、ノンス、使用済み確認等が必要</td></tr></table>
+<h3>3-1. HMACとの決定的な違い</h3>
+<p>HMACではAとBが同じKを知り、<strong>両者がタグを作れる</strong>。署名ではAが <code>sk_A</code> を保持し、Bは通常 <code>pk_A</code> しか持たない。Bは検証できるが、Aになり代わって新しい正当な署名を作れない。この鍵の非対称性が否認防止への寄与の根拠である。</p>
+<figure><img src="../assets/lesson39/compare.svg" alt="ハッシュ・HMAC・デジタル署名の比較" style="width:100%;height:auto;max-width:100%"><figcaption>ハッシュ・HMAC・デジタル署名の比較</figcaption></figure>
+<h3>3-2. 「公開鍵で復号する」は正しいか</h3>
+<p>試験参考書では「秘密鍵でハッシュ値を暗号化し、公開鍵で検証」と説明されることがある。しかし現代の署名アルゴリズムは一般に<strong>署名生成と署名検証</strong>という別の演算として理解する。ECDSAは楕円曲線上の計算であり、秘密鍵で暗号化した値を公開鍵で復号する仕組みではない。RSA-PSSも専用の符号化・検証規則を持つ。科目Bでは「署名者の秘密鍵で署名し、対応する公開鍵で検証する」と書くのが正確で汎用的である。</p>
+<h2>4. 攻撃シナリオ①：文書と署名を両方差し替えた【A】</h2>
+<p>攻撃者Eが契約書Mを「100万円」から「900万円」に変更したとする。EがAの署名Sをそのまま付けても、Bの <code>Verify(pk_A, M', S)</code> は失敗する。なぜなら署名対象Mと受信文書M'が一致しないためである。</p>
+<p>そこでEは、自分の秘密鍵 <code>sk_E</code> で改ざん文書M'に署名S'を作り、<strong>自分の公開鍵 <code>pk_E</code> を「Aの公開鍵」と偽って</strong>Bへ渡した。Bが公開鍵の帰属を確認せず <code>Verify(pk_E, M', S')</code> だけ実行すると、検証は成功し得る。だが、それはEの鍵による署名が正しいというだけで、Aの署名を意味しない。</p>
+<figure><img src="../assets/lesson39/key-substitution.svg" alt="公開鍵すり替えによる署名のなりすまし" style="width:100%;height:auto;max-width:100%"><figcaption>公開鍵すり替えによる署名のなりすまし</figcaption></figure>
+<p><strong>対策</strong>：信頼できる経路で取得したAの公開鍵、または認証局が発行した証明書を検証し、署名者の身元・鍵の対応関係を確認する。証明書を使う場合は有効期間、失効、信頼できる発行者、署名対象の用途などの確認が必要となる。これらの詳細はPKI講義で扱う。</p>
+<h2>5. 攻撃シナリオ②：署名対象外の金額を書き換えた【A】</h2>
+<p>電子注文のデータが <code>注文番号=731, 金額=1000, 支払先=B</code> であるのに、署名対象を注文番号だけにしていたとする。Eが金額を9000円に変更しても、Bが注文番号のみを検証する設計なら署名検証に成功してしまう。暗号アルゴリズム自体に欠陥がなくても、<strong>署名対象範囲の設計不備</strong>で改ざんを見逃す。</p>
+<p><strong>対策</strong>：金額・支払先・注文番号・通貨など、取引判断に使う重要項目を署名対象に含める。JSON/XMLなどでは表記順序や空白の扱いが違うと同じ意味でも異なるバイト列になるため、必要に応じて正規化（canonicalization）を行い、送受信者が同一の署名対象バイト列を使う。</p>
+<h2>6. 攻撃シナリオ③：正規の署名付き要求を再送した【A】</h2>
+<p>第39講と同じ落とし穴である。EはAが正規に署名した「1000円送金」の本文Mと署名Sを記録し、後日そのまま再送する。Bが署名だけを検証すると、<strong>正規のMとSなので検証は成功</strong>する。使用済み取引の検査がなければ二重送金が起こり得る。</p>
+<p><strong>対策</strong>：一意な要求ID・ノンス・有効期限などを<strong>署名対象に含め</strong>、受信側で使用済みIDや期限切れ要求を拒否する。時刻だけでは許容時間内の再送を防ぎ切れないため、取引IDによる重複実行防止が重要である。</p>
+<h2>7. 攻撃シナリオ④：秘密鍵漏えいと署名の信頼性【A】</h2>
+<p>Aの署名用秘密鍵 <code>sk_A</code> が盗まれると、EはAの公開鍵で検証に成功する偽署名を作れる。これは、通常の公開鍵すり替えと異なり、<strong>正しいAの公開鍵を使っても検証が成功してしまう</strong>深刻な状況である。</p>
+<p><strong>対策</strong>：秘密鍵へのアクセス制御、必要に応じたHSM等による鍵保護、鍵の失効・交換、証明書の失効情報の確認、事故時の署名時点や鍵管理記録の調査が必要。署名検証に成功したという事実だけでは、秘密鍵漏えい後に本当にAが操作したかを断定できない。</p>
+<h2>8. RSA-PSS・DSA・ECDSA【A/B】</h2>
+<table><tr><th>方式</th><th>何に基づくか</th><th>試験での着眼点</th></tr><tr><td>RSA署名／RSA-PSS</td><td>RSAの数学的構造</td><td>RSA-PSSは署名用の安全な符号化方式を使う。RSA暗号化とRSA署名を混同しない</td></tr><tr><td>DSA</td><td>離散対数問題</td><td>デジタル署名専用の方式。暗号化方式ではない</td></tr><tr><td>ECDSA</td><td>楕円曲線上の離散対数問題</td><td>楕円曲線を用いた署名方式。ECDHEの鍵共有とは用途が違う</td></tr></table>
+<p><strong>ECDSAとECDHEの混同に注意</strong>：ECDSAは「署名する／検証する」技術、ECDHEは「一時鍵を使って共有秘密を合意する」技術である。両者とも楕円曲線を使うことがあるが、役割は別。TLS 1.3ではECDHEによる鍵共有と、RSA-PSSやECDSA等によるサーバ認証が組み合わされ得る。</p>
+<p><strong>B：理解補助</strong>：RSA-PSSは単純なRSAのべき乗計算ではなく、確率的なパディングを含む署名方式。ECDSAでは署名ごとの一時値（nonce）の安全な生成が重要で、使い回しや漏えいが秘密鍵の危殆化につながる。内部計算式の導出はC（任意）。</p>
+<h2>9. ログ・設定例で判断する【A】</h2>
+<p>次は<strong>講師作成の擬似ログ</strong>であり、特定製品の実ログではない。</p>
+<pre><code class="language-text">2026-11-03T09:00:00 contract=731 signature_valid=true signer_cert_trusted=true signer_key_revoked=false accepted=true
+2026-11-03T09:01:00 contract=732 signature_valid=true signer_cert_trusted=false accepted=false reason=untrusted_signer
+2026-11-03T09:02:00 contract=733 signature_valid=false accepted=false reason=content_modified
+2026-11-03T09:03:00 contract=731 signature_valid=true signer_cert_trusted=true accepted=false reason=duplicate_request</code></pre>
+<p><strong>1行目</strong>：署名検証、署名者の鍵の信頼性、失効確認に成功し、業務上も受理している。<strong>2行目</strong>：署名値の数学的検証が成功しても、署名者の証明書を信頼できないため拒否。<strong>3行目</strong>：文書改ざん、署名不一致、実装上のバイト列の差などが疑われるが、ログだけで攻撃と断定しない。<strong>4行目</strong>：署名は正しくても同じ契約番号の再利用を検知し、重複処理を拒否した。</p>
+<p>設定レビューでは、①署名検証失敗時に必ず拒否するか、②公開鍵の帰属を確認するか、③金額等の重要項目が署名対象か、④重複要求を拒否するか、⑤秘密鍵を安全に管理しているか、を分けて確認する。</p>
+<h2>10. 科目A・科目Bの答案作成【A】</h2>
+<p><strong>科目Aの判断</strong>：送信者の秘密鍵で署名し、送信者の公開鍵で検証する。署名だけでは機密性・再送防止を実現しない。HMACは共有鍵なので否認防止には向かない。RSA-PSS・ECDSAは署名方式、ECDHEは鍵共有方式である。</p>
+<p><strong>科目B例題①：署名検証成功なのに偽契約書を受け入れた。</strong></p>
+<p>設問条件：Bは通信で渡された公開鍵をそのまま信用していた。Eは改ざん文書に自分の秘密鍵で署名し、自分の公開鍵をAのものと偽って送った。</p>
+<p><strong>答案例</strong>：「攻撃者が改ざん文書に自身の秘密鍵で署名し、公開鍵もAのものと偽って渡したため、Bは署名値の検証に成功しても署名者を誤認した。信頼できる認証局の証明書等で公開鍵とAの対応を検証する。」</p>
+<p><strong>科目B例題②：署名付き送金を二度実行した。</strong></p>
+<p>設問条件：署名検証のみ行い、処理済み要求IDを記録していない。</p>
+<p><strong>答案例</strong>：「攻撃者が過去の正規の署名付き送金要求をそのまま再送すると、署名は有効なため検証を通過し、二重送金される。要求IDを署名対象に含め、受信側で処理済みIDを記録して再使用を拒否する。」</p>
+<p><strong>科目B例題③：金額改ざんを検出できない。</strong></p>
+<p><strong>答案例</strong>：「署名対象が注文番号だけなので、攻撃者が署名対象外の金額を変更しても検証が成功する。金額と支払先を含む重要項目全体を署名対象とする。」</p>
+<h2>11. 重要事項と発展学習の切り分け</h2>
+<p><strong>A：必須</strong>：署名者の秘密鍵で署名、対応する公開鍵で検証。ハッシュとの組合せ、完全性・真正性・否認防止への寄与。公開鍵帰属の確認、署名対象範囲、再送防止、秘密鍵管理。科目Bは「原因→攻撃者の操作→影響→対策」を具体的に書く。</p>
+<p><strong>B：理解補助</strong>：RSA-PSS・DSA・ECDSAの役割とECDHEとの違い、データ正規化、証明書の基本。</p>
+<p><strong>C：任意</strong>：RSA-PSSの符号化詳細、ECDSAの数式、証明書パス検証アルゴリズムの細部。</p>
+</section><p class="foot"><a href="38.html">← 第35講 公開鍵暗号</a>　｜　<a href="../index.html">講義一覧へ</a>　｜　<a href="38.html">第39講 ハッシュ関数 →</a></p></main><script id="sc-inline-layout-script">(()=>{function init(){if(document.querySelector('.sc-shell'))return;const body=document.body;const global=body.querySelector(':scope > .sc-global-nav');const shell=document.createElement('div');shell.className='sc-shell';const side=document.createElement('details');side.className='sc-sidebar';side.open=window.matchMedia('(min-width: 881px)').matches;const summary=document.createElement('summary');summary.textContent='目次（タップで開閉）';side.appendChild(summary);const links=document.createElement('div');links.className='sc-sidebar-links';side.appendChild(links);const content=document.createElement('div');content.className='sc-content';for(const node of [...body.childNodes]){if(node===global||node===shell)continue;if(node.nodeType===1&&['SCRIPT','STYLE'].includes(node.tagName))continue;content.appendChild(node)}shell.append(side,content);if(global)global.after(shell);else body.prepend(shell);const candidates=[...content.querySelectorAll('nav')].filter(n=>n!==global&&(/目次/.test(n.textContent||'')||n.querySelector('a[href^="#"]')));for(const nav of candidates){nav.classList.add('sc-old-toc')}const heads=[...content.querySelectorAll('h2')];heads.forEach((h,i)=>{if(!h.id)h.id='sc-heading-'+(i+1);const a=document.createElement('a');a.href='#'+h.id;a.textContent=h.textContent.trim();links.appendChild(a)});if(!heads.length){for(const a of candidates.flatMap(n=>[...n.querySelectorAll('a[href^="#"]')])){links.appendChild(a.cloneNode(true))}}if(!links.children.length)side.remove();links.addEventListener('click',e=>{if(e.target.closest('a')&&window.matchMedia('(max-width: 880px)').matches)side.open=false});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init()})();</script></body></html>
