@@ -1,0 +1,69 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第49講 PKI｜SC合格講座</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;background:#f5f7fa;color:#202938;line-height:1.9;margin:0}header{background:#123458;color:white;padding:45px max(24px,calc((100vw - 920px)/2))}header h1{font-size:2rem;line-height:1.45;margin:12px 0}header p{color:#d8e6f5}main{max-width:960px;margin:0 auto;padding:28px 20px 80px}nav,section{background:white;border:1px solid #e1e6ed;border-radius:13px;padding:25px 32px;margin-bottom:22px;box-shadow:0 3px 14px #172b4d0a}nav ol{columns:2;column-gap:36px;padding-left:22px}nav a{color:#165c97;text-decoration:none}h2{font-size:1.38rem;color:#123b60;border-bottom:2px solid #d8e6f4;padding-bottom:10px;margin:0 0 20px}h3{font-size:1.12rem;color:#245276;margin:24px 0 10px}p{margin:12px 0}table{width:100%;border-collapse:collapse;margin:18px 0;font-size:.94rem}th,td{border:1px solid #d8e0e8;padding:9px 11px;text-align:left;vertical-align:top}th{background:#edf3f9}tr:nth-child(even) td{background:#fafbfd}pre{background:#172738;color:#f0f5fc;padding:18px;border-radius:8px;overflow:auto;line-height:1.6;font-size:.91rem}figure{margin:20px 0;padding:18px;background:#f8fbff;border:1px solid #dbe5f0;border-radius:10px}figcaption{text-align:center;font-size:.83rem;color:#617186;margin-top:10px}.sequence{display:grid;grid-template-columns:1fr 1fr;text-align:center;gap:8px;align-items:center}.sequence>div{padding:7px;border-radius:5px;background:#eaf1f9}.sequence>.arrow{color:#1a5d99;font-weight:bold;background:#f5f9fd}.network{text-align:center;max-width:560px;margin:auto}.node{padding:12px;border-radius:8px;border:1px solid #8294a6;margin:auto;max-width:360px}.client{background:#e8f1ff;border-color:#7aa6dc}.server{background:#e6f6ed;border-color:#78c09b}.router{background:#eef0f4}.attacker{background:#fff0f0;border-color:#e7a1a1}.connector{padding:9px}.branches{display:flex;gap:14px;margin-top:16px}.branches .node{flex:1}.foot{color:#637489;font-size:.85rem;text-align:center}@media(max-width:650px){header{padding:25px 20px}header h1{font-size:1.5rem}nav,section{padding:20px 16px}nav ol{columns:1}table{font-size:.82rem}th,td{padding:6px}pre{font-size:.78rem}}@media print{body{background:white}nav,section{box-shadow:none;break-inside:auto}section{break-before:page}header{color:black;background:white}a{color:black}}</style></head><body><nav class="sc-global-nav" aria-label="講義ナビゲーション"><a href="../index.html">講義一覧</a><span>第49講 / 217講</span><span><a href="48.html">← 前へ</a></span></nav><header><div>情報処理安全確保支援士（SC）合格講座｜講義全文版</div><h1>第49講｜デジタル証明書</h1><p>A：必須中心／講義本文のみ（確認問題・採点結果を除く）</p></header><main><section><h1>第49講｜デジタル証明書</h1>
+<h2>0. 到達目標・出典・優先度</h2>
+<p><strong>到達目標</strong>：X.509公開鍵証明書の各項目を読み、CSR・発行・配布・更新の流れを追い、サーバ証明書とクライアント証明書の違い、署名・名前・用途・有効期間・失効の検証、秘密鍵漏えい時の対処を科目A/Bで判断できる。</p>
+<p><strong>参考書の確認箇所</strong>：『徹底攻略 情報処理安全確保支援士教科書 令和7年度版』第4章4-2「認証」、印刷p.275〜278（「PKIの仕組み」「デジタル証明書」「デジタル証明書の作成と検証の流れ」「CRL・VA・OCSP」）。p.276〜277の図では、公開鍵・主体・発行者・有効期限・シリアル番号・CA署名と検証を説明する。ここから先のSAN、EKU、CSRの詳細、TLSログ例、mTLSの判断は<strong>講師独自の補足</strong>。参考書の記述を長文転載せず再説明する。</p>
+<p><strong>学習配分</strong>：A必須75%、B理解補助20%、C発展5%。前講のPKIは「信頼の制度と仕組み」、本講は<strong>「証明書というデータをどう読み、どう使うか」</strong>が中心。</p>
+<h2>1. なぜ証明書が必要か【A】</h2>
+<p>Webブラウザが <code>https://shop.example.test</code> に接続するとき、サーバが「私の公開鍵はこれです」と渡すだけでは、その鍵が本物の店舗のものか判断できない。攻撃者が途中で自分の公開鍵を渡すこともできるからである。</p>
+<p>そこで、公開鍵と対象の名前などを一つのデータにまとめ、認証局（CA）が電子署名した<strong>デジタル証明書（公開鍵証明書）</strong>を使う。署名を検証すれば「信頼するCAがこの内容を発行したこと」「発行後に署名対象が改ざんされていないこと」を確かめられる。ただし<strong>CAの署名だけで接続先名や現在の有効性まで保証されるわけではない</strong>。別途、名前・期間・用途・信頼連鎖・失効などの検証が必要である。</p>
+<p>証明書に入る<strong>公開鍵は公開してよい</strong>。対応する<strong>秘密鍵は証明書に含まれず</strong>、所有者側が守る。サーバが証明書を提示しただけでは秘密鍵を持つ証拠として十分ではないため、TLSのハンドシェイクでは通常、秘密鍵を用いた署名などで所有を示す。</p>
+<h2>2. X.509証明書の読み方【A】</h2>
+<p>X.509は公開鍵証明書の代表的な規格。実際の証明書には以下の情報がある。ここでは説明用の架空の証明書を使う。</p>
+<pre><code>Version: 3
+Serial Number: 04:2A:91
+Signature Algorithm: sha256WithRSAEncryption
+Issuer: CN=Example Intermediate CA, O=Example CA
+Validity:
+  Not Before: 2026-11-01 00:00:00 UTC
+  Not After : 2027-01-30 23:59:59 UTC
+Subject: CN=shop.example.test, O=Example Shop
+Subject Public Key Info: RSA Public Key (2048 bit)
+X509v3 Subject Alternative Name:
+  DNS:shop.example.test
+X509v3 Basic Constraints: CA:FALSE
+X509v3 Key Usage: Digital Signature
+X509v3 Extended Key Usage: TLS Web Server Authentication
+Signature Value: (CAが作成した署名データ)</code></pre>
+<p><strong>Subject（主体）</strong>：誰の証明書か。<strong>Issuer（発行者）</strong>：誰が発行したか。<strong>Serial Number（シリアル番号）</strong>：発行者が証明書を識別する番号。失効情報との照合などに使う。<strong>Validity（有効期間）</strong>：Not BeforeからNot Afterまで。<strong>Subject Public Key Info</strong>：証明される公開鍵とアルゴリズム。<strong>Signature Algorithm / Signature Value</strong>：CAが用いた署名方式と署名値。</p>
+<p><strong>SAN（Subject Alternative Name、サブジェクト代替名）</strong>は、Webサーバのホスト名を確認する重要な拡張領域。現在の一般的なTLSのDNS名照合では、SubjectのCNだけを頼りにせず、SANに対象名があるか確認する。例えば <code>shop.example.test</code> 用の証明書で <code>pay.example.test</code> に接続すると、署名が正しくても名前不一致となる。</p>
+<p><strong>Basic Constraints: CA:FALSE</strong>は、その証明書をCAとして下位証明書の発行に使うものではないことを示す。<strong>Key Usage</strong>は鍵の利用目的の制限、<strong>Extended Key Usage（EKU）</strong>はTLSサーバ認証・クライアント認証など用途を表す。証明書は署名が正しいだけでどの用途にも使えるわけではない。</p>
+<p><strong>注意</strong>：例のRSA 2048 bitや有効期間は説明用の設定値であり、すべての証明書の必須値ではない。</p>
+<h2>3. 申請から配布まで：CSRと秘密鍵の所在【A】</h2>
+<p>登場人物は、サイト管理者X、認証局CA、利用者のブラウザB。</p>
+<ol><li><strong>鍵ペア作成</strong>：Xがサーバ用公開鍵と秘密鍵を作る。秘密鍵はXが安全に保管する。外部CAに秘密鍵を送る必要は通常ない。</li><li><strong>CSR作成</strong>：Xは公開鍵、申請する名前などを含むCSR（Certificate Signing Request、証明書署名要求）を作成し、通常は対応する秘密鍵でCSRに署名する。CSRは「証明書を発行してほしい」という申請であり、CA発行済み証明書ではない。</li><li><strong>申請内容の確認</strong>：CA側でドメイン管理権限など、発行する証明書の種類に応じた確認を行う。CSRに名前が書かれているだけで所有者だと信用するわけではない。</li><li><strong>証明書発行</strong>：CAが公開鍵・主体・有効期間・用途などを含む証明書を作り、CA側の秘密鍵で署名する。</li><li><strong>サーバ設定</strong>：Xはサーバ証明書と対応する秘密鍵をサーバへ設定し、必要な中間CA証明書も配布する。</li><li><strong>接続と検証</strong>：Bは証明書とチェーンを受け取り、署名・名前・期間・用途・失効等を検証する。さらにTLSでサーバが証明書に対応する秘密鍵を持つことを確認する。</li></ol>
+<p><strong>混同しやすい鍵</strong>：CSRの署名に使うのは通常<strong>申請者の秘密鍵</strong>。発行済み証明書に署名するのは<strong>CAの秘密鍵</strong>。証明書のCA署名を検証するのは<strong>CAの公開鍵</strong>。TLS接続でサーバが鍵を所有することを示すのは<strong>サーバの秘密鍵</strong>。これらは役割が違う。</p>
+<h2>4. 証明書検証は「一つのチェック」ではない【A】</h2>
+<p>ブラウザBが <code>shop.example.test</code> にアクセスする場合、概念上、次を分けて考える。</p>
+<table><tr><th>検証</th><th>確認すること</th><th>失敗例</th></tr><tr><td>署名・チェーン</td><td>中間CAを経由し信頼済みルートへつながるか</td><td>中間CA証明書不足、未信頼CA</td></tr><tr><td>名前</td><td>SANのDNS名が接続先と一致するか</td><td>別ホスト名の証明書</td></tr><tr><td>期間</td><td>現在時刻が有効期間内か</td><td>期限切れ、端末時刻誤り</td></tr><tr><td>用途・制約</td><td>TLSサーバ認証用か、CA制約は正しいか</td><td>クライアント用途のみ</td></tr><tr><td>失効</td><td>失効済みと判明していないか</td><td>秘密鍵漏えいで失効</td></tr><tr><td>秘密鍵の所持</td><td>相手が対応する秘密鍵を使えるか</td><td>証明書だけ盗んで秘密鍵がない</td></tr></table>
+<p>たとえば「中間CAまで署名が正しい」のに<strong>SANが別名</strong>なら、接続先の本人性は確認できない。逆に「SANは正しい」のに<strong>未知のCA</strong>が発行していれば、名前を自称しているだけかもしれない。検証のどこか一つが通っただけで安全とはしない。</p>
+<p><strong>失効</strong>は前講のCRL（失効証明書の一覧）とOCSP（証明書状態の照会）で学んだ。期限内でも漏えい等で失効し得る。ただし、実際の失効確認の方式や通信失敗時の扱いはクライアントの実装・ポリシーによって異なる。</p>
+<h2>5. サーバ証明書とクライアント証明書【A】</h2>
+<p><strong>サーバ証明書</strong>はブラウザ等が接続先サーバの正当性を確認するために使う。HTTPSで一般的に用いられる。</p>
+<p><strong>クライアント証明書</strong>はサーバが接続元クライアントの公開鍵・身元などを確認するために使う。例えば会社の管理端末にクライアント証明書を配り、業務システムへの接続を許可する。</p>
+<p><strong>mTLS（mutual TLS、相互TLS認証）</strong>ではサーバだけでなくクライアントも証明書を提示し、サーバがクライアント証明書を検証する。クライアント側はサーバ証明書を検証し、サーバ側はクライアント証明書を検証する。サーバはさらにクライアントが対応する秘密鍵を持つことを確認する。</p>
+<p>ただし<strong>証明書の有効性と業務上の権限は別</strong>。有効なクライアント証明書を持っていても、その利用者が管理者権限を持つとは限らない。証明書の主体とアカウントの対応付け、権限確認、失効・端末紛失時の停止手順が必要になる。</p>
+<h2>6. 秘密鍵漏えい・誤発行・更新ミス【A】</h2>
+<p><strong>秘密鍵漏えい</strong>：攻撃者がサーバ秘密鍵を得ると、条件次第でサーバになりすます危険がある。秘密鍵を保護領域や適切なアクセス制御下で管理し、漏えい時は証明書を失効し<strong>新しい鍵ペア</strong>と証明書へ交換する。証明書だけ再発行して漏えい済みの秘密鍵を再利用するのは不適切。</p>
+<p><strong>誤発行</strong>：ドメイン管理権限の確認が不十分だと、攻撃者に正しい名前を含む証明書が発行され得る。発行審査の適正化、証明書透明性（CT）ログ等の監視が補助策になる。ただしCTは証明書の不正使用を自動で防止するものではない。</p>
+<p><strong>更新ミス</strong>：更新した証明書とサーバ秘密鍵が対応しない、SANが不足する、中間CA証明書を設定し忘れる、有効期限を超える、などが起こる。更新前に対象名・鍵の対応・チェーンを確認し、更新後に実際の接続先から検証する。検証無効化は根本対策にならない。</p>
+<h2>7. ログとコマンドを読む【A/B】</h2>
+<p>以下は<strong>架空のログ</strong>。観測した事実と推測を分ける。</p>
+<pre><code>11:00 host=shop.example.test verify=FAIL reason=HOSTNAME_MISMATCH
+11:04 host=shop.example.test verify=FAIL reason=UNTRUSTED_ROOT
+11:08 host=shop.example.test verify=FAIL reason=EXPIRED
+11:12 host=shop.example.test verify=FAIL reason=KEY_MISMATCH</code></pre>
+<p>11:00はSANと接続先名を調査。11:04は発行者・中間証明書・信頼ストアを調査。11:08は有効期間と端末時刻を調査。11:12は証明書に含まれる公開鍵と、サーバが使用する秘密鍵の対応を調査する。<strong>このログだけでは攻撃か運用ミスかは断定できない</strong>。</p>
+<p>管理者が証明書の中身を見るときの例（OpenSSL、実行例であり操作を要求しない）：</p>
+<pre><code>openssl x509 -in server.crt -noout -text</code></pre>
+<p>このコマンドは証明書の表示であり、秘密鍵を復号・公開する操作ではない。出力の <code>Issuer</code>、<code>Subject</code>、<code>Validity</code>、<code>Subject Alternative Name</code>、<code>Key Usage</code>、<code>Extended Key Usage</code> を読み、想定の接続先と用途に合うか確認する。コマンドだけではチェーン全体の信頼性や失効状態まで自動で完全検証したことにはならない。</p>
+<h2>8. 科目Aと科目Bの答案作成【A】</h2>
+<p><strong>科目A</strong>：公開鍵証明書と秘密鍵の所在、CSRと証明書、SubjectとIssuer、SANとCN、CA署名とTLSでの鍵所持確認、サーバ証明書とクライアント証明書、期限と失効の違い。</p>
+<p><strong>科目B例題</strong>：「新しいサーバ証明書を適用した直後から、<code>pay.example.test</code> へのHTTPS接続だけ名前不一致エラーとなった。証明書のSANには <code>shop.example.test</code> しか記載されていない。原因と対策を説明せよ。」</p>
+<p>事実：証明書のSANは <code>shop.example.test</code> のみ。接続先は <code>pay.example.test</code>。原因：署名が正しくても、証明書に接続先の名前が含まれず、サーバの本人性を確認できない。影響：クライアントは安全な接続として受け入れられない。対策：<code>pay.example.test</code> をSANに含む適切な証明書を発行・設定し、接続先で検証する。</p>
+<p><strong>答案例</strong>：「証明書のSANに接続先 <code>pay.example.test</code> がなく、ホスト名検証に失敗するため。接続先名をSANに含む証明書を発行してサーバに設定する。」</p>
+<p><strong>別ケース</strong>：「サーバ証明書は有効だが、mTLSでクライアント認証が失敗」なら、クライアント証明書の有無、用途、信頼先、失効、対応する秘密鍵の所持、アカウントへの対応付けを調べる。サーバ証明書の更新だけでは解決しない。</p>
+<h2>9. 重要事項と発展の切り分け</h2>
+<p><strong>A必須</strong>：証明書は公開鍵と主体等をCAが署名したもの。秘密鍵は含まれない。SAN・有効期間・用途・チェーン・失効を区別して検証する。CSRと発行済み証明書は違う。秘密鍵漏えい時は鍵を交換し証明書を失効する。</p>
+<p><strong>B理解補助</strong>：mTLSでのクライアント証明書と認可の違い、OpenSSLの表示項目、更新運用のチェック。</p>
+<p><strong>C発展・任意</strong>：ASN.1/DER内部符号化、証明書ポリシーOID、CTログ監視の細部。科目A/Bの基礎問題を解くために内部バイト列の暗記は不要。</p>
+</section><p class="foot"><a href="48.html">← 第48講 PKI</a>　｜　<a href="../index.html">講義一覧へ</a></p></main><script id="sc-inline-layout-script">(()=>{function init(){if(document.querySelector('.sc-shell'))return;const body=document.body;const global=body.querySelector(':scope > .sc-global-nav');const shell=document.createElement('div');shell.className='sc-shell';const side=document.createElement('details');side.className='sc-sidebar';side.open=window.matchMedia('(min-width: 881px)').matches;const summary=document.createElement('summary');summary.textContent='目次（タップで開閉）';side.appendChild(summary);const links=document.createElement('div');links.className='sc-sidebar-links';side.appendChild(links);const content=document.createElement('div');content.className='sc-content';for(const node of [...body.childNodes]){if(node===global||node===shell)continue;if(node.nodeType===1&&['SCRIPT','STYLE'].includes(node.tagName))continue;content.appendChild(node)}shell.append(side,content);if(global)global.after(shell);else body.prepend(shell);const candidates=[...content.querySelectorAll('nav')].filter(n=>n!==global&&(/目次/.test(n.textContent||'')||n.querySelector('a[href^="#"]')));for(const nav of candidates){nav.classList.add('sc-old-toc')}const heads=[...content.querySelectorAll('h2')];heads.forEach((h,i)=>{if(!h.id)h.id='sc-heading-'+(i+1);const a=document.createElement('a');a.href='#'+h.id;a.textContent=h.textContent.trim();links.appendChild(a)});if(!heads.length){for(const a of candidates.flatMap(n=>[...n.querySelectorAll('a[href^="#"]')])){links.appendChild(a.cloneNode(true))}}if(!links.children.length)side.remove();links.addEventListener('click',e=>{if(e.target.closest('a')&&window.matchMedia('(max-width: 880px)').matches)side.open=false});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init()})();</script></body></html>
