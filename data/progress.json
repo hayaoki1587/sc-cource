@@ -696,12 +696,12 @@
       "title": "CA・RA・CRL・OCSP",
       "type": "講義",
       "recommended_period": "11月",
-      "status": "未学習",
-      "correct": null,
-      "total": null,
-      "subject_b": "未",
-      "last_studied": null,
-      "notes": null
+      "status": "理解済み",
+      "correct": 15,
+      "total": 15,
+      "subject_b": "対応済み",
+      "last_studied": "2026-11-19",
+      "notes": "第50講CA・RA・CRL・OCSP：15/15点（基礎5/5、応用6/6、科目B型4/4）、全10問正解。新規弱点なし。維持復習：CA・RA・IAの役割分担、CRLとOCSPの違い、失効情報の更新・到達時差、soft-fail/hard-failのリスク。"
     },
     {
       "no": 51,
